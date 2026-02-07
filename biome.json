@@ -18,48 +18,6 @@
         "enabled": true,
         "rules": {
             "recommended": true,
-            "style": {
-                "useNamingConvention": {
-                    "level": "warn",
-                    "options": {
-                        "strictCase": false,
-                        "requireAscii": true,
-                        "conventions": [
-                            {
-                                "selector": {
-                                    "kind": "variable"
-                                },
-                                "formats": ["camelCase"]
-                            },
-                            {
-                                "selector": {
-                                    "kind": "function"
-                                },
-                                "formats": ["camelCase"]
-                            },
-                            {
-                                "selector": {
-                                    "kind": "class"
-                                },
-                                "formats": ["PascalCase"]
-                            },
-                            {
-                                "selector": {
-                                    "kind": "const",
-                                    "scope": "global"
-                                },
-                                "formats": ["CONSTANT_CASE"]
-                            },
-                            {
-                                "selector": {
-                                    "kind": "typeLike"
-                                },
-                                "formats": ["PascalCase"]
-                            }
-                        ]
-                    }
-                }
-            },
             "suspicious": {
                 "noConsole": "warn",
                 "noExplicitAny": "warn"
