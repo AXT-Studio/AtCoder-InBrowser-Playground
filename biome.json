@@ -29,32 +29,32 @@
                                 "selector": {
                                     "kind": "variable"
                                 },
-                                "formats": [ "camelCase" ]
+                                "formats": ["camelCase"]
                             },
                             {
                                 "selector": {
                                     "kind": "function"
                                 },
-                                "formats": [ "camelCase" ]
+                                "formats": ["camelCase"]
                             },
                             {
                                 "selector": {
                                     "kind": "class"
                                 },
-                                "formats": [ "PascalCase" ]
+                                "formats": ["PascalCase"]
                             },
                             {
                                 "selector": {
                                     "kind": "const",
                                     "scope": "global"
                                 },
-                                "formats": [ "CONSTANT_CASE" ]
+                                "formats": ["CONSTANT_CASE"]
                             },
                             {
                                 "selector": {
                                     "kind": "typeLike"
                                 },
-                                "formats": [ "PascalCase" ]
+                                "formats": ["PascalCase"]
                             }
                         ]
                     }
