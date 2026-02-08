@@ -6,9 +6,13 @@
 // imports
 // ----------------------------------------------------------------
 
+import { addExampleAutoExecButton } from "./uiSetups/exampleAutoExec";
 import { setupGlobalSettingsSetter } from "./uiSetups/globalSettings";
+import { setupInsertTemplate } from "./uiSetups/insertTemplate";
 import { setupMonacoEditor } from "./uiSetups/monaco";
 import { setupPageSettingsSetter } from "./uiSetups/pageSettings";
+import { addPrepareSubmissionListener } from "./uiSetups/prepareSubmission";
+import { addRunTestListener } from "./uiSetups/runTest";
 import { setupTabSwitching } from "./uiSetups/tabSwitching";
 
 // ----------------------------------------------------------------
@@ -31,27 +35,29 @@ const html = `\
                         <tbody>
                             <tr>
                                 <th>JavaScript</th>
-                                <td><button id="template-js-node">Node.js</button></td>
-                                <td><button id="template-js-deno">Deno</button></td>
-                                <td><button id="template-js-bun">Bun</button></td>
+                                <td><button id="template-js_node">Node.js</button></td>
+                                <td><button id="template-js_deno">Deno</button></td>
+                                <td><button id="template-js_bun">Bun</button></td>
                             </tr>
                             <tr>
                                 <th>TypeScript</th>
-                                <td><button id="template-ts-node">Node.js</button></td>
-                                <td><button id="template-ts-deno">Deno</button></td>
-                                <td><button id="template-ts-bun">Bun</button></td>
+                                <td><button id="template-ts_node">Node.js</button></td>
+                                <td><button id="template-ts_deno">Deno</button></td>
+                                <td><button id="template-ts_bun">Bun</button></td>
                             </tr>
+                            <!--
                             <tr>
                                 <th>Python3</th>
-                                <td><button id="template-py3-cpy">CPython</button></td>
+                                <td><button id="template-py3_cpy">CPython</button></td>
                             </tr>
                             <tr>
                                 <th>Ruby</th>
-                                <td><button id="template-rb-ruby">Ruby</button></td>
+                                <td><button id="template-rb_ruby">Ruby</button></td>
                             </tr>
+                            -->
                             <tr>
                                 <th>Text</th>
-                                <td><button id="template-txt-cat">Text (cat)</button></td>
+                                <td><button id="template-txt_cat">Text (cat)</button></td>
                             </tr>
                         </tbody>
                     </table>
@@ -172,6 +178,14 @@ export const createUI = async (): Promise<HTMLDivElement> => {
     await setupPageSettingsSetter(container);
     // Monaco Editor設定
     const editor = await setupMonacoEditor(container);
+    // コードテンプレ挿入ボタン イベント処理挿入
+    setupInsertTemplate(container, editor);
+    // Example Auto-Exec.ボタン群を追加
+    addExampleAutoExecButton(container);
+    // Prepare Submissionボタン イベント処理挿入
+    addPrepareSubmissionListener(container, editor);
+    // Run Testボタン イベント処理挿入
+    await addRunTestListener(container, editor);
 
     // ==== 返す ====
     return container;
