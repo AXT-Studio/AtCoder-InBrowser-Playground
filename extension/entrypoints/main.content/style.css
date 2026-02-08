@@ -87,8 +87,11 @@ Monaco Editor範囲
     /* -- Animation (animation, transition, transform) -- */
     /* -- Misc (cursor, outline, user-select) -- */
     /* -- CSS Nesting Selectors -- */
-    & > .monaco-editor .overflow-guard {
+    & > .monaco-editor {
         border-radius: 8px;
+        & > .overflow-guard {
+            border-radius: 8px;
+        }
     }
 }
 
