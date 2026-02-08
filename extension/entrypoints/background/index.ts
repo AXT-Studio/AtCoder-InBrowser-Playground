@@ -40,8 +40,8 @@
 // ----------------------------------------------------------------
 
 import PlaintextWorker from "./workers/plaintext?worker";
+import TypescriptWorker from "./workers/typescript?worker";
 // 他の言語のWorkerも将来的にここに追加
-// import TypescriptWorker from "./workers/typescript?worker";
 
 export default defineBackground(() => {
     console.log("Background script is started.");
@@ -51,8 +51,8 @@ export default defineBackground(() => {
     /** Runner Workerのコンストラクタ */
     const workerConstructors: Record<string, new () => Worker> = {
         plaintext: PlaintextWorker,
-        // javascript: TypescriptWorker,
-        // typescript: TypescriptWorker,
+        javascript: TypescriptWorker,
+        typescript: TypescriptWorker,
         // python: PythonWorker,
         // ruby: RubyWorker,
     };

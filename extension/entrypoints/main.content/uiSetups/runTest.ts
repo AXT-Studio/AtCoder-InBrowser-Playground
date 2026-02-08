@@ -163,7 +163,7 @@ const runTest = async (
             // stderrが出ている場合: Status = RE
             statusSpan.textContent = "RE";
             statusSpan.dataset.color = "purple";
-            execTimeTd.textContent = `${execTime.toFixed(2)} ms`;
+            execTimeTd.textContent = `${execTime.toFixed(0)} ms`;
             // stderrを表示
             actualStderrTextarea.value = testResult.stderr + (testResult.error ? `\nError: ${testResult.error}` : "");
         } else if (testResult.exitCode === 9) {
@@ -184,7 +184,7 @@ const runTest = async (
                 statusSpan.textContent = "WA";
                 statusSpan.dataset.color = "red";
             }
-            execTimeTd.textContent = `${execTime.toFixed(2)} ms`;
+            execTimeTd.textContent = `${execTime.toFixed(0)} ms`;
             // stdout, stderrがあれば表示
             actualStdoutTextarea.value = testResult.stdout;
             actualStderrTextarea.value = testResult.stderr;

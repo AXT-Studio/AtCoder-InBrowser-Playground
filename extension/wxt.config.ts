@@ -14,5 +14,9 @@ export default defineConfig({
             },
         },
     },
-    vite: () => ({}),
+    vite: () => ({
+        worker: {
+            format: "es",
+        },
+    }),
 });
