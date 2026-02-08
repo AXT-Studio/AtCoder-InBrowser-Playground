@@ -20,9 +20,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-      vite-plugin-monaco-editor-esm:
-        specifier: ^2.0.2
-        version: 2.0.2(monaco-editor@0.55.1(patch_hash=cc0fc1408a327ded9cb9bc76787cf3520be60f30513b4ff7c1a51c739ac14000))
       wxt:
         specifier: ^0.20.14
         version: 0.20.14(@types/node@25.2.1)(jiti@2.6.1)(rollup@4.57.1)
@@ -1567,11 +1564,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  vite-plugin-monaco-editor-esm@2.0.2:
-    resolution: {integrity: sha512-XVkOpL/r0rw1NpbO30vUwG4S0THkC9KB1vjjV8olGd49h4/EQsKl3DrxB6KRDwyZNC9mKiiZgk2L6njUYj3oKQ==}
-    peerDependencies:
-      monaco-editor: '>=0.33.0'
-
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -3098,10 +3090,6 @@ snapshots:
       - terser
       - tsx
       - yaml
-
-  vite-plugin-monaco-editor-esm@2.0.2(monaco-editor@0.55.1(patch_hash=cc0fc1408a327ded9cb9bc76787cf3520be60f30513b4ff7c1a51c739ac14000)):
-    dependencies:
-      monaco-editor: 0.55.1(patch_hash=cc0fc1408a327ded9cb9bc76787cf3520be60f30513b4ff7c1a51c739ac14000)
 
   vite@7.3.1(@types/node@25.2.1)(jiti@2.6.1):
     dependencies:

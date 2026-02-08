@@ -16,7 +16,6 @@
     },
     "devDependencies": {
         "typescript": "^5.9.3",
-        "vite-plugin-monaco-editor-esm": "^2.0.2",
         "wxt": "^0.20.14"
     },
     "dependencies": {
