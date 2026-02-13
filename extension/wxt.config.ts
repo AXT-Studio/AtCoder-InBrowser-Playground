@@ -1,5 +1,7 @@
 import { defineConfig } from "wxt";
 
+import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
+
 // See https://wxt.dev/api/config.html
 export default defineConfig({
     manifest: {
@@ -14,6 +16,7 @@ export default defineConfig({
         },
     },
     vite: () => ({
+        plugins: [monacoTypescriptLibSplitPlugin()],
         worker: {
             format: "es",
         },
