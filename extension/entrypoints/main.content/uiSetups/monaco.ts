@@ -8,6 +8,17 @@
 
 import { editor as monacoEditor, typescript as monacoTS } from "monaco-editor";
 
+type MonacoWorkerAssetPath = "monaco-ts-lib.js" | "monaco-ts.js" | "monaco-editor.js";
+
+const fetchWorkerScript = async (workerPath: MonacoWorkerAssetPath) => {
+    const url = browser.runtime.getURL(`/${workerPath}` as any);
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to load worker script: ${workerPath} (${response.status})`);
+    }
+    return response.text();
+};
+
 // ----------------------------------------------------------------
 // Monaco Editorの設定
 // ----------------------------------------------------------------
@@ -17,20 +28,15 @@ import { editor as monacoEditor, typescript as monacoTS } from "monaco-editor";
 // 一度スクリプトをfetchしてBlob URLに変換してから起動する
 (self as any).MonacoEnvironment = {
     getWorker: async (_: any, label: string) => {
-        const workerPath = (() => {
-            switch (label) {
-                case "typescript":
-                case "javascript":
-                    return "monaco-ts.js";
-                default:
-                    return "monaco-editor.js";
-            }
-        })();
+        if (label === "typescript" || label === "javascript") {
+            const libScript = await fetchWorkerScript("monaco-ts-lib.js");
+            const workerScript = await fetchWorkerScript("monaco-ts.js");
+            const blob = new Blob([libScript, "\n", workerScript], { type: "application/javascript" });
+            return new Worker(URL.createObjectURL(blob));
+        }
 
-        const url = browser.runtime.getURL(`/${workerPath}`);
-        const response = await fetch(url);
-        const script = await response.text();
-        const blob = new Blob([script], { type: "application/javascript" });
+        const workerScript = await fetchWorkerScript("monaco-editor.js");
+        const blob = new Blob([workerScript], { type: "application/javascript" });
         return new Worker(URL.createObjectURL(blob));
     },
 };
