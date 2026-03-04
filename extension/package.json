@@ -15,7 +15,16 @@
         "postinstall": "wxt prepare"
     },
     "devDependencies": {
+        "@types/babel__standalone": "^7.1.9",
         "typescript": "^5.9.3",
         "wxt": "^0.20.14"
+    },
+    "dependencies": {
+        "@babel/standalone": "^7.29.1",
+        "@jitl/quickjs-singlefile-browser-release-sync": "^0.31.0",
+        "monaco-editor": "^0.55.1",
+        "node-inspect-extracted": "^3.3.0",
+        "quickjs-emscripten": "^0.31.0",
+        "quickjs-emscripten-core": "^0.31.0"
     }
 }

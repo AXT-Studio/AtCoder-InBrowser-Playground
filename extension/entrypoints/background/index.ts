@@ -1,4 +1,4 @@
-// ================================================================================================================================
+// ================================================================================================
 // # entrypoints/background/index.ts
 // Background ScriptのEntrypoint。
 // 各言語向けのテスト実行環境のセットアップや、実際にテストを行う際のWorkerとのやりとりを担当する。
@@ -34,59 +34,60 @@
 //     - test-setupが呼び出されたとき、すでにその言語向けのWorkerが存在していれば、すぐにtest-readyを返してよい。
 // - TLE時は、Background ScriptがWorkerをterminateし、新しいWorkerを立ち上げる。
 //     - これにより、次のtest-run呼び出し時には新しいWorkerが使われることになる。
-// ================================================================================================================================
-// ------------------------------------------------------------------------------------------------
+// ================================================================================================
+// ----------------------------------------------------------------
 // imports
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------
+
+import PlaintextWorker from "./workers/plaintext?worker";
+import TypescriptWorker from "./workers/typescript?worker";
+// 他の言語のWorkerも将来的にここに追加
 
 export default defineBackground(() => {
     console.log("Background script is started.");
-    // ------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------
     // 各言語向けのWorkerの管理
-    // ------------------------------------------------------------------------------------------------
-    /** Runner Workerのパス */
-    const workerPaths: Record<string, string> = {
-        js_node: "./workers/typescript.ts",
-        js_deno: "./workers/typescript.ts",
-        js_bun: "./workers/typescript.ts",
-        ts_node: "./workers/typescript.ts",
-        ts_deno: "./workers/typescript.ts",
-        ts_bun: "./workers/typescript.ts",
-        py_cpython: "./workers/python.ts",
-        py_pypy: "./workers/python.ts",
-        rb_ruby: "./workers/ruby.ts",
-        txt_cat: "./workers/plaintext.ts",
+    // ----------------------------------------------------------------
+    /** Runner Workerのコンストラクタ */
+    const workerConstructors: Record<string, new () => Worker> = {
+        plaintext: PlaintextWorker,
+        javascript: TypescriptWorker,
+        typescript: TypescriptWorker,
+        // python: PythonWorker,
+        // ruby: RubyWorker,
     };
-    /** ビルド時にWorkerがバンドルされるようにimportしておく */
-    import.meta.glob("./workers/*.{ts,js}", {
-        eager: true,
-        query: "?worker&url",
-    });
-    /** 起動されたWorkerを保管しておく。キーはパスの文字列 */
+
+    /** 起動されたWorkerを保管しておく。キーは言語名 */
     const workers: Map<string, Worker> = new Map();
 
-    // ------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------
     // メッセージハンドラの登録
-    // ------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------
     /** test-setup -> worker生成 -> worker-ready -> test-ready */
-    browser.runtime.onMessage.addListener(async (message) => {
+    browser.runtime.onMessage.addListener(async (message, sender) => {
         if (message.type === "test-setup") {
             const { id, language } = message.payload;
             console.log(`Received test-setup for id=${id}, language=${language}`);
-            const workerPath = workerPaths[language];
+            const WorkerConstructor = workerConstructors[language];
+            // ==== Ensure sender tab exists ====
+            const tabId = sender.tab?.id;
+            if (!tabId) {
+                console.error("Received test-setup from a sender without a tab ID.");
+                return;
+            }
             // ==== 未対応言語の場合はエラーを返す ====
-            if (!workerPath) {
+            if (!WorkerConstructor) {
                 console.error(`Unsupported language: ${language}`);
-                await browser.runtime.sendMessage({
+                await browser.tabs.sendMessage(tabId, {
                     type: "test-error",
                     payload: { id, error: `Unsupported language: ${language}` },
                 });
                 return;
             }
             // ==== すでにWorkerが存在する場合はすぐにtest-readyを返す ====
-            if (workers.has(workerPath)) {
+            if (workers.has(language)) {
                 console.log(`Worker for language=${language} already exists. Sending test-ready.`);
-                await browser.runtime.sendMessage({
+                await browser.tabs.sendMessage(tabId, {
                     type: "test-ready",
                     payload: { id, language },
                 });
@@ -94,9 +95,7 @@ export default defineBackground(() => {
             }
             // ==== 新しいWorkerを生成する ====
             console.log(`Creating new Worker for language=${language}`);
-            const worker = new Worker(new URL(workerPath, import.meta.url).href, {
-                type: "module",
-            });
+            const worker = new WorkerConstructor();
             // workerからのworker-readyを待つ
             const workerReadyPromise = new Promise<void>((resolve) => {
                 worker.addEventListener("message", (event) => {
@@ -108,27 +107,33 @@ export default defineBackground(() => {
                 });
             });
             // Workerを登録
-            workers.set(workerPath, worker);
+            workers.set(language, worker);
             // worker-readyを待つ
             await workerReadyPromise;
             // test-readyを送信
-            await browser.runtime.sendMessage({
+            await browser.tabs.sendMessage(tabId, {
                 type: "test-ready",
                 payload: { id, language },
             });
         }
     });
     /** test-run -> worker-run -> worker-result/worker-error -> test-result/test-error */
-    browser.runtime.onMessage.addListener(async (message) => {
+    browser.runtime.onMessage.addListener(async (message, sender) => {
         if (message.type === "test-run") {
             const { id, code, language, stdin, timeLimitMs } = message.payload;
             console.log(`Received test-run for id=${id}, language=${language}`);
-            const workerPath = workerPaths[language];
-            const worker = workers.get(workerPath);
+            // ==== Ensure sender tab exists ====
+            const tabId = sender.tab?.id;
+            if (!tabId) {
+                console.error("Received test-run from a sender without a tab ID.");
+                return;
+            }
+
+            const worker = workers.get(language);
             // ==== 未対応 or Worker未生成の場合はエラーを返す ====
             if (!worker) {
                 console.error(`Worker for language=${language} is not available.`);
-                await browser.runtime.sendMessage({
+                await browser.tabs.sendMessage(tabId, {
                     type: "test-error",
                     payload: { id, error: `Worker for language=${language} is not available.` },
                 });
@@ -167,11 +172,10 @@ export default defineBackground(() => {
             if (result.exitCode === 9) {
                 console.log(`Time Limit Exceeded for id=${id}, terminating Worker for language=${language}`);
                 worker.terminate();
-                workers.delete(workerPath);
+                workers.delete(language);
                 // 新しいWorkerを生成して登録しておく
-                const newWorker = new Worker(new URL(workerPath, import.meta.url).href, {
-                    type: "module",
-                });
+                const WorkerConstructor = workerConstructors[language];
+                const newWorker = new WorkerConstructor();
                 // worker-readyを待つ
                 const newWorkerReadyPromise = new Promise<void>((resolve) => {
                     newWorker.addEventListener("message", (event) => {
@@ -182,11 +186,11 @@ export default defineBackground(() => {
                         }
                     });
                 });
-                workers.set(workerPath, newWorker);
+                workers.set(language, newWorker);
                 await newWorkerReadyPromise;
             }
             // ==== 結果を送信 ====
-            await browser.runtime.sendMessage({
+            await browser.tabs.sendMessage(tabId, {
                 type: "test-result",
                 payload: { id, ...result },
             });
