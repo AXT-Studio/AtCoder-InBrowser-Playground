@@ -120,6 +120,8 @@ export const setupMonacoEditor = async (container: HTMLDivElement) => {
         hover: {
             enabled: true,
         },
+        fontFamily: `'M PLUS 1 Code', monospace`,
+        glyphMargin: true,
     });
     // ==== コード変更時に保存するように設定 ====
     editor.onDidChangeModelContent(async () => {
