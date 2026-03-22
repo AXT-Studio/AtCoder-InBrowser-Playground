@@ -7,13 +7,38 @@
 // ----------------------------------------------------------------
 
 const MONACO_TS_LIB_GLOBAL_KEY = "__AIBP_MONACO_TS_LIB_FILE_MAP__";
+const TS_WORKER_FILE_PATTERN = /(^|\/)ts\.worker-[^/]+\.js$/;
 
-export default function monacoTypescriptLibSplitPlugin() {
+type BuildBundleItem = {
+    type: string;
+};
+
+type BuildPlugin = {
+    name: string;
+    apply: "build";
+    generateBundle(_: unknown, bundle: Record<string, BuildBundleItem>): void;
+    transform(
+        this: {
+            emitFile(file: { type: "asset"; fileName: string; source: string }): void;
+        },
+        code: string,
+        id: string,
+    ): string | null;
+};
+
+export default function monacoTypescriptLibSplitPlugin(): BuildPlugin {
     let isLibAssetEmitted = false;
 
     return {
         name: "aibp-monaco-typescript-lib-split",
         apply: "build",
+        generateBundle(_: unknown, bundle: Record<string, { type: string }>) {
+            for (const fileName of Object.keys(bundle)) {
+                if (TS_WORKER_FILE_PATTERN.test(fileName)) {
+                    delete bundle[fileName];
+                }
+            }
+        },
         transform(code: string, id: string) {
             const normalizedId = id.replace(/\\/g, "/");
             const isMonacoTsLib = normalizedId.endsWith("/vs/language/typescript/lib/lib.js");
@@ -35,7 +60,7 @@ export default function monacoTypescriptLibSplitPlugin() {
 
                 // emit separate asset that will be fetched at runtime by the content script
                 // (monaco.ts will fetch this asset and prepend it to the worker blob)
-                (this as any).emitFile({
+                this.emitFile({
                     type: "asset",
                     fileName: "unlisted_monaco-ts-lib.js",
                     source: monacoLibScriptSource,
@@ -52,5 +77,5 @@ if (!libFileMap) {
 export { libFileMap };
 `;
         },
-    } as any;
+    };
 }
