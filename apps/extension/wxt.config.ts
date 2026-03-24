@@ -24,8 +24,5 @@ export default defineConfig({
         worker: {
             format: "es",
         },
-        optimizeDeps: {
-            exclude: ["esbuild-wasm"],
-        },
     }),
 });
