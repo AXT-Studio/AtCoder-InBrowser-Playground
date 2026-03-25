@@ -1,4 +1,5 @@
 import { defineConfig } from "wxt";
+import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
 
 // See https://wxt.dev/api/config.html
@@ -23,6 +24,7 @@ export default defineConfig({
         plugins: [monacoTypescriptLibSplitPlugin()],
         worker: {
             format: "es",
+            plugins: (() => [buildPolyfillCodePlugin()]),
         },
     }),
 });

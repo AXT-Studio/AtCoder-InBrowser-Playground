@@ -6,6 +6,7 @@
 // imports
 // ----------------------------------------------------------------
 
+import coreJsPolyfill from "virtual:corejs-polyfill";
 import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
 import {
     initialize as esbuildInitialize,
@@ -19,6 +20,8 @@ import type { Failure, Result, Success } from "./../../../../types/Result";
 // ----------------------------------------------------------------
 // esbuild-wasmの事前ロード
 // ----------------------------------------------------------------
+
+console.log(coreJsPolyfill); // core-jsのPolyfillコードを事前にビルドしておいて、esbuildの初期化前にログ出力してみる (これも結構時間かかるはず)
 
 await esbuildInitialize({
     wasmURL: esbuildWasmURL,
@@ -85,6 +88,16 @@ const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
 // ==== QuickJSの初期化 ====
 const quickJS = await newQuickJSWASMModuleFromVariant(quickJSVariant);
 const vm = quickJS.newContext();
+
+// ==== core-jsのPolyfillコードをQuickJSのグローバルに評価して、Polyfillを適用する ====
+const coreJsPolyfillResult = vm.evalCode(coreJsPolyfill, "core-js-polyfill.js");
+if (coreJsPolyfillResult.error) {
+    console.error(
+        "Failed to apply core-js polyfill:",
+        vm.dump(coreJsPolyfillResult.error),
+    );
+    throw new Error("Failed to apply core-js polyfill");
+}
 
 // ==== Workerの準備ができたことを通知 ====
 self.postMessage({
