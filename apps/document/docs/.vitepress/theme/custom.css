@@ -1,0 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@100..700&family=M+PLUS+1p:wght@100;300;400;500;700;800;900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Zen+Kurenaido&family=Zen+Old+Mincho:wght@400;500;600;700;900&display=swap');
+
+:root {
+    --vp-font-family-base: 'Ubuntu', 'M PLUS 1p', sans-serif;
+    --vp-font-family-mono: 'M PLUS 1 Code', monospace;
+}
