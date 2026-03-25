@@ -3,17 +3,16 @@ import { sidebar } from "./sidebar";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-    title: "AtCoder In-Browser Playground",
+    title: "AIBP Docs",
     description:
-        "Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.",
+        "AtCoder In-Browser Playground: Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.",
     themeConfig: {
         // https://vitepress.dev/reference/default-theme-config
-        sidebar,
+        sidebar: sidebar.ja,
 
         nav: [
             { text: "Home", link: "/" },
-            { text: "はじめる", link: "/getting-started" },
-            { text: "使い方", link: "/usage" },
+            { text: "始め方・使い方", link: "/getting-started" },
         ],
 
         socialLinks: [
@@ -40,4 +39,22 @@ export default defineConfig({
         breaks: true,
     },
     ignoreDeadLinks: true,
+
+    locales: {
+        root: {
+            label: "日本語",
+            lang: "ja",
+        },
+        en: {
+            label: "English",
+            lang: "en",
+            themeConfig: {
+                nav: [
+                    { text: "Home", link: "/" },
+                    { text: "Usage", link: "/getting-started" },
+                ],
+                sidebar: sidebar.en,
+            },
+        },
+    },
 });

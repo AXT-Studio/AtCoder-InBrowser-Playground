@@ -8,11 +8,11 @@ hero:
   tagline: "AtCoderの問題ページ上に、ブラウザ上で動作が完結するコードエディター・テスターを追加する"
   actions:
     - theme: brand
-      text: はじめる
+      text: 使い方
       link: /getting-started
     - theme: alt
-      text: 使い方
-      link: /usage
+      text: AIBPを選ぶ理由
+      link: /why-aibp
 
 features:
   - title: ブラウザ完結
@@ -27,4 +27,4 @@ features:
         一部言語では、Syntax HighlightやIntelliSenseなどの高度なコード編集機能を利用できます。
 ---
 
-![](./visual.webp)
+![](/visual.webp)
