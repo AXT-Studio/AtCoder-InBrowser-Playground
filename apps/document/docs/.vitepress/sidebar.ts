@@ -14,4 +14,10 @@ export const sidebar: DefaultTheme.Sidebar = [
             { text: "ver0.2.0 (β)", link: "/release-notes/v0.2.0" },
         ],
     },
+    {
+        text: "Privacy Policy",
+        items: [
+            { text: "プライバシーポリシー", link: "/privacy-policy" },
+        ],
+    },
 ];
