@@ -28,3 +28,5 @@ features:
 ---
 
 ![](/visual.webp)
+
+<small>[プライバシーポリシー](./privacy-policy.md) | [リリースノート](./release-notes/index.md)</small>

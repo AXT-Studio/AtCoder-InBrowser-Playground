@@ -14,7 +14,6 @@ export default defineConfig({
         nav: [
             { text: "Home", link: "/" },
             { text: "使い方", link: "/getting-started" },
-            { text: "リリースノート", link: "/release-notes" },
         ],
 
         socialLinks: [
