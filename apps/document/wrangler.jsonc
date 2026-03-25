@@ -1,0 +1,9 @@
+{
+    // ↓作っているサイトを表す英小文字とハイフンからなる文字列に変更
+    "name": "atcoder-inbrowser-playground-document",
+    // ↓この作業をしている日の日付に変更
+    "compatibility_date": "2026-03-25",
+    "assets": {
+        "directory": "./docs/.vitepress/dist"
+    }
+}

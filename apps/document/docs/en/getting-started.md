@@ -42,7 +42,7 @@ From left to right: **Operations** tab, **Test** tab, and **Settings** tab.
 
 #### Operations Tab (Left)
 
-![Operations tab UI](./tab_operation.webp)
+![Operations tab UI](/tab_operation.webp)
 
 - **Template** button
     - Clicking this button inserts a code template for the selected language into the code editor.
@@ -53,7 +53,7 @@ From left to right: **Operations** tab, **Test** tab, and **Settings** tab.
 
 #### Test Tab (Center)
 
-![Test tab UI](./tab_test.webp)
+![Test tab UI](/tab_test.webp)
 
 - **Testcase Input** field
     - Enter test case input here.
@@ -76,7 +76,7 @@ From left to right: **Operations** tab, **Test** tab, and **Settings** tab.
 
 #### Settings Tab (Right)
 
-![Settings tab UI](./tab_settings.webp)
+![Settings tab UI](/tab_settings.webp)
 
 All setting items are listed below.
 

@@ -14,8 +14,8 @@ export const sidebar: Record<string, DefaultTheme.Sidebar> = {
         {
             text: "AtCoder In-Browser Playground",
             items: [
-                { text: "Why AIBP?", link: "/en/why-aibp" },
-                { text: "How to Use AIBP", link: "/en/getting-started" },
+                { text: "Why AIBP?", link: "/why-aibp" },
+                { text: "How to Use AIBP", link: "/getting-started" },
             ],
         },
     ],

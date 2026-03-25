@@ -42,7 +42,7 @@ AIBPのUIの下部には3つのタブがあります。
 
 #### Operationタブ (左)
 
-![OperationタブのUI](./tab_operation.webp)
+![OperationタブのUI](/tab_operation.webp)
 
 - **Template** ボタン
     - ボタンを押下すると、対応する言語のコードテンプレートがコードエディターに挿入されます。
@@ -53,7 +53,7 @@ AIBPのUIの下部には3つのタブがあります。
 
 #### Testタブ (中央)
 
-![TestタブのUI](./tab_test.webp)
+![TestタブのUI](/tab_test.webp)
 
 - **Testcase Input** 欄
     - ここにテストケースの入力を記入します。
@@ -76,7 +76,7 @@ AIBPのUIの下部には3つのタブがあります。
 
 #### Settingsタブ (右)
 
-![SettingsタブのUI](./tab_settings.webp)
+![SettingsタブのUI](/tab_settings.webp)
 
 以下に、すべての設定項目を列挙します。
 

@@ -1,5 +1,6 @@
 import { defineConfig } from "vitepress";
 import { sidebar } from "./sidebar";
+import { iconSvg as axtechIconSvg } from "./axtech_icon";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -16,6 +17,11 @@ export default defineConfig({
         ],
 
         socialLinks: [
+            {
+                icon: { svg: axtechIconSvg },
+                link: "https://axtech.dev/",
+                ariaLabel: "AXTECH",
+            },
             {
                 icon: "github",
                 link:
