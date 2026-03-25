@@ -6,11 +6,27 @@
 // imports
 // ----------------------------------------------------------------
 
-import { transform as babelTransform } from "@babel/standalone";
+import coreJsPolyfill from "virtual:corejs-polyfill";
 import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
+import {
+    initialize as esbuildInitialize,
+    transform as esbuildTransform,
+} from "esbuild-wasm";
+import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
 import inspectUtil from "node-inspect-extracted";
 import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
 import type { Failure, Result, Success } from "./../../../../types/Result";
+
+// ----------------------------------------------------------------
+// esbuild-wasmの事前ロード
+// ----------------------------------------------------------------
+
+console.log(coreJsPolyfill); // core-jsのPolyfillコードを事前にビルドしておいて、esbuildの初期化前にログ出力してみる (これも結構時間かかるはず)
+
+await esbuildInitialize({
+    wasmURL: esbuildWasmURL,
+    worker: false, // 既にこのコード自体がWorker内で動いているため、esbuildのWorkerは使用しない
+});
 
 // ----------------------------------------------------------------
 // utilities
@@ -24,25 +40,14 @@ const stringifyJSObject = (obj: any): string => {
     return inspectUtil.inspect(obj, false, null, false);
 };
 
-/** TS/JSコードをES2023相当までダウンコンパイルします (babelを使用) */
+/** TS/JSコードをES2023相当までダウンコンパイルします (esbuild-wasmを使用) */
 const downCompileCode = async (code: string): Promise<string> => {
-    const result = babelTransform(code, {
-        presets: [
-            "typescript",
-            [
-                "env",
-                {
-                    targets: {
-                        esmodules: true,
-                    },
-                    modules: false,
-                },
-            ],
-        ],
-        filename: "Main.ts",
+    const result = await esbuildTransform(code, {
+        loader: "ts",
+        target: "es2023",
     });
     if (result === null || typeof result.code !== "string") {
-        throw new Error("Babel transformation failed");
+        throw new Error("esbuild transformation failed");
     }
     return result.code;
 };
@@ -62,7 +67,7 @@ const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
     for (const pattern of patterns) {
         result = result.replace(pattern, "Main(__stdin__)");
     }
-    // ==== Babelに通す ====
+    // ==== ダウンコンパイルに通す ====
     result = await downCompileCode(result);
     // ==== QuickJSはTop-Level exportをサポートしてないかも 念の為削除 ====
     result = result.replace(/^export\s*\{\s*\}\s*;?/m, "");
@@ -83,6 +88,16 @@ const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
 // ==== QuickJSの初期化 ====
 const quickJS = await newQuickJSWASMModuleFromVariant(quickJSVariant);
 const vm = quickJS.newContext();
+
+// ==== core-jsのPolyfillコードをQuickJSのグローバルに評価して、Polyfillを適用する ====
+const coreJsPolyfillResult = vm.evalCode(coreJsPolyfill, "core-js-polyfill.js");
+if (coreJsPolyfillResult.error) {
+    console.error(
+        "Failed to apply core-js polyfill:",
+        vm.dump(coreJsPolyfillResult.error),
+    );
+    throw new Error("Failed to apply core-js polyfill");
+}
 
 // ==== Workerの準備ができたことを通知 ====
 self.postMessage({
@@ -112,7 +127,12 @@ self.addEventListener("message", async (event) => {
         // 一応全体をtry-catchしておこうか……
         try {
             console.log(
-                `[Worker] Received request-run: id=${id}, code=${code.slice(0, 100)}..., stdin=${stdin.slice(0, 100)}...`,
+                `[Worker] Received request-run: id=${id}, code=${
+                    code.slice(
+                        0,
+                        100,
+                    )
+                }..., stdin=${stdin.slice(0, 100)}...`,
             );
             if (!vm) {
                 // ==== もしvmが存在しなかったらエラーを返す (通常は起こらないはず) ====
@@ -169,7 +189,9 @@ self.addEventListener("message", async (event) => {
                     status: "failure",
                     error: {
                         errorType: "RE",
-                        error: typeof error === "string" ? error : JSON.stringify(error),
+                        error: typeof error === "string"
+                            ? error
+                            : JSON.stringify(error),
                     },
                 };
                 self.postMessage({

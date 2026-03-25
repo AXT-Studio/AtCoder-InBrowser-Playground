@@ -1,12 +1,14 @@
 import { defineConfig } from "wxt";
+import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
     manifest: {
-        version: "0.1.0",
+        version: "0.2.0",
         name: "AtCoder In-Browser Playground",
-        description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
+        description:
+            "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
         permissions: ["storage"],
         browser_specific_settings: {
             gecko: {
@@ -22,6 +24,7 @@ export default defineConfig({
         plugins: [monacoTypescriptLibSplitPlugin()],
         worker: {
             format: "es",
+            plugins: (() => [buildPolyfillCodePlugin()]),
         },
     }),
 });
