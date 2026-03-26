@@ -5,7 +5,7 @@
 AtCoder In-Browser Playgroundは、ChromeとFirefoxの両方で利用可能なブラウザ拡張機能です。
 Chrome Web StoreとFirefox Add-onsからインストールできます。
 
-- [Chrome Web Store](#) (準備中)
+- [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok)
 - [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
 
 ## 使い方
