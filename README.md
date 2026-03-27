@@ -95,3 +95,10 @@ pnpm --filter atcoder-inbrowser-playground-document run docs:build
 # ドキュメントサイトのビルド成果物をローカルサーバーで確認
 pnpm --filter atcoder-inbrowser-playground-document run docs:preview
 ```
+
+### Format, Lint
+
+```bash
+# コードのフォーマット
+pnpm biome check --write
+```

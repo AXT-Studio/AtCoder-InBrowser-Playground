@@ -19,12 +19,16 @@ export default defineConfig({
                 },
             },
         },
+        content_security_policy: {
+            extension_pages:
+                "script-src 'self'; 'wasm-unsafe-eval'; object-src 'self';",
+        },
     },
     vite: () => ({
-        plugins: [monacoTypescriptLibSplitPlugin()],
+        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin()],
         worker: {
             format: "es",
-            plugins: (() => [buildPolyfillCodePlugin()]),
+            plugins: () => [buildPolyfillCodePlugin()],
         },
     }),
 });

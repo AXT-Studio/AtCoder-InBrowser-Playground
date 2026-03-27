@@ -41,71 +41,74 @@
 //             - TLEの場合は"Time Limit Exceeded"などのわかりやすい文言を返す。
 //             - CE/REの場合はコンパイルエラーや実行時エラーの内容を含む文字列を返す。
 //
-// ## 通信プロトコル (Background <--> Worker)
-// すべての通信はidを伴い、一連の通信をこのidで識別します。
-// idは各プロトコル最初の通信を発する側が生成します。
+// ## Runner Moduleの使用方法
+// ### 初期化
+// - Runner Moduleは、その言語のコード実行に必要なオブジェクトを生成するinit関数をexportする。
+//     - (init関数はPromiseでRunnerContextを返す。)
+// - Background Scriptは、準備要求時にこのinit関数を呼び出し、戻り値を言語名に紐づけて保存する。
 //
-// ### Worker Initialization Protocol
-// - message W->B: "notify-initialized" (payload: { id: string, language: string })
-//     - Workerの初期化が完了し、コード実行を開始する用意ができたことをBackgroundに通知する。
-//
-// ### Worker Run Protocol
-// - message B->W: "request-run" (payload: { id: string, code: string, stdin: string })
-//     - stdinを標準入力として、codeを実行するようWorkerに指示する。
-// - task W:
-//     - codeを実行し、stdinを標準入力として与える。実行の完了を待つ。
-//         - 注: 実行時間制限はBackground側で管理するので、Worker側ではコードの実行に集中して良い。
-// - message W->B: "notify-output" (payload: { id: string, result: Result<{stdout: string, stderr: string}, {errorType: "TLE" | "RE" | "CE", error: string}> })
-//     - テスト実行の結果をBackgroundに返す。
-//     - resultはResult型で、以下のいずれかの形をとる。
-//     - テストが正常に終了した場合、Success<{stdout: string, stderr: string}>を返す。
-//         - stdoutは標準出力の内容、stderrは標準エラー出力の内容を表す。
-//     - テストが正常に終了できなかった場合、Failure<{errorType: "TLE" | "RE" | "CE", error: string}>を返す。
-//         - errorTypeはエラーの種類を表す。
-//             - Backgroundからのrequest-runで与えられた実行時間制限を超えた場合は"TLE"。
-//             - プログラムのコンパイルに失敗した場合は"CE"。
-//             - それ以外の実行時エラーが発生した場合は"RE"。
-//         - errorはエラーの内容を表す。
-//             - TLEの場合は"Time Limit Exceeded"などのわかりやすい文言を返す。
-//             - CE/REの場合はコンパイルエラーや実行時エラーの内容を含む文字列を返す。
+// ### コード実行
+// - Runner Moduleは、コードを実行するrun関数をexportする。
+//     - (run関数はPromiseでRunnerResultを返す。)
+// - Background Scriptは、実行要求時に保存してあるinitの戻り値(RunnerContext)とコード、標準入力をrun関数に渡し、コードの実行を行う。
+// - run関数は、コードの実行結果をResult型で返す。
 //
 // ## 注意点
-// - Workerは各言語ごとに1つ。複数回の実行リクエストを受け取った場合でも同じWorkerを使い回す。
-//     - Workerは複数回のWorker Run Protocolに対応できるように設計すること。
-//     - ただし、同時に複数のWorker Run Protocolが走ることはないと仮定して良い。
-// - Environment Preparing Protocolは同じ言語の2回目以降の実行でも呼び出される。
-//     - "notify-ready"は実行可能であることを保証するものであって、必ずしも新たなWorkerの立ち上げを伴うものではなくてよい。
-// - TLE時は、Background ScriptがWorkerをterminateし破棄する。
-//     - Workerは次の実行リクエスト時に新たに立ち上げられるので、terminateするだけでよい。
+// - initが返すContextは、同じ言語の複数回のコード実行要求で共有される。
+//     - Runner Module側はそれを前提として設計すべきだし、Background Script側もそのように扱うべき。
+//     - ただし、コード実行が失敗した(TLE, CE, RE)場合は、現在のContextは破棄して次の要求時にinitし直す。
+//         - Runner Module側は、正常実行の繰り返しは処理できるべきだが、失敗したコード実行の後の再初期化は処理できなくてもよい。Background Script側で対応する。
+// - run()について、TLE検知の実装をRunner Module側で行う必要はない。
+//     - Background Script側で、run()のPromiseと実行時間制限のPromiseをraceさせる形でTLEを検知する。
+//         - さらに、TLEの場合はAbortControllerなどを用いてrun()側の処理を強制終了する。
+//     - run()はコードの実行に集中し、実行結果を返すことに専念すればよい。
 // ================================================================================================
 
 // ----------------------------------------------------------------
 // imports
 // ----------------------------------------------------------------
 
+/** biome-ignore-all assist/source/organizeImports: Module importを分けて書きたいのでignore */
+import type { Runner, RunnerContext } from "./runners/types";
 import type { Result } from "./../../types/Result";
 
-import PlaintextWorker from "./workers/plaintext/worker?worker";
-import TypescriptWorker from "./workers/typescript/worker?worker";
-// 他の言語のWorkerも将来的にここに追加
+// 他の言語のModuleも将来的にここに追加
+import PlaintextModule from "./runners/plaintext/index";
+import TypeScriptModule from "./runners/typescript/index";
+
+// ----------------------------------------------------------------
+// types
+// ----------------------------------------------------------------
+
+/** Test Execution Protocolのnotify-resultで使用する型 */
+type TestExecutionProtocolResult = Result<
+    { stdout: string; stderr: string },
+    { errorType: "TLE" | "RE" | "CE"; error: string }
+>;
+
+// ----------------------------------------------------------------
+// 本体 (background script)
+// ----------------------------------------------------------------
 
 export default defineBackground({
     main() {
         console.log("Background script is started.");
         // ----------------------------------------------------------------
-        // 各言語向けのWorkerの管理
+        // 各言語向けのModuleの管理
         // ----------------------------------------------------------------
-        /** Runner Workerのコンストラクタ */
-        const workerConstructors: Record<string, new () => Worker> = {
-            plaintext: PlaintextWorker,
-            javascript: TypescriptWorker,
-            typescript: TypescriptWorker,
-            // python: PythonWorker,
-            // ruby: RubyWorker,
+        /** Runner Moduleのリスト */
+        const runnerModules: Record<
+            string,
+            // biome-ignore lint/suspicious/noExplicitAny: どの言語のRunnerも来る可能性があるのでanyで受ける
+            { init: () => Promise<RunnerContext>; run: Runner<any> }
+        > = {
+            plaintext: PlaintextModule,
+            javascript: TypeScriptModule,
+            typescript: TypeScriptModule,
         };
 
-        /** 起動されたWorkerを保管しておく。キーは言語名 */
-        const workers: Map<string, Worker> = new Map();
+        /** Runner Contextのリスト (initしたらここに保存) */
+        const runnerContexts: Record<string, RunnerContext> = {};
 
         // ----------------------------------------------------------------
         // プロトコルごとのメッセージハンドラの登録
@@ -120,13 +123,17 @@ export default defineBackground({
                 // ==== Ensure sender tab exists ====
                 const tabId = sender.tab?.id;
                 if (!tabId) {
-                    console.error("Received `request-prepare` from a sender without a tab ID.");
+                    console.error(
+                        "Received `request-prepare` from a sender without a tab ID.",
+                    );
                     return;
                 }
                 // ==== 未対応言語の場合はエラーを返す ====
-                const WorkerConstructor = workerConstructors[language];
-                if (!WorkerConstructor) {
-                    console.error(`Unsupported language in request-prepare: ${language}`);
+                const runnerModule = runnerModules[language];
+                if (!runnerModule) {
+                    console.error(
+                        `Unsupported language in request-prepare: ${language}`,
+                    );
                     await browser.tabs.sendMessage(tabId, {
                         type: "notify-denied",
                         payload: {
@@ -137,8 +144,8 @@ export default defineBackground({
                     });
                     return;
                 }
-                // ==== すでにWorkerが存在する場合はすぐにnotify-readyを返す ====
-                if (workers.has(language)) {
+                // ==== すでにContextが存在する場合はすぐにnotify-readyを返す ====
+                if (runnerContexts[language]) {
                     await browser.tabs.sendMessage(tabId, {
                         type: "notify-ready",
                         payload: {
@@ -148,21 +155,33 @@ export default defineBackground({
                     });
                     return;
                 }
-                // ==== 新しいWorkerを生成し、Workerからのnotify-initializedを待つ ====
-                console.log(`Creating new Worker for language=${language}`);
-                const worker = new WorkerConstructor();
-                const workerReadyPromise = new Promise<void>((resolve) => {
-                    worker.addEventListener("message", (event) => {
-                        const workerMessage = event.data;
-                        if (workerMessage.type === "notify-initialized") {
-                            console.log(`Worker for language=${language} is ready.`);
-                            resolve();
-                        }
+                // ==== 新しいContextを生成する ====
+                console.log(
+                    `Initializing Runner Context for language=${language}`,
+                );
+                try {
+                    const context = await runnerModule.init();
+                    runnerContexts[language] = context;
+                } catch (error) {
+                    console.error(
+                        `Failed to initialize Runner Context for language=${language}:`,
+                        error,
+                    );
+                    await browser.tabs.sendMessage(tabId, {
+                        type: "notify-denied",
+                        payload: {
+                            id,
+                            language,
+                            error: `Failed to initialize Runner Context: ${
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error)
+                            }`,
+                        },
                     });
-                });
-                workers.set(language, worker);
-                await workerReadyPromise;
-                // ==== Workerの準備ができたらnotify-readyを返す ====
+                    return;
+                }
+                // ==== Contextの準備ができたらnotify-readyを返す ====
                 await browser.tabs.sendMessage(tabId, {
                     type: "notify-ready",
                     payload: {
@@ -172,25 +191,28 @@ export default defineBackground({
                 });
             }
         });
-
         // ==== Test Execution Protocol (Worker Run Protocol) ====
         browser.runtime.onMessage.addListener(async (message, sender) => {
             if (message.type === "request-execute") {
-                const { id, code, language, stdin, timeLimitMs } = message.payload;
+                const { id, code, language, stdin, timeLimitMs } =
+                    message.payload;
                 console.log(
                     `[Background] Received request-execute: id=${id}, language=${language}, code=${code}, stdin=${stdin}, timeLimitMs=${timeLimitMs}`,
                 );
                 // ==== Ensure sender tab exists ====
                 const tabId = sender.tab?.id;
                 if (!tabId) {
-                    console.error("Received `request-execute` from a sender without a tab ID.");
+                    console.error(
+                        "Received `request-execute` from a sender without a tab ID.",
+                    );
                     return;
                 }
-                // ==== 対応するWorkerが存在しない場合はエラーを返す ====
-                const worker = workers.get(language);
-                if (!worker) {
+                // ==== 対応するContextが存在しない場合はエラーを返す ====
+                const runnerModule = runnerModules[language];
+                const runnerContext = runnerContexts[language];
+                if (!runnerModule || !runnerContext) {
                     console.error(
-                        `No Worker available for language=${language} in request-execute.`,
+                        `No Runner Context available for language=${language} in request-execute.`,
                     );
                     await browser.tabs.sendMessage(tabId, {
                         type: "notify-result",
@@ -200,66 +222,37 @@ export default defineBackground({
                                 status: "failure",
                                 data: {
                                     errorType: "RE",
-                                    error: `No Worker available for language: ${language}`,
+                                    error:
+                                        `No Runner Context available for language: ${language}`,
                                 },
                             },
                         },
                     });
                     return;
                 }
-                // ==== Workerにコードの実行を指示、同時に実行時間制限でtimeoutするPromiseを立ててrace ====
-                type RaceResult = Result<
-                    { stdout: string; stderr: string },
-                    { errorType: "TLE" | "RE" | "CE"; error: string }
-                >;
-                const workerRunPromise = new Promise<RaceResult>((resolve) => {
-                    const onMessageListener = (event: MessageEvent) => {
-                        const workerMessage = event.data;
-                        if (
-                            workerMessage.type === "notify-output" &&
-                            workerMessage.payload.id === id
-                        ) {
-                            console.log(
-                                `Received notify-output from Worker for id=${id}:`,
-                                workerMessage.payload.result,
-                            );
-                            worker.removeEventListener("message", onMessageListener);
-                            resolve(workerMessage.payload.result);
-                        }
-                    };
-                    worker.addEventListener("message", onMessageListener);
-                });
-                const timeoutPromise = new Promise<RaceResult>((resolve) => {
-                    setTimeout(() => {
-                        resolve({
-                            status: "failure",
-                            error: {
-                                errorType: "TLE",
-                                error: "Execution time limit exceeded.",
-                            },
-                        });
-                    }, timeLimitMs);
-                });
-                const racePromise = Promise.race([workerRunPromise, timeoutPromise]);
-                // ==== Workerにコードの実行を指示 ====
-                worker.postMessage({
-                    type: "request-run",
-                    payload: {
-                        id,
-                        code,
-                        stdin,
+                const run = runnerModule.run;
+                // ==== 実行に時間がかかる場合に強制終了するために、race用のtimeout Promiseを生成 ====
+                const timeoutPromise = new Promise<TestExecutionProtocolResult>(
+                    (resolve) => {
+                        setTimeout(() => {
+                            resolve({
+                                status: "failure",
+                                error: {
+                                    errorType: "TLE",
+                                    error: "Execution time limit exceeded.",
+                                },
+                            });
+                        }, timeLimitMs);
                     },
+                );
+                // ==== Runnerにコードの実行を指示 ====
+                const runPromise = run({
+                    context: runnerContext,
+                    code,
+                    stdin,
                 });
-                // ==== 結果を待つ ====
-                const result = await racePromise;
-                // ==== TLEの場合はWorkerをterminateし、Mapから削除する ====
-                if (result.status === "failure" && result.error.errorType === "TLE") {
-                    console.warn(
-                        `Execution timed out for id=${id}. Terminating Worker for language=${language}.`,
-                    );
-                    worker.terminate();
-                    workers.delete(language);
-                }
+                // ==== raceして結果を待つ ====
+                const result = await Promise.race([runPromise, timeoutPromise]);
                 // ==== 結果をContentに返す ====
                 await browser.tabs.sendMessage(tabId, {
                     type: "notify-result",
@@ -268,6 +261,13 @@ export default defineBackground({
                         result,
                     },
                 });
+                // ==== エラー(TLE, RE, CE)の場合はContextを破棄する ====
+                if (result.status === "failure") {
+                    console.warn(
+                        `Execution failed (${result.error.errorType}) for id=${id}. Discarding Runner Context for language=${language}.`,
+                    );
+                    delete runnerContexts[language];
+                }
             }
         });
     },

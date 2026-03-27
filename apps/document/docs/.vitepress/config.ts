@@ -1,6 +1,6 @@
 import { defineConfig } from "vitepress";
-import { sidebar } from "./sidebar";
 import { iconSvg as axtechIconSvg } from "./axtech_icon";
+import { sidebar } from "./sidebar";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -24,13 +24,11 @@ export default defineConfig({
             },
             {
                 icon: "github",
-                link:
-                    "https://github.com/AXT-AyaKoto/AtCoder-InBrowser-Playground",
+                link: "https://github.com/AXT-AyaKoto/AtCoder-InBrowser-Playground",
             },
             {
                 icon: "firefoxbrowser",
-                link:
-                    "https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/",
+                link: "https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/",
             },
             /* {
                 icon: "chromewebstore",
