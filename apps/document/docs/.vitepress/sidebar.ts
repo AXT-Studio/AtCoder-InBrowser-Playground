@@ -10,7 +10,10 @@ export const sidebar: DefaultTheme.Sidebar = [
     },
     {
         text: "Release Notes",
-        items: [{ text: "ver0.2.0 (β)", link: "/release-notes/v0.2.0" }],
+        items: [
+            { text: "ver0.2.1 (β)", link: "/release-notes/v0.2.1" },
+            { text: "ver0.2.0 (β)", link: "/release-notes/v0.2.0" },
+        ],
     },
     {
         text: "Privacy Policy",
