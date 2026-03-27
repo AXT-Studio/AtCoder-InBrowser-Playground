@@ -1,7 +1,7 @@
 // ================================================================================================
 // # entrypoints/background/index.ts
 // Background ScriptのEntrypoint。
-// 各言語向けのテスト実行環境のセットアップや、実際にテストを行う際のWorkerとのやりとりを担当する。
+// 各言語向けのテスト実行環境のセットアップや、実際にテストを行う際のRunnerとのやりとりを担当する。
 //
 // ## 通信プロトコル (Content <--> Background)
 // すべての通信はidを伴い、一連の通信をこのidで識別します。
@@ -9,24 +9,24 @@
 //
 // ### Environment Preparing Protocol
 // - message C->B: "request-prepare" (payload: { id: string, language: string })
-//     - 指定された言語向けのテスト実行Workerの準備をBackgroundに要求する。
+//     - 指定された言語向けのテスト実行Runnerの準備をBackgroundに要求する。
 // - task B:
-//     - 指定された言語のWorkerが存在しない場合は新たに立ち上げ、セットアップを行う。
-//     - 指定された言語のWorkerがすでに存在する場合はセットアップが完了しているものとみなす。
+//     - 指定された言語のRunnerが存在しない場合は新たに立ち上げ、セットアップを行う。
+//     - 指定された言語のRunnerの準備がすでに完了している場合はセットアップが完了しているものとみなす。
 //         - 直前の実行でTLEしてterminateされている場合は立ち上げ直す必要があるので注意。
 // - message: B->C: "notify-ready" (payload: { id: string, language: string })
-//     - テスト実行Workerの準備が完了した(している)ことをBackgroundに通知する。
+//     - テスト実行Runnerの準備が完了した(している)ことをBackgroundに通知する。
 // - message: B->C: "notify-denied" (payload: { id: string, language: string, error: string })
-//     - テスト実行Workerの準備ができないことをBackgroundに通知する。
+//     - テスト実行Runnerの準備ができないことをBackgroundに通知する。
 //
 // ### Test Execution Protocol
 // - message C->B: "request-execute" (payload: { id: string, code: string, language: string, stdin: string, timeLimitMs: number })
 //     - codeをlanguageとみなし、stdinを標準入力としてテストを実行するようBackgroundに要求する。
 // - task B:
-//     - 指定された言語のWorkerにcodeの実行とstdinの提供を指示する。
-//     - Workerからの結果を待ち、Contentに返す。
-//     - ただし、TLEの場合はWorkerをterminateしTLEを返す。
-//         - 注: Workerは次のtest-run要求時に新たに立ち上げられるので、terminateするだけでよい。
+//     - 指定された言語のRunnerにcodeの実行とstdinの提供を指示する。
+//     - Runnerからの結果を待ち、Contentに返す。
+//     - ただし、TLEの場合はRunnerをterminateしTLEを返す。
+//         - 注: Runnerは次のtest-run要求時に新たに立ち上げられるので、terminateするだけでよい。
 // - message B->C: "notify-result" (payload: { id: string, result: Result<{stdout: string, stderr: string}, {errorType: "TLE" | "RE" | "CE", error: string}> })
 //     - テスト実行の結果をContentに返す。
 //     - resultはResult型で、以下のいずれかの形をとる。
