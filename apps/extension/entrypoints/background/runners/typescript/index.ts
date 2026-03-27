@@ -22,14 +22,10 @@ import type { Runner, RunnerResult } from "../types";
 // types
 // ----------------------------------------------------------------
 
-/** TypeScriptのRunnerに必要なRunnerContext。現時点では空。 */
+/** TypeScriptのRunnerに必要なRunnerContext。quickJSのVMを保持する */
 type TypeScriptRunnerContext = {
     quickJsVm: QuickJSContext;
 };
-
-// ----------------------------------------------------------------
-// esbuild-wasmの事前ロード
-// ----------------------------------------------------------------
 
 // ----------------------------------------------------------------
 // utilities
