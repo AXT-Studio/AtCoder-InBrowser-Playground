@@ -30,7 +30,7 @@ const result = await pyodide.runPythonAsync(code);
 
 テストケース間で状態が混ざらないように、実行ごとにハンドラを再設定してください。
 
-## 4) パッケージ方針
+## 4) パッケージ読み込み方法
 
 現在の対象パッケージ:
 
@@ -43,10 +43,49 @@ const result = await pyodide.runPythonAsync(code);
 - sympy
 - ac-library-python
 
-推奨ロード順:
+### 4-1) ローカル同梱パッケージの読み込み（`loadPackage`）
 
-1. ローカルの Pyodide runtime/lock に含まれるものを優先して利用する
-2. ローカルにないものだけ `micropip.install(...)` で補う
+次のパッケージは build 時に `assets/pyodide/` へ同梱される想定です。
+
+- bitarray
+- numpy
+- scipy
+
+読み込みは `loadPackage` を優先します。
+
+```ts
+await pyodide.loadPackage(["bitarray", "numpy", "scipy"]);
+```
+
+`indexURL` は `browser.runtime.getURL("/assets/pyodide/")` を使うため、同梱済みファイルがあればネットワークを使わずに読み込まれます。
+
+### 4-2) PyPI 経由パッケージの読み込み（`micropip.install`）
+
+同梱対象外のパッケージは `micropip` でインストールします。
+
+- more-itertools
+- networkx
+- sortedcontainers
+- sympy
+- ac-library-python
+
+```ts
+await pyodide.loadPackage("micropip");
+const micropip = pyodide.pyimport("micropip");
+await micropip.install([
+  "more-itertools",
+  "networkx",
+  "sortedcontainers",
+  "sympy",
+  "ac-library-python",
+]);
+```
+
+運用ルールは次の通りです。
+
+1. 同梱対象は `loadPackage` を使う
+2. 同梱対象外は `micropip.install` を使う
+3. 失敗時は runner の `setup-error` / `runtime-error` に正規化して返す
 
 ## 5) エラーハンドリング
 

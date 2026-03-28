@@ -39,9 +39,14 @@ type PythonRunnerContext = {
 // コード実行に必要な初期化処理を行い、Contextを返す。
 // ----------------------------------------------------------------
 
-export const init = (): PythonRunnerContext => {
+export const init = async (): Promise<PythonRunnerContext> => {
+    // ==== Pyodideの初期化 ====
+    const pyodide = await loadPyodide({
+        indexURL: browser.runtime.getURL("/assets/pyodide/" as any),
+    });
+    // ==== Contextを返す ====
     return {
-        pyodide: null,
+        pyodide,
         pyodideIndexURL: "/assets/pyodide/",
         supportedPackages: SUPPORTED_PYTHON_PACKAGES,
     };
