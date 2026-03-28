@@ -6,14 +6,33 @@
 // imports
 // ----------------------------------------------------------------
 
+import type { PyodideInterface } from "pyodide";
+import { loadPyodide } from "pyodide";
 import type { Runner, RunnerResult } from "../types";
 
 // ----------------------------------------------------------------
 // types
 // ----------------------------------------------------------------
 
-/** PythonのRunnerに必要なRunnerContext。 */
-type PythonRunnerContext = {};
+const SUPPORTED_PYTHON_PACKAGES = [
+    "bitarray",
+    "more-itertools",
+    "networkx",
+    "numpy",
+    "scipy",
+    "sortedcontainers",
+    "sympy",
+    "ac-library-python",
+] as const;
+
+type SupportedPythonPackage = (typeof SUPPORTED_PYTHON_PACKAGES)[number];
+
+/** PythonのRunnerに必要なRunnerContext */
+type PythonRunnerContext = {
+    pyodide: PyodideInterface | null;
+    pyodideIndexURL: string;
+    supportedPackages: readonly SupportedPythonPackage[];
+};
 
 // ----------------------------------------------------------------
 // init()
@@ -21,7 +40,11 @@ type PythonRunnerContext = {};
 // ----------------------------------------------------------------
 
 export const init = (): PythonRunnerContext => {
-    return {};
+    return {
+        pyodide: null,
+        pyodideIndexURL: "/assets/pyodide/",
+        supportedPackages: SUPPORTED_PYTHON_PACKAGES,
+    };
 };
 
 // ----------------------------------------------------------------
@@ -29,9 +52,7 @@ export const init = (): PythonRunnerContext => {
 // Contextを用いてコードを実行し、結果を返す。
 // ----------------------------------------------------------------
 
-export const run: Runner<PythonRunnerContext> = async (
-    { code },
-) => {
+export const run: Runner<PythonRunnerContext> = async ({ code }) => {
     const result: Awaited<RunnerResult> = {
         status: "success",
         data: {

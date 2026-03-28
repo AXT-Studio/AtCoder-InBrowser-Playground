@@ -1,5 +1,6 @@
 import { defineConfig } from "wxt";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
+import bundlePyodideRuntimeFilesPlugin from "./plugins/bundlePyodideRuntimeFiles";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
 
 // See https://wxt.dev/api/config.html
@@ -23,18 +24,25 @@ export default defineConfig({
             extension_pages:
                 "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
         },
-        web_accessible_resources: [{
-            resources: [
-                "unlisted_monaco-editor.js",
-                "unlisted_monaco-ts-lib.js",
-                "unlisted_monaco-ts.js",
-                "assets/*",
-            ],
-            matches: ["https://atcoder.jp/*"],
-        }],
+        web_accessible_resources: [
+            {
+                resources: [
+                    "unlisted_monaco-editor.js",
+                    "unlisted_monaco-ts-lib.js",
+                    "unlisted_monaco-ts.js",
+                    "assets/*",
+                    "assets/pyodide/*",
+                ],
+                matches: ["https://atcoder.jp/*"],
+            },
+        ],
     },
     vite: () => ({
-        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin()],
+        plugins: [
+            monacoTypescriptLibSplitPlugin(),
+            buildPolyfillCodePlugin(),
+            bundlePyodideRuntimeFilesPlugin(),
+        ],
         worker: {
             format: "es",
         },
