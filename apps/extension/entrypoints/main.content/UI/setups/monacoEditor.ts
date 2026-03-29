@@ -16,7 +16,9 @@ const fetchWorkerScript = async (workerPath: MonacoWorkerAssetPath) => {
     const url = browser.runtime.getURL(`/${workerPath}` as any);
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`Failed to load worker script: ${workerPath} (${response.status})`);
+        throw new Error(
+            `Failed to load worker script: ${workerPath} (${response.status})`,
+        );
     }
     return response.text();
 };
@@ -31,16 +33,24 @@ const fetchWorkerScript = async (workerPath: MonacoWorkerAssetPath) => {
 (self as any).MonacoEnvironment = {
     getWorker: async (_: any, label: string) => {
         if (label === "typescript" || label === "javascript") {
-            const libScript = await fetchWorkerScript("unlisted_monaco-ts-lib.js");
-            const workerScript = await fetchWorkerScript("unlisted_monaco-ts.js");
+            const libScript = await fetchWorkerScript(
+                "unlisted_monaco-ts-lib.js",
+            );
+            const workerScript = await fetchWorkerScript(
+                "unlisted_monaco-ts.js",
+            );
             const blob = new Blob([libScript, "\n", workerScript], {
                 type: "application/javascript",
             });
             return new Worker(URL.createObjectURL(blob));
         }
 
-        const workerScript = await fetchWorkerScript("unlisted_monaco-editor.js");
-        const blob = new Blob([workerScript], { type: "application/javascript" });
+        const workerScript = await fetchWorkerScript(
+            "unlisted_monaco-editor.js",
+        );
+        const blob = new Blob([workerScript], {
+            type: "application/javascript",
+        });
         return new Worker(URL.createObjectURL(blob));
     },
 };
@@ -65,7 +75,6 @@ monacoTS.javascriptDefaults.setCompilerOptions({
     allowNonTsExtensions: true,
     strict: false, // JSは厳密モードにしない
     allowJs: true,
-    checkJs: true, // JSも型チェックする
 });
 
 // ==== Extra Libraryの設定 (入出力周りのコードで怒られないように型定義追加) ====
@@ -98,10 +107,13 @@ for (const [fileName, libContent] of Object.entries(extraLibs)) {
 // ----------------------------------------------------------------
 export const setupMonacoEditor = async (container: HTMLDivElement) => {
     // ==== 保存されているコードがあればそれを取得 ====
-    const codeSaveKey: `local:${string}` = `local:editor.code.${window.location.pathname}`;
+    const codeSaveKey: `local:${string}` =
+        `local:editor.code.${window.location.pathname}`;
     const savedCode = (await storage.getItem<string>(codeSaveKey)) || "";
     // ==== Monaco Editorを入れるコンテナ要素を取得 ====
-    const monacoContainer = container.querySelector<HTMLDivElement>("#monaco-editor-container");
+    const monacoContainer = container.querySelector<HTMLDivElement>(
+        "#monaco-editor-container",
+    );
     if (!monacoContainer) {
         throw new Error("Monaco Editor container not found");
     }

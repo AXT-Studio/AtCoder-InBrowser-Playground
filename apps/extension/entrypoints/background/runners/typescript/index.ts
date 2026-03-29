@@ -95,8 +95,11 @@ const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
 
 export const init = async (): Promise<TypeScriptRunnerContext> => {
     // ==== QuickJSの初期化 ====
-    const quickJS = await newQuickJSWASMModuleFromVariant(quickJSVariant);
-    const quickJsVm = quickJS.newContext();
+    const quickJs = await newQuickJSWASMModuleFromVariant(quickJSVariant);
+    const quickJsRuntime = quickJs.newRuntime();
+    quickJsRuntime.setMemoryLimit(1024 * 1024 * 1024); // メモリ制限 1024MiB (一般的なAtCoderの問題と同じ)
+    quickJsRuntime.setMaxStackSize(0); // スタックサイズ制限解除
+    const quickJsVm = quickJsRuntime.newContext();
     // ==== core-jsのPolyfillコードをQuickJSのグローバルに評価して、Polyfillを適用する ====
     const coreJsPolyfillResult = quickJsVm.evalCode(
         coreJsPolyfill,
