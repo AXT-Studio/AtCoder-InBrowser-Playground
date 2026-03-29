@@ -26,12 +26,18 @@ const PYODIDE_RUNTIME_FILES = [
 
 const LOCAL_BUNDLED_PACKAGE_ROOTS = [
     "micropip",
+    "numpy",
     "scipy",
-    "sympy",
     "bitarray",
+] as const;
+
+// ---- これらはmicropipでPyPIから取得するため、lock由来の同梱対象から除外する ----
+const PYPI_ONLY_PACKAGES = [
+    "sympy",
     "networkx",
     "sortedcontainers",
 ] as const;
+const PYPI_ONLY_PACKAGE_SET = new Set<string>(PYPI_ONLY_PACKAGES);
 
 const TEST_PACKAGE_PATTERNS = [
     /-tests$/,
@@ -308,7 +314,8 @@ function collectLockManagedArtifacts(
         const packageName = stack.pop();
         if (
             !packageName || visited.has(packageName) ||
-            isTestPackage(packageName)
+            isTestPackage(packageName) ||
+            PYPI_ONLY_PACKAGE_SET.has(packageName)
         ) {
             continue;
         }
@@ -322,7 +329,10 @@ function collectLockManagedArtifacts(
 
         visited.add(packageName);
         for (const dependencyName of packageEntry.depends ?? []) {
-            if (!isTestPackage(dependencyName)) {
+            if (
+                !isTestPackage(dependencyName) &&
+                !PYPI_ONLY_PACKAGE_SET.has(dependencyName)
+            ) {
                 stack.push(dependencyName);
             }
         }

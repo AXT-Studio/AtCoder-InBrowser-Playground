@@ -16,19 +16,28 @@ import type { Runner, RunnerResult } from "../types";
 
 const SUPPORTED_PYTHON_PACKAGES_PYPI = [
     "ac-library-python",
-    "numpy",
-] as const;
-const SUPPORTED_PYTHON_PACKAGES_LOCAL = [
-    "scipy",
+    "mpmath",
     "sympy",
-    "bitarray",
     "networkx",
     "sortedcontainers",
 ] as const;
+const SUPPORTED_PYTHON_PACKAGES_LOCAL = [
+    "numpy",
+    "scipy",
+    "bitarray",
+] as const;
 
-type SupportedPythonPackage =
-    | (typeof SUPPORTED_PYTHON_PACKAGES_PYPI)[number]
-    | (typeof SUPPORTED_PYTHON_PACKAGES_LOCAL)[number];
+// ---- lock優先を避けるため、pure Pythonパッケージはwheel URLを固定してインストールする ----
+const PYPI_WHEEL_URL_BY_PACKAGE = {
+    mpmath:
+        "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl",
+    sympy:
+        "https://files.pythonhosted.org/packages/99/ff/c87e0622b1dadea79d2fb0b25ade9ed98954c9033722eb707053d310d4f3/sympy-1.13.3-py3-none-any.whl",
+    networkx:
+        "https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl",
+    sortedcontainers:
+        "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl",
+} as const;
 
 /** PythonのRunnerに必要なRunnerContext */
 type PythonRunnerContext = {
@@ -43,7 +52,10 @@ type PythonRunnerContext = {
 export const init = async (): Promise<PythonRunnerContext> => {
     // ==== Pyodideの初期化 ====
     const pyodide = await loadPyodide({
-        indexURL: browser.runtime.getURL("/assets/pyodide/" as any),
+        // 型制約の都合でunknown->neverの順に絞って、実行時は従来どおり同じURLを使う
+        indexURL: browser.runtime.getURL(
+            "/assets/pyodide/" as unknown as never,
+        ),
     });
     if (pyodide === null) {
         throw new Error("Failed to initialize Pyodide");
@@ -57,7 +69,19 @@ export const init = async (): Promise<PythonRunnerContext> => {
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
     for (const pkg of SUPPORTED_PYTHON_PACKAGES_PYPI) {
-        await micropip.install(pkg);
+        // ---- pure Pythonの一部パッケージはwheel URL固定でinstallし、lock優先を回避する ----
+        const wheelUrl = PYPI_WHEEL_URL_BY_PACKAGE[
+            pkg as keyof typeof PYPI_WHEEL_URL_BY_PACKAGE
+        ];
+        try {
+            await micropip.install(wheelUrl ?? pkg);
+        } catch (error) {
+            throw new Error(
+                `Failed to install Python package ${pkg}: ${
+                    error instanceof Error ? error.message : String(error)
+                }`,
+            );
+        }
     }
     // ==== Contextを返す ====
     return {

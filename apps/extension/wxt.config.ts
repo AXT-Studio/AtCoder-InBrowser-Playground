@@ -22,7 +22,7 @@ export default defineConfig({
         },
         content_security_policy: {
             extension_pages:
-                "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+                "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://cdn.jsdelivr.net https://files.pythonhosted.org https://pypi.org ws:;",
         },
         web_accessible_resources: [
             {
