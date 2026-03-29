@@ -136,7 +136,7 @@ const html = `\
                         </ul>
                     </section>
                     <section class="settings-section">
-                        <h3>Editor (Need Reload)</h3>
+                        <h3>Editor</h3>
                         <ul class="settings-list">
                             <li>
                                 <label for="select-settings-editor-language">Language (IntelliSense, Syntax Highlighting)</label>

@@ -377,13 +377,13 @@ export const setupRunTestButton = async (
     const runTestButton = container.querySelector(
         "#button-run-test",
     ) as HTMLButtonElement;
-    // ==== Languageの設定をbrowser.storage.localから取得 ====
-    const selectedLanguage =
-        (await storage.getItem<string>("local:settings.editorLanguage")) ||
-        "plaintext";
 
     // ==== ボタンにクリックイベントリスナーを追加 ====
     runTestButton.addEventListener("click", async () => {
+        // ==== Languageの設定をbrowser.storage.localから取得 ====
+        const selectedLanguage =
+            (await storage.getItem<string>("local:settings.editorLanguage")) ||
+            "plaintext";
         // 実行時間制限・許容誤差を取得
         const timeLimitMs = Number(timeLimitInput.value) || 1000;
         const allowableError = Number(timeMarginInput.value) || 0;
