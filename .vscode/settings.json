@@ -1,5 +1,8 @@
 {
-    "cSpell.words": ["AIBP"],
+    "cSpell.words": [
+        "AIBP",
+        "pyodide"
+    ],
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "biomejs.biome",
     "editor.codeActionsOnSave": {
