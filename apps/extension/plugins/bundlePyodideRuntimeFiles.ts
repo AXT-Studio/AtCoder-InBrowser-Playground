@@ -24,7 +24,14 @@ const PYODIDE_RUNTIME_FILES = [
     "python_stdlib.zip",
 ] as const;
 
-const LOCAL_BUNDLED_PACKAGE_ROOTS = ["bitarray", "numpy", "scipy"] as const;
+const LOCAL_BUNDLED_PACKAGE_ROOTS = [
+    "micropip",
+    "scipy",
+    "sympy",
+    "bitarray",
+    "networkx",
+    "sortedcontainers",
+] as const;
 
 const TEST_PACKAGE_PATTERNS = [
     /-tests$/,

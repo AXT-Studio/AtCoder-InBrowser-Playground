@@ -143,8 +143,8 @@ const html = `\
                                 <select id="select-settings-editor-language">
                                     <option value="javascript">JavaScript</option>
                                     <option value="typescript">TypeScript</option>
-                                    <!--
                                     <option value="python">Python 3 (CPython)</option>
+                                    <!--
                                     <option value="ruby">Ruby (ruby)</option>
                                     -->
                                     <option value="plaintext" selected>Plain Text</option>

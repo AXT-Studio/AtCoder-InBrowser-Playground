@@ -75,6 +75,7 @@ import type { Result } from "./../../types/Result";
 // 他の言語のModuleも将来的にここに追加
 import PlaintextModule from "./runners/plaintext/index";
 import TypeScriptModule from "./runners/typescript/index";
+import PythonModule from "./runners/python/index";
 
 // ----------------------------------------------------------------
 // types
@@ -105,6 +106,7 @@ export default defineBackground({
             plaintext: PlaintextModule,
             javascript: TypeScriptModule,
             typescript: TypeScriptModule,
+            python: PythonModule,
         };
 
         /** Runner Contextのリスト (initしたらここに保存) */

@@ -90,3 +90,4 @@ await micropip.install([
 ## 5) エラーハンドリング
 
 初期化・実行は `try/catch` で包み、失敗を runner の `setup-error` / `runtime-error` として返して UI に分かりやすく表示できるようにします。
+
