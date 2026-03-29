@@ -1,10 +1,13 @@
 import { defineConfig } from "wxt";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
-import bundlePyodideRuntimeFilesPlugin from "./plugins/bundlePyodideRuntimeFiles";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
+import bundlePyodidePublicAssetsHook from "./plugins/pyodide-public-assets-hook";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
+    hooks: {
+        "build:publicAssets": bundlePyodidePublicAssetsHook,
+    },
     manifest: {
         version: "0.2.1",
         name: "AtCoder In-Browser Playground",
@@ -41,7 +44,6 @@ export default defineConfig({
         plugins: [
             monacoTypescriptLibSplitPlugin(),
             buildPolyfillCodePlugin(),
-            bundlePyodideRuntimeFilesPlugin(),
         ],
         worker: {
             format: "es",

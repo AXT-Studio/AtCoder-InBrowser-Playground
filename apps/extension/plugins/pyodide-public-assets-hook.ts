@@ -1,5 +1,5 @@
 // ================================================================================================
-// Vite plugin to bundle required Pyodide runtime files into extension assets.
+// WXT hook to register required Pyodide runtime files as public assets.
 // ================================================================================================
 
 // ----------------------------------------------------------------
@@ -7,9 +7,10 @@
 // ----------------------------------------------------------------
 
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { ResolvedPublicFile, Wxt } from "wxt";
 
 // ----------------------------------------------------------------
 // constants
@@ -46,6 +47,9 @@ const TEST_PACKAGE_PATTERNS = [
     /_tests-/,
 ];
 
+const PYODIDE_PUBLIC_ASSETS_BASE = "assets/pyodide";
+const PYODIDE_CACHE_DIR_NAME = "aibp-pyodide-cache";
+
 type LockPackageEntry = {
     depends?: string[];
     file_name?: string;
@@ -62,22 +66,26 @@ type LockManagedArtifact = {
     sourcePackage: string;
 };
 
-type LoadedArtifact = {
-    source: Uint8Array;
-    sourceDescription: string;
+type ResolvedArtifactSource =
+    | {
+        type: "local";
+        absolutePath: string;
+        sourceDescription: string;
+    }
+    | {
+        type: "downloaded";
+        source: Uint8Array;
+        sourceDescription: string;
+    };
+
+type BundledArtifact = {
+    fileName: string;
+    source: ResolvedArtifactSource;
+    sourcePackage?: string;
 };
 
-const artifactLoadCache = new Map<string, Promise<LoadedArtifact>>();
-
-type BuildPlugin = {
-    name: string;
-    apply: "build";
-    generateBundle(this: {
-        emitFile(
-            file: { type: "asset"; fileName: string; source: Uint8Array },
-        ): void;
-    }): Promise<void>;
-};
+const artifactSourceCache = new Map<string, Promise<ResolvedArtifactSource>>();
+const downloadedArtifactPathCache = new Map<string, string>();
 
 // ----------------------------------------------------------------
 // helpers
@@ -221,26 +229,27 @@ async function downloadFromCdn(
     };
 }
 
-async function loadArtifactPreferLocal(
+async function resolveArtifactSourcePreferLocal(
     fileName: string,
     localSearchDirs: readonly string[],
     cdnBaseUrl: string,
     expectedSha256?: string,
-): Promise<LoadedArtifact> {
+): Promise<ResolvedArtifactSource> {
     const cacheKey = [
         cdnBaseUrl,
         fileName,
         expectedSha256 ?? "",
         localSearchDirs.join("|"),
     ].join("::");
-    const cachedLoad = artifactLoadCache.get(cacheKey);
-    if (cachedLoad) {
-        return cachedLoad;
+    const cached = artifactSourceCache.get(cacheKey);
+    if (cached) {
+        return cached;
     }
 
-    const loadPromise = (async (): Promise<LoadedArtifact> => {
+    const loadPromise = (async (): Promise<ResolvedArtifactSource> => {
         const localMismatches: string[] = [];
 
+        // ---- まずローカル(node_modules配下)を優先して探す ----
         for (const localDir of localSearchDirs) {
             const localPath = resolve(localDir, fileName);
             try {
@@ -251,7 +260,8 @@ async function loadArtifactPreferLocal(
                 }
 
                 return {
-                    source,
+                    type: "local",
+                    absolutePath: localPath,
                     sourceDescription: `local:${localPath}`,
                 };
             } catch (error) {
@@ -267,6 +277,7 @@ async function loadArtifactPreferLocal(
             }
         }
 
+        // ---- ローカルに無ければCDNから取得する ----
         try {
             const downloaded = await downloadFromCdn(cdnBaseUrl, fileName);
             if (!hasMatchingSha256(downloaded.source, expectedSha256)) {
@@ -278,6 +289,7 @@ async function loadArtifactPreferLocal(
             }
 
             return {
+                type: "downloaded",
                 source: downloaded.source,
                 sourceDescription: `cdn:${downloaded.url}`,
             };
@@ -295,13 +307,23 @@ async function loadArtifactPreferLocal(
         }
     })();
 
-    artifactLoadCache.set(cacheKey, loadPromise);
+    artifactSourceCache.set(cacheKey, loadPromise);
     try {
         return await loadPromise;
     } catch (error) {
-        artifactLoadCache.delete(cacheKey);
+        artifactSourceCache.delete(cacheKey);
         throw error;
     }
+}
+
+async function readResolvedArtifactBytes(
+    source: ResolvedArtifactSource,
+): Promise<Uint8Array> {
+    if (source.type === "downloaded") {
+        return source.source;
+    }
+
+    return await readFile(source.absolutePath);
 }
 
 function collectLockManagedArtifacts(
@@ -359,98 +381,150 @@ function collectLockManagedArtifacts(
     return [...uniqueArtifacts.values()];
 }
 
+function toPyodideRelativeDest(fileName: string): string {
+    return `${PYODIDE_PUBLIC_ASSETS_BASE}/${fileName}`;
+}
+
+async function ensureAbsoluteSrcForAsset(
+    pyodideVersion: string,
+    fileName: string,
+    source: ResolvedArtifactSource,
+    wxtDir: string,
+): Promise<string> {
+    if (source.type === "local") {
+        return source.absolutePath;
+    }
+
+    // ---- CDNから取得したバイナリは.wxt配下に保存し、CopiedPublicFileとして扱う ----
+    const cachePath = resolve(
+        wxtDir,
+        PYODIDE_CACHE_DIR_NAME,
+        `v${pyodideVersion}`,
+        fileName,
+    );
+    const cachedPath = downloadedArtifactPathCache.get(cachePath);
+    if (cachedPath) {
+        return cachedPath;
+    }
+
+    await mkdir(dirname(cachePath), { recursive: true });
+    await writeFile(cachePath, source.source);
+    downloadedArtifactPathCache.set(cachePath, cachePath);
+    return cachePath;
+}
+
 // ----------------------------------------------------------------
 // implementation
 // ----------------------------------------------------------------
 
-export default function bundlePyodideRuntimeFilesPlugin(): BuildPlugin {
-    return {
-        name: "aibp-bundle-pyodide-runtime-files",
-        apply: "build",
-        async generateBundle() {
-            const extensionRootDir = resolve(
-                fileURLToPath(new URL("..", import.meta.url)),
-            );
-            const pyodidePackageDir = resolve(
-                extensionRootDir,
-                "node_modules",
-                "pyodide",
-            );
+export default async function bundlePyodidePublicAssetsHook(
+    wxt: Wxt,
+    files: ResolvedPublicFile[],
+): Promise<void> {
+    // ==== build:publicAssetsの1回呼び出しで、必要なPyodide資産をまとめて登録する ====
+    const extensionRootDir = resolve(
+        fileURLToPath(new URL("..", import.meta.url)),
+    );
+    const pyodidePackageDir = resolve(
+        extensionRootDir,
+        "node_modules",
+        "pyodide",
+    );
 
-            const pyodideVersion = await resolvePyodideVersion(
-                extensionRootDir,
-                pyodidePackageDir,
-            );
-            const pyodideCdnBaseUrl =
-                `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`;
-            const localSearchDirs = [
-                pyodidePackageDir,
-                resolve(pyodidePackageDir, "dist"),
-            ] as const;
+    const pyodideVersion = await resolvePyodideVersion(
+        extensionRootDir,
+        pyodidePackageDir,
+    );
+    const pyodideCdnBaseUrl =
+        `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`;
+    const localSearchDirs = [
+        pyodidePackageDir,
+        resolve(pyodidePackageDir, "dist"),
+    ] as const;
 
-            const loadedPyodideLock = await loadArtifactPreferLocal(
-                "pyodide-lock.json",
+    const loadedPyodideLock = await resolveArtifactSourcePreferLocal(
+        "pyodide-lock.json",
+        localSearchDirs,
+        pyodideCdnBaseUrl,
+    );
+    const lockPackages = parsePyodideLockFile(
+        await readResolvedArtifactBytes(loadedPyodideLock),
+    );
+    const lockManagedArtifacts = collectLockManagedArtifacts(lockPackages);
+
+    // ==== runtime + lock由来の資産を、ファイル名単位で一意化する ====
+    const bundledArtifacts = new Map<string, BundledArtifact>();
+
+    for (const fileName of PYODIDE_RUNTIME_FILES) {
+        const source = fileName === "pyodide-lock.json"
+            ? loadedPyodideLock
+            : await resolveArtifactSourcePreferLocal(
+                fileName,
                 localSearchDirs,
                 pyodideCdnBaseUrl,
             );
-            const lockPackages = parsePyodideLockFile(loadedPyodideLock.source);
-            const lockManagedArtifacts = collectLockManagedArtifacts(
-                lockPackages,
+        bundledArtifacts.set(fileName, {
+            fileName,
+            source,
+        });
+    }
+
+    for (const artifact of lockManagedArtifacts) {
+        if (bundledArtifacts.has(artifact.fileName)) {
+            continue;
+        }
+
+        const source = await resolveArtifactSourcePreferLocal(
+            artifact.fileName,
+            localSearchDirs,
+            pyodideCdnBaseUrl,
+            artifact.expectedSha256,
+        );
+        bundledArtifacts.set(artifact.fileName, {
+            fileName: artifact.fileName,
+            source,
+            sourcePackage: artifact.sourcePackage,
+        });
+    }
+
+    // ==== 既存public assetと衝突しないように、relativeDest重複はスキップする ====
+    const existingRelativeDestSet = new Set(
+        files.map((file) => file.relativeDest),
+    );
+    let addedAssetCount = 0;
+
+    for (const artifact of bundledArtifacts.values()) {
+        const relativeDest = toPyodideRelativeDest(artifact.fileName);
+        if (existingRelativeDestSet.has(relativeDest)) {
+            wxt.logger.warn(
+                `AIBP: Skipped duplicate public asset registration: ${relativeDest}`,
             );
-            const emittedFileNames = new Set<string>();
+            continue;
+        }
 
-            const emitAssetIfNeeded = (
-                fileName: string,
-                source: Uint8Array,
-            ) => {
-                if (emittedFileNames.has(fileName)) {
-                    return;
-                }
+        const absoluteSrc = await ensureAbsoluteSrcForAsset(
+            pyodideVersion,
+            artifact.fileName,
+            artifact.source,
+            wxt.config.wxtDir,
+        );
 
-                this.emitFile({
-                    type: "asset",
-                    fileName: `assets/pyodide/${fileName}`,
-                    source,
-                });
-                emittedFileNames.add(fileName);
-            };
+        files.push({
+            absoluteSrc,
+            relativeDest,
+        });
+        existingRelativeDestSet.add(relativeDest);
+        addedAssetCount += 1;
 
-            for (const fileName of PYODIDE_RUNTIME_FILES) {
-                if (fileName === "pyodide-lock.json") {
-                    emitAssetIfNeeded(fileName, loadedPyodideLock.source);
-                    continue;
-                }
+        const packageLabel = artifact.sourcePackage
+            ? ` (${artifact.sourcePackage})`
+            : "";
+        wxt.logger.info(
+            `AIBP: Added Pyodide public asset ${artifact.fileName}${packageLabel} from ${artifact.source.sourceDescription}`,
+        );
+    }
 
-                const loadedRuntimeArtifact = await loadArtifactPreferLocal(
-                    fileName,
-                    localSearchDirs,
-                    pyodideCdnBaseUrl,
-                );
-                console.info(
-                    `AIBP: Bundled runtime artifact ${fileName} from ${loadedRuntimeArtifact.sourceDescription}`,
-                );
-                emitAssetIfNeeded(fileName, loadedRuntimeArtifact.source);
-            }
-
-            for (const artifact of lockManagedArtifacts) {
-                const loadedLockManagedArtifact = await loadArtifactPreferLocal(
-                    artifact.fileName,
-                    localSearchDirs,
-                    pyodideCdnBaseUrl,
-                    artifact.expectedSha256,
-                );
-                console.info(
-                    `AIBP: Bundled package artifact ${artifact.fileName} (${artifact.sourcePackage}) from ${loadedLockManagedArtifact.sourceDescription}`,
-                );
-                emitAssetIfNeeded(
-                    artifact.fileName,
-                    loadedLockManagedArtifact.source,
-                );
-            }
-
-            console.info(
-                `AIBP: Bundled ${emittedFileNames.size} Pyodide assets (runtime + local scientific packages).`,
-            );
-        },
-    };
+    wxt.logger.info(
+        `AIBP: Added ${addedAssetCount} Pyodide public assets via build:publicAssets.`,
+    );
 }
