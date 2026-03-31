@@ -1,5 +1,6 @@
 // ================================================================================================
-// Runner Module: Python
+// Runner Module: Python (Firefox ver.)
+// FirefoxではBackground Script内でPyodideが動かせるので、そうします
 // ================================================================================================
 
 // ----------------------------------------------------------------
@@ -8,8 +9,6 @@
 
 import type { PyodideInterface } from "pyodide";
 import type { Runner, RunnerResult } from "../types";
-import { init as firefoxInit, run as firefoxRun } from "./firefox";
-import { init as chromeInit, run as chromeRun } from "./chrome";
 
 // ----------------------------------------------------------------
 // types
@@ -17,16 +16,15 @@ import { init as chromeInit, run as chromeRun } from "./chrome";
 
 /** PythonのRunnerに必要なRunnerContext */
 type PythonRunnerContext = {
-    /** PyodideのInterfaceを保存するMapのkey。Fierfox(MV2)ではBackground Script内、Chrome(MV3)ではOffscreen Document内にそのMapがある。 */
     pyodideInterfaceID: string;
 };
 
-
 // ----------------------------------------------------------------
-// 環境判定
+// Implementation
 // ----------------------------------------------------------------
 
-const manifestVersion = import.meta.env.MANIFEST_VERSION;
+/** (Firefox限定) PyodideのInterfaceを保存するMap */
+const pyodideMap = new Map<string, PyodideInterface>();
 
 // ----------------------------------------------------------------
 // init()
@@ -34,13 +32,7 @@ const manifestVersion = import.meta.env.MANIFEST_VERSION;
 // ----------------------------------------------------------------
 
 export const init = async (): Promise<PythonRunnerContext> => {
-    if (manifestVersion === 2) {
-    // ==== Firefox(MV2)の場合はFirefox用の初期化処理をそのまま実行すればOK ====
-        return firefoxInit();
-    } else {
-    // ==== Chrome(MV3)の場合は、Unlisted Page(`/mv3_python_runner.html`)と通信してPyodideを初期化する ====
-        return chromeInit();
-    }
+    // TODO: Implementation
 };
 
 // ----------------------------------------------------------------
@@ -51,13 +43,7 @@ export const init = async (): Promise<PythonRunnerContext> => {
 export const run: Runner<PythonRunnerContext> = async (
     { context, code, stdin },
 ) => {
-    if (manifestVersion === 2) {
-        // ==== Firefox(MV2)の場合はFirefox用の実行処理をそのまま実行すればOK ====
-        return firefoxRun({ context, code, stdin });
-    } else {
-        // ==== Chrome(MV3)の場合は、Unlisted Page(`/mv3_python_runner.html`)と通信してコードを実行する ====
-        return chromeRun({ context, code, stdin });
-    }
+    // TODO: Implementation
 };
 
 // ----------------------------------------------------------------
