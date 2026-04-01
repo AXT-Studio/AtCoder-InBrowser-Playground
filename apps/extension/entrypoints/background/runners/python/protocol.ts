@@ -26,9 +26,7 @@ export type PythonOffscreenRequestPayload =
           pyodideInterfaceID: string;
       };
 
-type RemoveRequestId<T> = T extends { requestId: string }
-    ? Omit<T, "requestId">
-    : never;
+type RemoveRequestId<T> = T extends { requestId: string } ? Omit<T, "requestId"> : never;
 
 export type PythonOffscreenRequestPayloadWithoutRequestId =
     RemoveRequestId<PythonOffscreenRequestPayload>;
@@ -39,10 +37,7 @@ export type PythonOffscreenResponsePayload =
     | {
           requestId: string;
           ok: true;
-          data:
-              | PythonRunnerContext
-              | PythonOffscreenRunResponseData
-              | { disposed: true };
+          data: PythonRunnerContext | PythonOffscreenRunResponseData | { disposed: true };
       }
     | {
           requestId: string;

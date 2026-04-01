@@ -7,10 +7,9 @@
 // ----------------------------------------------------------------
 
 import type { Runner } from "../types";
-import type { PythonRunnerContext } from "./protocol";
-import { init as firefoxInit, run as firefoxRun } from "./firefox";
 import { init as chromeInit, run as chromeRun } from "./chrome";
-
+import { init as firefoxInit, run as firefoxRun } from "./firefox";
+import type { PythonRunnerContext } from "./protocol";
 
 // ----------------------------------------------------------------
 // 環境判定
@@ -25,10 +24,10 @@ const manifestVersion = import.meta.env.MANIFEST_VERSION;
 
 export const init = async (): Promise<PythonRunnerContext> => {
     if (manifestVersion === 2) {
-    // ==== Firefox(MV2)の場合はFirefox用の初期化処理をそのまま実行すればOK ====
+        // ==== Firefox(MV2)の場合はFirefox用の初期化処理をそのまま実行すればOK ====
         return firefoxInit();
     } else {
-    // ==== Chrome(MV3)の場合は、Unlisted Page(`/mv3_python_runner.html`)と通信してPyodideを初期化する ====
+        // ==== Chrome(MV3)の場合は、Unlisted Page(`/mv3_python_runner.html`)と通信してPyodideを初期化する ====
         return chromeInit();
     }
 };
@@ -38,9 +37,7 @@ export const init = async (): Promise<PythonRunnerContext> => {
 // Contextを用いてコードを実行し、結果を返す。
 // ----------------------------------------------------------------
 
-export const run: Runner<PythonRunnerContext> = async (
-    { context, code, stdin },
-) => {
+export const run: Runner<PythonRunnerContext> = async ({ context, code, stdin }) => {
     if (manifestVersion === 2) {
         // ==== Firefox(MV2)の場合はFirefox用の実行処理をそのまま実行すればOK ====
         return firefoxRun({ context, code, stdin });

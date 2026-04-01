@@ -29,9 +29,7 @@ export const init = async (): Promise<PlaintextRunnerContext> => {
 // Contextを用いてコードを実行し、結果を返す。
 // ----------------------------------------------------------------
 
-export const run: Runner<PlaintextRunnerContext> = async (
-    { code },
-) => {
+export const run: Runner<PlaintextRunnerContext> = async ({ code }) => {
     // ==== Plain Textは実行しないので、そのままstdoutにコードを返す ====
     const result: Awaited<RunnerResult> = {
         status: "success",

@@ -8,10 +8,7 @@
 
 import coreJsPolyfill from "virtual:corejs-polyfill";
 import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
-import {
-    initialize as esbuildInitialize,
-    transform as esbuildTransform,
-} from "esbuild-wasm";
+import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
 import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
 import inspectUtil from "node-inspect-extracted";
 import type { QuickJSContext } from "quickjs-emscripten-core";
@@ -101,10 +98,7 @@ export const init = async (): Promise<TypeScriptRunnerContext> => {
     quickJsRuntime.setMaxStackSize(0); // スタックサイズ制限解除
     const quickJsVm = quickJsRuntime.newContext();
     // ==== core-jsのPolyfillコードをQuickJSのグローバルに評価して、Polyfillを適用する ====
-    const coreJsPolyfillResult = quickJsVm.evalCode(
-        coreJsPolyfill,
-        "core-js-polyfill.js",
-    );
+    const coreJsPolyfillResult = quickJsVm.evalCode(coreJsPolyfill, "core-js-polyfill.js");
     if (coreJsPolyfillResult.error) {
         console.error(
             "Failed to apply core-js polyfill:",
@@ -123,9 +117,7 @@ export const init = async (): Promise<TypeScriptRunnerContext> => {
 // Contextを用いてコードを実行し、結果を返す。
 // ----------------------------------------------------------------
 
-export const run: Runner<TypeScriptRunnerContext> = async (
-    { context, code, stdin },
-) => {
+export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdin }) => {
     // ==== 初手全体try-catch なにかあったらCE扱いでエラー返す ====
     try {
         // ==== contextにquickJsVmがあることを保証する (型定義上はあるはず) ====
@@ -160,11 +152,7 @@ export const run: Runner<TypeScriptRunnerContext> = async (
         quickJsVm.setProp(consoleObj, "error", errorFn);
         quickJsVm.setProp(quickJsVm.global, "console", consoleObj);
         // ==== stdinをグローバル変数__stdin__にセット ====
-        quickJsVm.setProp(
-            quickJsVm.global,
-            "__stdin__",
-            quickJsVm.newString(stdin),
-        );
+        quickJsVm.setProp(quickJsVm.global, "__stdin__", quickJsVm.newString(stdin));
         // ==== codeを実行 ====
         const preProcessedCode = await preProcessCodeForQuickJS(code);
         const result = quickJsVm.evalCode(preProcessedCode, "Main.js");
@@ -176,9 +164,7 @@ export const run: Runner<TypeScriptRunnerContext> = async (
                 status: "failure",
                 error: {
                     errorType: "RE",
-                    error: typeof error === "string"
-                        ? error
-                        : JSON.stringify(error),
+                    error: typeof error === "string" ? error : JSON.stringify(error),
                 },
             };
             return notifyResult;
