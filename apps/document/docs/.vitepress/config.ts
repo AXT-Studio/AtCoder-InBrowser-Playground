@@ -42,4 +42,5 @@ export default defineConfig({
         breaks: true,
     },
     ignoreDeadLinks: true,
+    head: [["link", { rel: "icon", href: "/icon.svg" }]],
 });
