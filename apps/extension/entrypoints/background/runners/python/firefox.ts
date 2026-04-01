@@ -10,6 +10,7 @@
 import type { PyodideInterface } from "pyodide";
 import { loadPyodide } from "pyodide";
 import type { Runner, RunnerResult } from "../types";
+import type { PythonRunnerContext } from "./protocol";
 
 // ----------------------------------------------------------------
 // types
@@ -39,11 +40,6 @@ const PYPI_WHEEL_URL_BY_PACKAGE = {
     sortedcontainers:
         "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl",
 } as const;
-
-/** PythonのRunnerに必要なRunnerContext */
-type PythonRunnerContext = {
-    pyodideInterfaceID: string;
-};
 
 // ----------------------------------------------------------------
 // Implementation

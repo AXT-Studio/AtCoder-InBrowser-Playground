@@ -87,6 +87,30 @@ type TestExecutionProtocolResult = Result<
     { errorType: "TLE" | "RE" | "CE"; error: string }
 >;
 
+type ChromeGlobalWithOffscreen = typeof globalThis & {
+    chrome?: {
+        offscreen?: {
+            closeDocument: () => Promise<void>;
+        };
+    };
+};
+
+const closeMv3PythonOffscreenDocument = async (): Promise<void> => {
+    if (import.meta.env.MANIFEST_VERSION !== 3) {
+        return;
+    }
+    const chromeGlobal = globalThis as ChromeGlobalWithOffscreen;
+    const closeDocument = chromeGlobal.chrome?.offscreen?.closeDocument;
+    if (!closeDocument) {
+        return;
+    }
+    try {
+        await closeDocument();
+    } catch (error) {
+        console.warn("Failed to close offscreen document:", error);
+    }
+};
+
 // ----------------------------------------------------------------
 // 本体 (background script)
 // ----------------------------------------------------------------
@@ -222,7 +246,7 @@ export default defineBackground({
                             id,
                             result: {
                                 status: "failure",
-                                data: {
+                                error: {
                                     errorType: "RE",
                                     error:
                                         `No Runner Context available for language: ${language}`,
@@ -269,6 +293,9 @@ export default defineBackground({
                         `Execution failed (${result.error.errorType}) for id=${id}. Discarding Runner Context for language=${language}.`,
                     );
                     delete runnerContexts[language];
+                    if (language === "python") {
+                        await closeMv3PythonOffscreenDocument();
+                    }
                 }
             }
         });

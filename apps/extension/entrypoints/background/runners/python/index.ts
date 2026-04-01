@@ -6,20 +6,10 @@
 // imports
 // ----------------------------------------------------------------
 
-import type { PyodideInterface } from "pyodide";
-import type { Runner, RunnerResult } from "../types";
+import type { Runner } from "../types";
+import type { PythonRunnerContext } from "./protocol";
 import { init as firefoxInit, run as firefoxRun } from "./firefox";
 import { init as chromeInit, run as chromeRun } from "./chrome";
-
-// ----------------------------------------------------------------
-// types
-// ----------------------------------------------------------------
-
-/** PythonのRunnerに必要なRunnerContext */
-type PythonRunnerContext = {
-    /** PyodideのInterfaceを保存するMapのkey。Fierfox(MV2)ではBackground Script内、Chrome(MV3)ではOffscreen Document内にそのMapがある。 */
-    pyodideInterfaceID: string;
-};
 
 
 // ----------------------------------------------------------------
