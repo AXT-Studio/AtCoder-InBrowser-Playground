@@ -87,6 +87,30 @@ type TestExecutionProtocolResult = Result<
     { errorType: "TLE" | "RE" | "CE"; error: string }
 >;
 
+type ChromeGlobalWithOffscreen = typeof globalThis & {
+    chrome?: {
+        offscreen?: {
+            closeDocument: () => Promise<void>;
+        };
+    };
+};
+
+const closeMv3PythonOffscreenDocument = async (): Promise<void> => {
+    if (import.meta.env.MANIFEST_VERSION !== 3) {
+        return;
+    }
+    const chromeGlobal = globalThis as ChromeGlobalWithOffscreen;
+    const closeDocument = chromeGlobal.chrome?.offscreen?.closeDocument;
+    if (!closeDocument) {
+        return;
+    }
+    try {
+        await closeDocument();
+    } catch (error) {
+        console.warn("Failed to close offscreen document:", error);
+    }
+};
+
 // ----------------------------------------------------------------
 // 本体 (background script)
 // ----------------------------------------------------------------
@@ -125,17 +149,13 @@ export default defineBackground({
                 // ==== Ensure sender tab exists ====
                 const tabId = sender.tab?.id;
                 if (!tabId) {
-                    console.error(
-                        "Received `request-prepare` from a sender without a tab ID.",
-                    );
+                    console.error("Received `request-prepare` from a sender without a tab ID.");
                     return;
                 }
                 // ==== 未対応言語の場合はエラーを返す ====
                 const runnerModule = runnerModules[language];
                 if (!runnerModule) {
-                    console.error(
-                        `Unsupported language in request-prepare: ${language}`,
-                    );
+                    console.error(`Unsupported language in request-prepare: ${language}`);
                     await browser.tabs.sendMessage(tabId, {
                         type: "notify-denied",
                         payload: {
@@ -158,9 +178,7 @@ export default defineBackground({
                     return;
                 }
                 // ==== 新しいContextを生成する ====
-                console.log(
-                    `Initializing Runner Context for language=${language}`,
-                );
+                console.log(`Initializing Runner Context for language=${language}`);
                 try {
                     const context = await runnerModule.init();
                     runnerContexts[language] = context;
@@ -175,9 +193,7 @@ export default defineBackground({
                             id,
                             language,
                             error: `Failed to initialize Runner Context: ${
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error)
+                                error instanceof Error ? error.message : String(error)
                             }`,
                         },
                     });
@@ -196,17 +212,14 @@ export default defineBackground({
         // ==== Test Execution Protocol (Worker Run Protocol) ====
         browser.runtime.onMessage.addListener(async (message, sender) => {
             if (message.type === "request-execute") {
-                const { id, code, language, stdin, timeLimitMs } =
-                    message.payload;
+                const { id, code, language, stdin, timeLimitMs } = message.payload;
                 console.log(
                     `[Background] Received request-execute: id=${id}, language=${language}, code=${code}, stdin=${stdin}, timeLimitMs=${timeLimitMs}`,
                 );
                 // ==== Ensure sender tab exists ====
                 const tabId = sender.tab?.id;
                 if (!tabId) {
-                    console.error(
-                        "Received `request-execute` from a sender without a tab ID.",
-                    );
+                    console.error("Received `request-execute` from a sender without a tab ID.");
                     return;
                 }
                 // ==== 対応するContextが存在しない場合はエラーを返す ====
@@ -222,10 +235,9 @@ export default defineBackground({
                             id,
                             result: {
                                 status: "failure",
-                                data: {
+                                error: {
                                     errorType: "RE",
-                                    error:
-                                        `No Runner Context available for language: ${language}`,
+                                    error: `No Runner Context available for language: ${language}`,
                                 },
                             },
                         },
@@ -234,19 +246,17 @@ export default defineBackground({
                 }
                 const run = runnerModule.run;
                 // ==== 実行に時間がかかる場合に強制終了するために、race用のtimeout Promiseを生成 ====
-                const timeoutPromise = new Promise<TestExecutionProtocolResult>(
-                    (resolve) => {
-                        setTimeout(() => {
-                            resolve({
-                                status: "failure",
-                                error: {
-                                    errorType: "TLE",
-                                    error: "Execution time limit exceeded.",
-                                },
-                            });
-                        }, timeLimitMs);
-                    },
-                );
+                const timeoutPromise = new Promise<TestExecutionProtocolResult>((resolve) => {
+                    setTimeout(() => {
+                        resolve({
+                            status: "failure",
+                            error: {
+                                errorType: "TLE",
+                                error: "Execution time limit exceeded.",
+                            },
+                        });
+                    }, timeLimitMs);
+                });
                 // ==== Runnerにコードの実行を指示 ====
                 const runPromise = run({
                     context: runnerContext,
@@ -269,6 +279,9 @@ export default defineBackground({
                         `Execution failed (${result.error.errorType}) for id=${id}. Discarding Runner Context for language=${language}.`,
                     );
                     delete runnerContexts[language];
+                    if (language === "python") {
+                        await closeMv3PythonOffscreenDocument();
+                    }
                 }
             }
         });

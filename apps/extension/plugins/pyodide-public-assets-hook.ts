@@ -25,27 +25,13 @@ const PYODIDE_RUNTIME_FILES = [
     "python_stdlib.zip",
 ] as const;
 
-const LOCAL_BUNDLED_PACKAGE_ROOTS = [
-    "micropip",
-    "numpy",
-    "scipy",
-    "bitarray",
-] as const;
+const LOCAL_BUNDLED_PACKAGE_ROOTS = ["micropip", "numpy", "scipy", "bitarray"] as const;
 
 // ---- これらはmicropipでPyPIから取得するため、lock由来の同梱対象から除外する ----
-const PYPI_ONLY_PACKAGES = [
-    "sympy",
-    "networkx",
-    "sortedcontainers",
-] as const;
+const PYPI_ONLY_PACKAGES = ["sympy", "networkx", "sortedcontainers"] as const;
 const PYPI_ONLY_PACKAGE_SET = new Set<string>(PYPI_ONLY_PACKAGES);
 
-const TEST_PACKAGE_PATTERNS = [
-    /-tests$/,
-    /_tests$/,
-    /-tests-/,
-    /_tests-/,
-];
+const TEST_PACKAGE_PATTERNS = [/-tests$/, /_tests$/, /-tests-/, /_tests-/];
 
 const PYODIDE_PUBLIC_ASSETS_BASE = "assets/pyodide";
 const PYODIDE_CACHE_DIR_NAME = "aibp-pyodide-cache";
@@ -68,15 +54,15 @@ type LockManagedArtifact = {
 
 type ResolvedArtifactSource =
     | {
-        type: "local";
-        absolutePath: string;
-        sourceDescription: string;
-    }
+          type: "local";
+          absolutePath: string;
+          sourceDescription: string;
+      }
     | {
-        type: "downloaded";
-        source: Uint8Array;
-        sourceDescription: string;
-    };
+          type: "downloaded";
+          source: Uint8Array;
+          sourceDescription: string;
+      };
 
 type BundledArtifact = {
     fileName: string;
@@ -103,9 +89,7 @@ function isTestPackage(packageName: string): boolean {
     return TEST_PACKAGE_PATTERNS.some((pattern) => pattern.test(packageName));
 }
 
-function parsePyodideLockFile(
-    lockFileBytes: Uint8Array,
-): Record<string, LockPackageEntry> {
+function parsePyodideLockFile(lockFileBytes: Uint8Array): Record<string, LockPackageEntry> {
     const lockJsonText = new TextDecoder().decode(lockFileBytes);
     let parsed: PyodideLockFile;
     try {
@@ -124,9 +108,7 @@ function parsePyodideLockFile(
         !parsed.packages ||
         typeof parsed.packages !== "object"
     ) {
-        throw new Error(
-            "AIBP: Invalid pyodide-lock.json format: missing packages map.",
-        );
+        throw new Error("AIBP: Invalid pyodide-lock.json format: missing packages map.");
     }
 
     return parsed.packages;
@@ -135,9 +117,7 @@ function parsePyodideLockFile(
 function normalizeVersion(versionRaw: string): string {
     const matched = versionRaw.match(/\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?/);
     if (!matched) {
-        throw new Error(
-            `AIBP: Could not normalize Pyodide version: ${versionRaw}`,
-        );
+        throw new Error(`AIBP: Could not normalize Pyodide version: ${versionRaw}`);
     }
     return matched[0];
 }
@@ -146,17 +126,12 @@ async function resolvePyodideVersion(
     extensionRootDir: string,
     pyodidePackageDir: string,
 ): Promise<string> {
-    const localPyodidePackageJsonPath = resolve(
-        pyodidePackageDir,
-        "package.json",
-    );
+    const localPyodidePackageJsonPath = resolve(pyodidePackageDir, "package.json");
     try {
-        const localPackageJsonBytes = await readFile(
-            localPyodidePackageJsonPath,
-        );
-        const localPackageJson = JSON.parse(
-            new TextDecoder().decode(localPackageJsonBytes),
-        ) as { version?: string };
+        const localPackageJsonBytes = await readFile(localPyodidePackageJsonPath);
+        const localPackageJson = JSON.parse(new TextDecoder().decode(localPackageJsonBytes)) as {
+            version?: string;
+        };
         if (typeof localPackageJson.version === "string") {
             return normalizeVersion(localPackageJson.version);
         }
@@ -178,8 +153,8 @@ async function resolvePyodideVersion(
         dependencies?: Record<string, string>;
         devDependencies?: Record<string, string>;
     };
-    const pyodideVersionSpec = extensionPackageJson.dependencies?.pyodide ??
-        extensionPackageJson.devDependencies?.pyodide;
+    const pyodideVersionSpec =
+        extensionPackageJson.dependencies?.pyodide ?? extensionPackageJson.devDependencies?.pyodide;
 
     if (!pyodideVersionSpec) {
         throw new Error(
@@ -194,10 +169,7 @@ function sha256Hex(bytes: Uint8Array): string {
     return createHash("sha256").update(bytes).digest("hex");
 }
 
-function hasMatchingSha256(
-    bytes: Uint8Array,
-    expectedSha256?: string,
-): boolean {
+function hasMatchingSha256(bytes: Uint8Array, expectedSha256?: string): boolean {
     if (!expectedSha256) {
         return true;
     }
@@ -216,11 +188,7 @@ async function downloadFromCdn(
     const url = `${withTrailingSlash(cdnBaseUrl)}${fileName}`;
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(
-            `HTTP ${response.status} ${
-                response.statusText || "(no status text)"
-            }`,
-        );
+        throw new Error(`HTTP ${response.status} ${response.statusText || "(no status text)"}`);
     }
 
     return {
@@ -235,12 +203,9 @@ async function resolveArtifactSourcePreferLocal(
     cdnBaseUrl: string,
     expectedSha256?: string,
 ): Promise<ResolvedArtifactSource> {
-    const cacheKey = [
-        cdnBaseUrl,
-        fileName,
-        expectedSha256 ?? "",
-        localSearchDirs.join("|"),
-    ].join("::");
+    const cacheKey = [cdnBaseUrl, fileName, expectedSha256 ?? "", localSearchDirs.join("|")].join(
+        "::",
+    );
     const cached = artifactSourceCache.get(cacheKey);
     if (cached) {
         return cached;
@@ -294,11 +259,10 @@ async function resolveArtifactSourcePreferLocal(
                 sourceDescription: `cdn:${downloaded.url}`,
             };
         } catch (error) {
-            const mismatchMessage = localMismatches.length === 0
-                ? ""
-                : ` local SHA256 mismatch paths: ${
-                    localMismatches.join(", ")
-                }.`;
+            const mismatchMessage =
+                localMismatches.length === 0
+                    ? ""
+                    : ` local SHA256 mismatch paths: ${localMismatches.join(", ")}.`;
             throw new Error(
                 `AIBP: Failed to load artifact ${fileName} from both local and CDN.${mismatchMessage} ${
                     error instanceof Error ? error.message : String(error)
@@ -316,9 +280,7 @@ async function resolveArtifactSourcePreferLocal(
     }
 }
 
-async function readResolvedArtifactBytes(
-    source: ResolvedArtifactSource,
-): Promise<Uint8Array> {
+async function readResolvedArtifactBytes(source: ResolvedArtifactSource): Promise<Uint8Array> {
     if (source.type === "downloaded") {
         return source.source;
     }
@@ -335,7 +297,8 @@ function collectLockManagedArtifacts(
     while (stack.length > 0) {
         const packageName = stack.pop();
         if (
-            !packageName || visited.has(packageName) ||
+            !packageName ||
+            visited.has(packageName) ||
             isTestPackage(packageName) ||
             PYPI_ONLY_PACKAGE_SET.has(packageName)
         ) {
@@ -344,17 +307,12 @@ function collectLockManagedArtifacts(
 
         const packageEntry = lockPackages[packageName];
         if (!packageEntry) {
-            throw new Error(
-                `AIBP: Package ${packageName} is missing from pyodide-lock.json`,
-            );
+            throw new Error(`AIBP: Package ${packageName} is missing from pyodide-lock.json`);
         }
 
         visited.add(packageName);
         for (const dependencyName of packageEntry.depends ?? []) {
-            if (
-                !isTestPackage(dependencyName) &&
-                !PYPI_ONLY_PACKAGE_SET.has(dependencyName)
-            ) {
+            if (!isTestPackage(dependencyName) && !PYPI_ONLY_PACKAGE_SET.has(dependencyName)) {
                 stack.push(dependencyName);
             }
         }
@@ -364,9 +322,7 @@ function collectLockManagedArtifacts(
     for (const packageName of visited) {
         const packageEntry = lockPackages[packageName];
         if (!packageEntry?.file_name) {
-            throw new Error(
-                `AIBP: Package ${packageName} has no file_name in pyodide-lock.json`,
-            );
+            throw new Error(`AIBP: Package ${packageName} has no file_name in pyodide-lock.json`);
         }
 
         if (!uniqueArtifacts.has(packageEntry.file_name)) {
@@ -396,12 +352,7 @@ async function ensureAbsoluteSrcForAsset(
     }
 
     // ---- CDNから取得したバイナリは.wxt配下に保存し、CopiedPublicFileとして扱う ----
-    const cachePath = resolve(
-        wxtDir,
-        PYODIDE_CACHE_DIR_NAME,
-        `v${pyodideVersion}`,
-        fileName,
-    );
+    const cachePath = resolve(wxtDir, PYODIDE_CACHE_DIR_NAME, `v${pyodideVersion}`, fileName);
     const cachedPath = downloadedArtifactPathCache.get(cachePath);
     if (cachedPath) {
         return cachedPath;
@@ -422,47 +373,33 @@ export default async function bundlePyodidePublicAssetsHook(
     files: ResolvedPublicFile[],
 ): Promise<void> {
     // ==== build:publicAssetsの1回呼び出しで、必要なPyodide資産をまとめて登録する ====
-    const extensionRootDir = resolve(
-        fileURLToPath(new URL("..", import.meta.url)),
-    );
-    const pyodidePackageDir = resolve(
-        extensionRootDir,
-        "node_modules",
-        "pyodide",
-    );
+    const extensionRootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
+    const pyodidePackageDir = resolve(extensionRootDir, "node_modules", "pyodide");
 
-    const pyodideVersion = await resolvePyodideVersion(
-        extensionRootDir,
-        pyodidePackageDir,
-    );
-    const pyodideCdnBaseUrl =
-        `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`;
-    const localSearchDirs = [
-        pyodidePackageDir,
-        resolve(pyodidePackageDir, "dist"),
-    ] as const;
+    const pyodideVersion = await resolvePyodideVersion(extensionRootDir, pyodidePackageDir);
+    const pyodideCdnBaseUrl = `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`;
+    const localSearchDirs = [pyodidePackageDir, resolve(pyodidePackageDir, "dist")] as const;
 
     const loadedPyodideLock = await resolveArtifactSourcePreferLocal(
         "pyodide-lock.json",
         localSearchDirs,
         pyodideCdnBaseUrl,
     );
-    const lockPackages = parsePyodideLockFile(
-        await readResolvedArtifactBytes(loadedPyodideLock),
-    );
+    const lockPackages = parsePyodideLockFile(await readResolvedArtifactBytes(loadedPyodideLock));
     const lockManagedArtifacts = collectLockManagedArtifacts(lockPackages);
 
     // ==== runtime + lock由来の資産を、ファイル名単位で一意化する ====
     const bundledArtifacts = new Map<string, BundledArtifact>();
 
     for (const fileName of PYODIDE_RUNTIME_FILES) {
-        const source = fileName === "pyodide-lock.json"
-            ? loadedPyodideLock
-            : await resolveArtifactSourcePreferLocal(
-                fileName,
-                localSearchDirs,
-                pyodideCdnBaseUrl,
-            );
+        const source =
+            fileName === "pyodide-lock.json"
+                ? loadedPyodideLock
+                : await resolveArtifactSourcePreferLocal(
+                      fileName,
+                      localSearchDirs,
+                      pyodideCdnBaseUrl,
+                  );
         bundledArtifacts.set(fileName, {
             fileName,
             source,
@@ -488,17 +425,13 @@ export default async function bundlePyodidePublicAssetsHook(
     }
 
     // ==== 既存public assetと衝突しないように、relativeDest重複はスキップする ====
-    const existingRelativeDestSet = new Set(
-        files.map((file) => file.relativeDest),
-    );
+    const existingRelativeDestSet = new Set(files.map((file) => file.relativeDest));
     let addedAssetCount = 0;
 
     for (const artifact of bundledArtifacts.values()) {
         const relativeDest = toPyodideRelativeDest(artifact.fileName);
         if (existingRelativeDestSet.has(relativeDest)) {
-            wxt.logger.warn(
-                `AIBP: Skipped duplicate public asset registration: ${relativeDest}`,
-            );
+            wxt.logger.warn(`AIBP: Skipped duplicate public asset registration: ${relativeDest}`);
             continue;
         }
 
@@ -516,15 +449,11 @@ export default async function bundlePyodidePublicAssetsHook(
         existingRelativeDestSet.add(relativeDest);
         addedAssetCount += 1;
 
-        const packageLabel = artifact.sourcePackage
-            ? ` (${artifact.sourcePackage})`
-            : "";
+        const packageLabel = artifact.sourcePackage ? ` (${artifact.sourcePackage})` : "";
         wxt.logger.info(
             `AIBP: Added Pyodide public asset ${artifact.fileName}${packageLabel} from ${artifact.source.sourceDescription}`,
         );
     }
 
-    wxt.logger.info(
-        `AIBP: Added ${addedAssetCount} Pyodide public assets via build:publicAssets.`,
-    );
+    wxt.logger.info(`AIBP: Added ${addedAssetCount} Pyodide public assets via build:publicAssets.`);
 }

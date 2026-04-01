@@ -14,11 +14,7 @@ import type { Failure, Result, Success } from "./../../../../types/Result";
 // 数値の場合は許容誤差を考慮して比較
 // ----------------------------------------------------------------
 
-const isOutputCorrect = (
-    expected: string,
-    actual: string,
-    allowableError: number,
-): boolean => {
+const isOutputCorrect = (expected: string, actual: string, allowableError: number): boolean => {
     // 両方を改行・スペース区切りで2次元配列にする
     const expectedLines = expected
         .trim()
@@ -161,11 +157,7 @@ const runTest = async (
     selectedLanguage: string,
 ): Promise<Result<void, Error>> => {
     // ==== まずボタン自体を無効化し、statusをWJにする ====
-    const prepareResult = prepareForTestExecution(
-        statusSpan,
-        execTimeTd,
-        runTestButton,
-    );
+    const prepareResult = prepareForTestExecution(statusSpan, execTimeTd, runTestButton);
     if (prepareResult.status === "failure") return prepareResult;
     // ==== stdout/stderr表示エリアをクリア ====
     updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, "", "");
@@ -177,50 +169,36 @@ const runTest = async (
         const testInput = testInputTextarea.value;
         const expectedOutput = expectedOutputTextarea.value;
         // ==== Background Scriptにテスト実行環境のセットアップを要求 (Environment Preparing Protocol) ====
-        const prepareResponse = await new Promise<Result<void, Error>>(
-            (resolve) => {
-                // 通信IDを生成
-                const requestId = crypto.randomUUID();
-                // 返ってくるnotify-readyかnotify-deniedを待つためのリスナーを先に作る
-                const notifyListener = (message: any) => {
-                    console.log("Received setup response:", message);
-                    // notify-readyが返ってきたら成功
-                    if (
-                        message.type === "notify-ready" &&
-                        message.payload.id === requestId
-                    ) {
-                        browser.runtime.onMessage.removeListener(
-                            notifyListener,
-                        );
-                        resolve({ status: "success", data: undefined });
-                    } // notify-deniedが返ってきたら失敗
-                    else if (
-                        message.type === "notify-denied" &&
-                        message.payload.id === requestId
-                    ) {
-                        browser.runtime.onMessage.removeListener(
-                            notifyListener,
-                        );
-                        resolve({
-                            status: "failure",
-                            error: new Error(
-                                `Environment setup denied: ${message.payload.error}`,
-                            ),
-                        });
-                    }
-                };
-                // リスナーを登録
-                browser.runtime.onMessage.addListener(notifyListener);
-                // Background Scriptにrequest-prepareを送る
-                browser.runtime.sendMessage({
-                    type: "request-prepare",
-                    payload: {
-                        id: requestId,
-                        language: selectedLanguage,
-                    },
-                });
-            },
-        );
+        const prepareResponse = await new Promise<Result<void, Error>>((resolve) => {
+            // 通信IDを生成
+            const requestId = crypto.randomUUID();
+            // 返ってくるnotify-readyかnotify-deniedを待つためのリスナーを先に作る
+            const notifyListener = (message: any) => {
+                console.log("Received setup response:", message);
+                // notify-readyが返ってきたら成功
+                if (message.type === "notify-ready" && message.payload.id === requestId) {
+                    browser.runtime.onMessage.removeListener(notifyListener);
+                    resolve({ status: "success", data: undefined });
+                } // notify-deniedが返ってきたら失敗
+                else if (message.type === "notify-denied" && message.payload.id === requestId) {
+                    browser.runtime.onMessage.removeListener(notifyListener);
+                    resolve({
+                        status: "failure",
+                        error: new Error(`Environment setup denied: ${message.payload.error}`),
+                    });
+                }
+            };
+            // リスナーを登録
+            browser.runtime.onMessage.addListener(notifyListener);
+            // Background Scriptにrequest-prepareを送る
+            browser.runtime.sendMessage({
+                type: "request-prepare",
+                payload: {
+                    id: requestId,
+                    language: selectedLanguage,
+                },
+            });
+        });
         if (prepareResponse.status === "failure") {
             // ==== 環境のセットアップに失敗した場合はエラーメッセージを表示して終了 ====
             updateTestStatus(statusSpan, "RE");
@@ -245,10 +223,7 @@ const runTest = async (
             // 返ってくるnotify-resultを待つためのリスナーを先に作る
             const notifyListener = (message: any) => {
                 console.log("Received run response:", message);
-                if (
-                    message.type === "notify-result" &&
-                    message.payload.id === requestId
-                ) {
+                if (message.type === "notify-result" && message.payload.id === requestId) {
                     console.log("Received run result:", message.payload.result);
                     browser.runtime.onMessage.removeListener(notifyListener);
                     resolve(message.payload.result);
@@ -272,20 +247,15 @@ const runTest = async (
         const endTime = performance.now();
         const execTime = endTime - startTime;
         // ==== stdoutが合ってるか確認 ====
-        const isCorrect = runResponse.status === "success" &&
-            isOutputCorrect(
-                expectedOutput,
-                runResponse.data.stdout,
-                allowableError,
-            );
+        const isCorrect =
+            runResponse.status === "success" &&
+            isOutputCorrect(expectedOutput, runResponse.data.stdout, allowableError);
         // ==== 結果ステータスによって表示を分ける必要がないところは先に更新 ====
         updateOutputAreas(
             actualStdoutTextarea,
             actualStderrTextarea,
             runResponse.status === "success" ? runResponse.data.stdout : "",
-            runResponse.status === "success"
-                ? runResponse.data.stderr
-                : runResponse.error.error,
+            runResponse.status === "success" ? runResponse.data.stderr : runResponse.error.error,
         );
         updateExecutionTime(execTimeTd, execTime, timeLimitMs);
         if (execTime > timeLimitMs) {
@@ -342,12 +312,8 @@ export const setupRunTestButton = async (
     editor: monacoEditor.IStandaloneCodeEditor,
 ) => {
     // ==== 先にStatus・Exec. Timeの要素を取得 ====
-    const statusSpan = container.querySelector(
-        "#span-test-status",
-    ) as HTMLSpanElement;
-    const execTimeTd = container.querySelector(
-        "#td-execution-time",
-    ) as HTMLTableCellElement;
+    const statusSpan = container.querySelector("#span-test-status") as HTMLSpanElement;
+    const execTimeTd = container.querySelector("#td-execution-time") as HTMLTableCellElement;
 
     // ==== 先にtest inputとexpected outputの要素を取得 ====
     const testInputTextarea = container.querySelector(
@@ -374,16 +340,13 @@ export const setupRunTestButton = async (
     ) as HTMLTextAreaElement;
 
     // ==== Run Testボタンの要素を取得 ====
-    const runTestButton = container.querySelector(
-        "#button-run-test",
-    ) as HTMLButtonElement;
+    const runTestButton = container.querySelector("#button-run-test") as HTMLButtonElement;
 
     // ==== ボタンにクリックイベントリスナーを追加 ====
     runTestButton.addEventListener("click", async () => {
         // ==== Languageの設定をbrowser.storage.localから取得 ====
         const selectedLanguage =
-            (await storage.getItem<string>("local:settings.editorLanguage")) ||
-            "plaintext";
+            (await storage.getItem<string>("local:settings.editorLanguage")) || "plaintext";
         // 実行時間制限・許容誤差を取得
         const timeLimitMs = Number(timeLimitInput.value) || 1000;
         const allowableError = Number(timeMarginInput.value) || 0;

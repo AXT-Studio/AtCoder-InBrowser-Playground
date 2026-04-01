@@ -24,18 +24,15 @@ export default defineConfig({
             },
             {
                 icon: "github",
-                link:
-                    "https://github.com/AXT-AyaKoto/AtCoder-InBrowser-Playground",
+                link: "https://github.com/AXT-AyaKoto/AtCoder-InBrowser-Playground",
             },
             {
                 icon: "firefoxbrowser",
-                link:
-                    "https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/",
+                link: "https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/",
             },
             {
                 icon: "chromewebstore",
-                link:
-                    "https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok",
+                link: "https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok",
             },
         ],
 

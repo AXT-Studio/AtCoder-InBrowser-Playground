@@ -9,11 +9,10 @@ export default defineConfig({
         "build:publicAssets": bundlePyodidePublicAssetsHook,
     },
     manifest: {
-        version: "0.3.0",
+        version: "0.3.1",
         name: "AtCoder In-Browser Playground",
-        description:
-            "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
-        permissions: ["storage"],
+        description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
+        permissions: ["storage", "offscreen"],
         browser_specific_settings: {
             gecko: {
                 id: "atcoder-in-browser-playground@axtech.dev",
@@ -41,10 +40,7 @@ export default defineConfig({
         ],
     },
     vite: () => ({
-        plugins: [
-            monacoTypescriptLibSplitPlugin(),
-            buildPolyfillCodePlugin(),
-        ],
+        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin()],
         worker: {
             format: "es",
         },
