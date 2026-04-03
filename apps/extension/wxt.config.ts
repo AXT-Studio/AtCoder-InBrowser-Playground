@@ -45,4 +45,5 @@ export default defineConfig({
             format: "es",
         },
     }),
+    modules: ["@wxt-dev/auto-icons"],
 });
