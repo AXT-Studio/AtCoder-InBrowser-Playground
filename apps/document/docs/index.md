@@ -8,7 +8,7 @@ hero:
   tagline: "AtCoderの問題ページ上に、ブラウザ上で動作が完結するコードエディター・テスターを追加する"
   actions:
     - theme: brand
-      text: 使い方
+      text: AIBPを使い始める
       link: /getting-started
     - theme: alt
       text: AIBPを選ぶ理由
@@ -18,15 +18,19 @@ features:
   - title: ブラウザ完結
     icon: 💻️
     details:
-        コードの実行はブラウザ内(Web Worker)で行われます。
+        コードの実行はブラウザ内で行われます。
         AtCoderのコードテストなどの外部環境に依存しません。
   - title: 高度なコード編集機能
     icon: ⌨️
     details:
         Visual Studio Codeで使用されているMonaco Editorを組み込んでいます。
         一部言語では、Syntax HighlightやIntelliSenseなどの高度なコード編集機能を利用できます。
+  - title: 複数言語対応
+    icon: 📚️
+    details:
+        TypeScript, Pythonなど、複数の言語に対応しています。
 ---
 
 ![](/visual.webp)
 
-<small>[プライバシーポリシー](./privacy-policy.md) | [リリースノート](./release-notes/index.md)</small>
+<small>[プライバシーポリシー](./privacy-policy.md) | [更新履歴](./changelog/index.md)</small>
