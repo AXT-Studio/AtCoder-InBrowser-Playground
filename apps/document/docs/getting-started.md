@@ -18,7 +18,7 @@ Chrome Web StoreとFirefox Add-onsからインストールできます。
 
 - Settingsタブの「Language」から、あなたが使いたいプログラミング言語を選択します。
 - 上部のエディターでコードを書きます。
-- Testタブの「Tescase Input」「Expected Output」欄に入出力例を入力して「Run Test」ボタンを押すと、テスト結果を教えてくれます。
+- Testタブの「Testcase Input」「Expected Output」欄に入出力例を入力して「Run Test」ボタンを押すと、テスト結果を教えてくれます。
 - Operationタブの「Prepare Submission」ボタンを押すと、コードを提出欄に自動入力できます。
 
 さあ、AIBPでAtCoderに挑戦してみましょう！
