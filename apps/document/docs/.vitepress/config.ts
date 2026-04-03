@@ -13,7 +13,9 @@ export default defineConfig({
 
         nav: [
             { text: "Home", link: "/" },
-            { text: "使い方", link: "/getting-started" },
+            { text: "ガイド", link: "/guides/" },
+            { text: "補足資料", link: "/references/" },
+            { text: "更新履歴", link: "/changelogs/" },
         ],
 
         socialLinks: [
@@ -42,4 +44,5 @@ export default defineConfig({
         breaks: true,
     },
     ignoreDeadLinks: true,
+    head: [["link", { rel: "icon", href: "/icon.svg" }]],
 });

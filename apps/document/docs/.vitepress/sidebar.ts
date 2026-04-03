@@ -1,33 +1,36 @@
 import type { DefaultTheme } from "vitepress";
 
 export const sidebar: DefaultTheme.Sidebar = [
+    { text: "トップ", link: "/" },
+    { text: "Quick Start", link: "/getting-started" },
+    { text: "AIBPを選ぶ理由", link: "/why-aibp" },
     {
-        text: "Guide",
+        text: "ガイド",
+        link: "/guides/",
         items: [
-            { text: "AIBPを選ぶ理由", link: "/why-aibp" },
-            { text: "AIBPの始め方", link: "/getting-started" },
+            { text: "コードを書く", link: "/guides/code" },
+            { text: "テストする", link: "/guides/test" },
+            { text: "提出する", link: "/guides/submit" },
         ],
     },
     {
-        text: "対応言語",
-        link: "/supported-languages",
+        text: "補足資料",
+        link: "/references/",
         items: [
-            { text: "JavaScript", link: "/supported-languages/javascript" },
-            { text: "TypeScript", link: "/supported-languages/typescript" },
-            { text: "Python", link: "/supported-languages/python" },
+            { text: "推奨環境・対応環境", link: "/references/supported" },
+            { text: "FAQ", link: "/references/faq" },
+            { text: "既知の不具合", link: "/references/known-issues" },
         ],
     },
     {
-        text: "Release Notes",
+        text: "更新履歴",
+        link: "/changelogs/",
         items: [
-            { text: "ver0.3.1 (β)", link: "/release-notes/v0.3.1" },
-            { text: "ver0.3.0 (β)", link: "/release-notes/v0.3.0" },
-            { text: "ver0.2.1 (β)", link: "/release-notes/v0.2.1" },
-            { text: "ver0.2.0 (β)", link: "/release-notes/v0.2.0" },
+            { text: "ver0.3.1 (β)", link: "/changelogs/v0.3.1" },
+            { text: "ver0.3.0 (β)", link: "/changelogs/v0.3.0" },
+            { text: "ver0.2.1 (β)", link: "/changelogs/v0.2.1" },
+            { text: "ver0.2.0 (β)", link: "/changelogs/v0.2.0" },
         ],
     },
-    {
-        text: "Privacy Policy",
-        items: [{ text: "プライバシーポリシー", link: "/privacy-policy" }],
-    },
+    { text: "プライバシーポリシー", link: "/privacy-policy" },
 ];
