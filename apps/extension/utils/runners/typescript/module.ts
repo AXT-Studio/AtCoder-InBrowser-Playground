@@ -12,14 +12,24 @@ import type { CodeTestContext, Runner } from "../types";
 // utilities
 // ----------------------------------------------------------------
 
-import inspectUtil from "node-inspect-extracted";
+import { inspect } from "loupe";
 
-/** JavaScriptオブジェクトを標準出力風の文字列に変換します (node-inspect-extractedを使用) */
-const stringifyJSObject = (obj: any): string => {
-    if (typeof obj === "string") {
-        return obj;
+/** JavaScriptオブジェクトを標準出力風の文字列に変換します (loupeを使用) */
+const stringifyJSObject = (data: unknown): string => {
+    // string -> そのまま返す
+    if (typeof data === "string") {
+        return data;
     }
-    return inspectUtil.inspect(obj, false, null, false);
+    // 0 -> +0になっちゃうので特例で"0"を返す
+    if (data === 0) {
+        return "0";
+    }
+    // Error -> 一応自前シリアライズを入れておく
+    if (data instanceof Error) {
+        return `${data.name}: ${data.message}\n[Stack]\n${data.stack}\n[Cause]\n${data.cause}`;
+    }
+    // それ以外 -> loupeで文字列化する
+    return inspect(data);
 };
 
 import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
