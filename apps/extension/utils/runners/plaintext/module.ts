@@ -1,31 +1,19 @@
-# Runner Moduleについて
-
-## コードテンプレート
-
-```ts
 // ================================================================================================
-// Runner Module: [LanguageName]
+// Runner Module: Plain Text
 // ================================================================================================
 
 // ----------------------------------------------------------------
 // imports
 // ----------------------------------------------------------------
 
-import type { Runner, RunnerResult } from "../types";
-
-// ----------------------------------------------------------------
-// types
-// ----------------------------------------------------------------
-
-/** [LanguageName]のRunnerに必要なRunnerContext。現時点では空。 */
-type [LanguageName]RunnerContext = Record<string, never>;
+import type { CodeTestContext, Runner } from "../types";
 
 // ----------------------------------------------------------------
 // init()
 // コード実行に必要な初期化処理を行い、Contextを返す。
 // ----------------------------------------------------------------
 
-export const init = (): [LanguageName]RunnerContext => {
+export const init = async (): Promise<CodeTestContext["plaintext"]> => {
     return {};
 };
 
@@ -34,16 +22,15 @@ export const init = (): [LanguageName]RunnerContext => {
 // Contextを用いてコードを実行し、結果を返す。
 // ----------------------------------------------------------------
 
-export const run: Runner<[LanguageName]RunnerContext> = async (
-    { code },
-) => {
-    const result: Awaited<RunnerResult> = {
+export const run: Runner<"plaintext"> = async ({ code }) => {
+    // ==== Plain Textは実行しないので、そのままstdoutにコードを返す ====
+    const result = {
         status: "success",
         details: {
             stdout: code,
             stderr: "",
         },
-    };
+    } as const;
     return result;
 };
 
@@ -51,4 +38,3 @@ export const run: Runner<[LanguageName]RunnerContext> = async (
 // export
 // ----------------------------------------------------------------
 export default { init, run };
-```
