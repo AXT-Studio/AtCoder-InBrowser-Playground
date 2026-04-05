@@ -9,7 +9,7 @@ export default defineConfig({
         "build:publicAssets": bundlePyodidePublicAssetsHook,
     },
     manifest: {
-        version: "0.3.1",
+        version: "0.4.0",
         name: "AtCoder In-Browser Playground",
         description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
         permissions: ["storage", "offscreen"],
