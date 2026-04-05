@@ -162,7 +162,7 @@ export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdi
             const error = quickJsVm.dump(result.error);
             const notifyResult: Awaited<RunnerResult> = {
                 status: "failure",
-                error: {
+                details: {
                     errorType: "RE",
                     error: typeof error === "string" ? error : JSON.stringify(error),
                 },
@@ -180,7 +180,7 @@ export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdi
             // resultオブジェクトを作成して返す
             const notifyResult: Awaited<RunnerResult> = {
                 status: "success",
-                data: {
+                details: {
                     stdout,
                     stderr,
                 },
@@ -191,7 +191,7 @@ export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdi
         // ==== なにかあってエラーとなった場合、CE扱いでエラーを返す ====
         const result: Awaited<RunnerResult> = {
             status: "failure",
-            error: {
+            details: {
                 errorType: "CE",
                 error: error instanceof Error ? error.message : String(error),
             },

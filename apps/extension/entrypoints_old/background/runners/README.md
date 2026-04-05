@@ -39,7 +39,7 @@ export const run: Runner<[LanguageName]RunnerContext> = async (
 ) => {
     const result: Awaited<RunnerResult> = {
         status: "success",
-        data: {
+        details: {
             stdout: code,
             stderr: "",
         },

@@ -70,7 +70,6 @@
 
 /** biome-ignore-all assist/source/organizeImports: Module importを分けて書きたいのでignore */
 import type { Runner, RunnerContext } from "./runners/types";
-import type { Result } from "./../../types/Result";
 
 // 他の言語のModuleも将来的にここに追加
 import PlaintextModule from "./runners/plaintext/index";
@@ -235,7 +234,7 @@ export default defineBackground({
                             id,
                             result: {
                                 status: "failure",
-                                error: {
+                                details: {
                                     errorType: "RE",
                                     error: `No Runner Context available for language: ${language}`,
                                 },
@@ -250,7 +249,7 @@ export default defineBackground({
                     setTimeout(() => {
                         resolve({
                             status: "failure",
-                            error: {
+                            details: {
                                 errorType: "TLE",
                                 error: "Execution time limit exceeded.",
                             },
@@ -276,7 +275,7 @@ export default defineBackground({
                 // ==== エラー(TLE, RE, CE)の場合はContextを破棄する ====
                 if (result.status === "failure") {
                     console.warn(
-                        `Execution failed (${result.error.errorType}) for id=${id}. Discarding Runner Context for language=${language}.`,
+                        `Execution failed (${result.details.errorType}) for id=${id}. Discarding Runner Context for language=${language}.`,
                     );
                     delete runnerContexts[language];
                     if (language === "python") {

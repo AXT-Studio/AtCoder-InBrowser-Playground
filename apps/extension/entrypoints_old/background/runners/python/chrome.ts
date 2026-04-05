@@ -207,7 +207,7 @@ export const run: Runner<PythonRunnerContext> = async ({ context, code, stdin })
     } catch (error) {
         return {
             status: "failure",
-            error: {
+            details: {
                 errorType: "RE",
                 error: getErrorMessage(error),
             },

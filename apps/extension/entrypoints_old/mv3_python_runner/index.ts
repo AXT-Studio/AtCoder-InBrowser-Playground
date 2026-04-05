@@ -130,7 +130,7 @@ const runPythonCode = async (
         const decoder = new TextDecoder();
         const result: Awaited<RunnerResult> = {
             status: "success",
-            data: {
+            details: {
                 stdout: decoder.decode(new Uint8Array(stdout)),
                 stderr: decoder.decode(new Uint8Array(stderr)),
             },
@@ -139,7 +139,7 @@ const runPythonCode = async (
     } catch (error) {
         const result: Awaited<RunnerResult> = {
             status: "failure",
-            error: {
+            details: {
                 errorType: "CE",
                 error: getErrorMessage(error),
             },

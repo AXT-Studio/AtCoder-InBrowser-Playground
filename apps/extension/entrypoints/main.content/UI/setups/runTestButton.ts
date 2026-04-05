@@ -7,7 +7,6 @@
 // ----------------------------------------------------------------
 
 import type { editor as monacoEditor } from "monaco-editor";
-import type { Failure, Result, Success } from "./../../../../types/Result";
 
 // ----------------------------------------------------------------
 // 期待出力とstdoutが「一致」しているかを判定する関数
@@ -133,9 +132,9 @@ const prepareForTestExecution = (
         runTestButton.disabled = true;
         updateTestStatus(statusSpan, "WJ");
         execTimeTd.textContent = "---";
-        return { status: "success", data: undefined };
+        return { status: "success", details: undefined };
     } catch (error) {
-        return { status: "failure", error: error as Error };
+        return { status: "failure", details: error as Error };
     }
 };
 
@@ -178,13 +177,13 @@ const runTest = async (
                 // notify-readyが返ってきたら成功
                 if (message.type === "notify-ready" && message.payload.id === requestId) {
                     browser.runtime.onMessage.removeListener(notifyListener);
-                    resolve({ status: "success", data: undefined });
+                    resolve({ status: "success", details: undefined });
                 } // notify-deniedが返ってきたら失敗
                 else if (message.type === "notify-denied" && message.payload.id === requestId) {
                     browser.runtime.onMessage.removeListener(notifyListener);
                     resolve({
                         status: "failure",
-                        error: new Error(`Environment setup denied: ${message.payload.error}`),
+                        details: new Error(`Environment setup denied: ${message.payload.error}`),
                     });
                 }
             };
@@ -206,7 +205,7 @@ const runTest = async (
                 actualStdoutTextarea,
                 actualStderrTextarea,
                 "",
-                `Environment setup failed: ${prepareResponse.error.message}`,
+                `Environment setup failed: ${prepareResponse.details.message}`,
             );
             return prepareResponse;
         }
@@ -249,13 +248,15 @@ const runTest = async (
         // ==== stdoutが合ってるか確認 ====
         const isCorrect =
             runResponse.status === "success" &&
-            isOutputCorrect(expectedOutput, runResponse.data.stdout, allowableError);
+            isOutputCorrect(expectedOutput, runResponse.details.stdout, allowableError);
         // ==== 結果ステータスによって表示を分ける必要がないところは先に更新 ====
         updateOutputAreas(
             actualStdoutTextarea,
             actualStderrTextarea,
-            runResponse.status === "success" ? runResponse.data.stdout : "",
-            runResponse.status === "success" ? runResponse.data.stderr : runResponse.error.error,
+            runResponse.status === "success" ? runResponse.details.stdout : "",
+            runResponse.status === "success"
+                ? runResponse.details.stderr
+                : runResponse.details.error,
         );
         updateExecutionTime(execTimeTd, execTime, timeLimitMs);
         if (execTime > timeLimitMs) {
@@ -264,7 +265,7 @@ const runTest = async (
             updateTestStatus(statusSpan, "TLE");
         } else if (runResponse.status === "failure") {
             // Failureが返ってきている場合、中身のerrorType(RE, CE, TLEがあり得る)を見て判断
-            switch (runResponse.error.errorType) {
+            switch (runResponse.details.errorType) {
                 case "TLE":
                     updateTestStatus(statusSpan, "TLE");
                     break;
@@ -288,7 +289,7 @@ const runTest = async (
         // ==== 最後にRun Testボタンを有効化 ====
         runTestButton.disabled = false;
         // ==== すべて正常に終了したらsuccessを返す ====
-        return { status: "success", data: undefined };
+        return { status: "success", details: undefined };
     } catch (error) {
         // ==== 予期せぬエラーが発生した場合はエラーメッセージを表示しボタンを有効化して終了 ====
         updateTestStatus(statusSpan, "RE");
@@ -299,7 +300,7 @@ const runTest = async (
             `Unexpected error: ${(error as Error).message}`,
         );
         runTestButton.disabled = false;
-        return { status: "failure", error: error as Error };
+        return { status: "failure", details: error as Error };
     }
 };
 

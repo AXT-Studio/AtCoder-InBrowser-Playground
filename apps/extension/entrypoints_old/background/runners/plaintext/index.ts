@@ -33,7 +33,7 @@ export const run: Runner<PlaintextRunnerContext> = async ({ code }) => {
     // ==== Plain Textは実行しないので、そのままstdoutにコードを返す ====
     const result: Awaited<RunnerResult> = {
         status: "success",
-        data: {
+        details: {
             stdout: code,
             stderr: "",
         },

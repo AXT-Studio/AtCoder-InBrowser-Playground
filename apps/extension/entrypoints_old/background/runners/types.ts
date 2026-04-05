@@ -1,5 +1,3 @@
-import type { Failure, Result, Success } from "./../../../types/Result";
-
 export type RunnerResult = Promise<
     Result<{ stdout: string; stderr: string }, { errorType: "RE" | "CE"; error: string }>
 >;

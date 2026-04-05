@@ -128,7 +128,7 @@ export const run: Runner<PythonRunnerContext> = async ({ context, code, stdin })
         const stderrText = decoder.decode(new Uint8Array(stderr));
         const result: Awaited<RunnerResult> = {
             status: "success",
-            data: {
+            details: {
                 stdout: stdoutText,
                 stderr: stderrText,
             },
@@ -138,7 +138,7 @@ export const run: Runner<PythonRunnerContext> = async ({ context, code, stdin })
         // ==== なにかあってエラーとなった場合、CE扱いでエラーを返す ====
         const result: Awaited<RunnerResult> = {
             status: "failure",
-            error: {
+            details: {
                 errorType: "CE",
                 error: error instanceof Error ? error.message : String(error),
             },
