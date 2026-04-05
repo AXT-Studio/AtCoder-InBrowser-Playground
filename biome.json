@@ -31,10 +31,10 @@
         }
     },
     "assist": {
-        "enabled": true,
+        "enabled": false,
         "actions": {
             "source": {
-                "organizeImports": "on"
+                "organizeImports": "off"
             }
         }
     },
