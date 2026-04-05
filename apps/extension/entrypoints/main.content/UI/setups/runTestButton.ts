@@ -188,44 +188,21 @@ const runTest = async (
                 });
             }
             const language = selectedLanguage as keyof CodeTestContext;
-            // ---- manifestVersionは、MV2なら2、MV3なら3が入るはずなので、それを見てどちらに送るか決める ----
-            const manifestVersion = import.meta.env.MANIFEST_VERSION;
-            if (manifestVersion === 2) {
-                // ---- MV2環境ならBackground Scriptを使う ----
-                // ---- Background ScriptはCodeTestResultWithTLEを投げてくるので、それでresolveするよう先に設定 ----
-                browser.runtime.onMessage.addListener(function handleMessage(message: any) {
-                    console.log("Received run response:", message);
-                    browser.runtime.onMessage.removeListener(handleMessage);
-                    resolve(message as CodeTestResultWithTLE);
-                });
-                // ---- Background ScriptはexecでContentScriptMessageを渡せばいい ----
-                const messageData: ContentScriptMessage = {
-                    type: "exec",
-                    language,
-                    code,
-                    stdin: testInput,
-                    timeLimitMs,
-                };
-                browser.runtime.sendMessage(messageData);
-            } else if (manifestVersion === 3) {
-                // ---- MV3環境ならOffscreen Documentを使う ----
-                // (未実装なので一旦CEを返す形にしておく)
-                resolve({
-                    status: "failure",
-                    details: {
-                        kind: "CE",
-                        message: `Offscreen Document execution is not implemented yet`,
-                    },
-                });
-            } else {
-                resolve({
-                    status: "failure",
-                    details: {
-                        kind: "CE",
-                        message: `Unsupported manifest version: ${manifestVersion}`,
-                    },
-                });
-            }
+            // ---- Background ScriptはCodeTestResultWithTLEを投げてくるので、それでresolveするよう先に設定 ----
+            browser.runtime.onMessage.addListener(function handleMessage(message: any) {
+                console.log("Received run response:", message);
+                browser.runtime.onMessage.removeListener(handleMessage);
+                resolve(message as CodeTestResultWithTLE);
+            });
+            // ---- Background ScriptはexecでContentScriptMessageを渡せばいい ----
+            const messageData: ContentScriptMessage = {
+                type: "exec",
+                language,
+                code,
+                stdin: testInput,
+                timeLimitMs,
+            };
+            browser.runtime.sendMessage(messageData);
         });
         // ==== 実行時間を計測 ====
         const endTime = performance.now();

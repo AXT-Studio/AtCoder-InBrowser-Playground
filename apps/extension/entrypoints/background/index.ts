@@ -35,11 +35,19 @@ export default defineBackground({
         let runnerWorker: Worker | null = null;
 
         // ----------------------------------------------------------------
-        // メッセージハンドラの登録
+        // マニフェストバージョンを取得 (MV2/MV3で処理を分けるため)
+        // ----------------------------------------------------------------
+        const manifestVersion = import.meta.env.MANIFEST_VERSION;
+
+        // ----------------------------------------------------------------
+        // メッセージハンドラの登録 (MV2版)
         // ----------------------------------------------------------------
         browser.runtime.onMessage.addListener(async (message, sender) => {
             // ==== exec メッセージ以外は無視 ====
             if (message.type !== "exec") return;
+            // ==== MV2でない場合は無視 ====
+            if (manifestVersion !== 2) return;
+            // ==== メッセージからコード実行に必要な情報を取り出す ====
             const { language, code, stdin, timeLimitMs } = message as ContentScriptMessage;
             // ==== Workerがまだ生成されていない場合は生成する ====
             if (!runnerWorker) {
@@ -89,6 +97,17 @@ export default defineBackground({
             } else {
                 console.error("Cannot send execution result: sender does not have a tab ID.");
             }
+        });
+
+        // ----------------------------------------------------------------
+        // メッセージハンドラの登録 (MV3版)
+        // ----------------------------------------------------------------
+        browser.runtime.onMessage.addListener(async (message, sender) => {
+            // ==== exec メッセージ以外は無視 ====
+            if (message.type !== "exec") return;
+            // ==== MV3でない場合は無視 ====
+            if (manifestVersion !== 3) return;
+            // TODO: Implementation for MV3
         });
     },
 });
