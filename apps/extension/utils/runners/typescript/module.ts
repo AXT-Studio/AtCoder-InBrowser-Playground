@@ -6,35 +6,34 @@
 // imports
 // ----------------------------------------------------------------
 
-import coreJsPolyfill from "virtual:corejs-polyfill";
-import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
-import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
-import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
-import inspectUtil from "node-inspect-extracted";
-import type { QuickJSContext } from "quickjs-emscripten-core";
-import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
-import type { Runner, RunnerResult } from "../types";
-
-// ----------------------------------------------------------------
-// types
-// ----------------------------------------------------------------
-
-/** TypeScriptのRunnerに必要なRunnerContext。quickJSのVMを保持する */
-type TypeScriptRunnerContext = {
-    quickJsVm: QuickJSContext;
-};
+import type { CodeTestContext, Runner } from "../types";
 
 // ----------------------------------------------------------------
 // utilities
 // ----------------------------------------------------------------
 
-/** JavaScriptオブジェクトを標準出力風の文字列に変換します (node-inspect-extractedを使用) */
-const stringifyJSObject = (obj: any): string => {
-    if (typeof obj === "string") {
-        return obj;
+import { inspect } from "loupe";
+
+/** JavaScriptオブジェクトを標準出力風の文字列に変換します (loupeを使用) */
+const stringifyJSObject = (data: unknown): string => {
+    // string -> そのまま返す
+    if (typeof data === "string") {
+        return data;
     }
-    return inspectUtil.inspect(obj, false, null, false);
+    // 0 -> +0になっちゃうので特例で"0"を返す
+    if (data === 0) {
+        return "0";
+    }
+    // Error -> 一応自前シリアライズを入れておく
+    if (data instanceof Error) {
+        return `${data.name}: ${data.message}\n[Stack]\n${data.stack}\n[Cause]\n${data.cause}`;
+    }
+    // それ以外 -> loupeで文字列化する
+    return inspect(data);
 };
+
+import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
+import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
 
 /** TS/JSコードをES2023相当までダウンコンパイルします (esbuild-wasmを使用) */
 const downCompileCode = async (code: string): Promise<string> => {
@@ -46,7 +45,7 @@ const downCompileCode = async (code: string): Promise<string> => {
             worker: false, // このコード自体がメインから分離されているのでworkerは使用しない というかworker使えない
         });
     } catch (_error) {
-        // 初期化に失敗してもエラーを無視する (すでに初期化されている場合はエラーが出るため)
+        // 初期化に失敗してもエラーを無視する (すでに初期化されている場合はエラーが出るが、別にそれでいい)
     }
     // コードの変換
     const result = await esbuildTransform(code, {
@@ -90,7 +89,11 @@ const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
 // コード実行に必要な初期化処理を行い、Contextを返す。
 // ----------------------------------------------------------------
 
-export const init = async (): Promise<TypeScriptRunnerContext> => {
+import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
+import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
+import coreJsPolyfill from "virtual:corejs-polyfill";
+
+export const init = async (): Promise<CodeTestContext["typescript"]> => {
     // ==== QuickJSの初期化 ====
     const quickJs = await newQuickJSWASMModuleFromVariant(quickJSVariant);
     const quickJsRuntime = quickJs.newRuntime();
@@ -117,7 +120,7 @@ export const init = async (): Promise<TypeScriptRunnerContext> => {
 // Contextを用いてコードを実行し、結果を返す。
 // ----------------------------------------------------------------
 
-export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdin }) => {
+export const run: Runner<"typescript"> = async ({ context, code, stdin }) => {
     // ==== 初手全体try-catch なにかあったらCE扱いでエラー返す ====
     try {
         // ==== contextにquickJsVmがあることを保証する (型定義上はあるはず) ====
@@ -159,15 +162,17 @@ export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdi
         // ==== 実行結果に応じてSuccess/Failureを返す ====
         if (result.error) {
             // ---- エラー発生 -> Failure(RE)を返す ----
-            const error = quickJsVm.dump(result.error);
-            const notifyResult: Awaited<RunnerResult> = {
+            const errorMessage = quickJsVm.dump(result.error);
+            return {
                 status: "failure",
-                error: {
-                    errorType: "RE",
-                    error: typeof error === "string" ? error : JSON.stringify(error),
+                details: {
+                    kind: "RE",
+                    message:
+                        typeof errorMessage === "string"
+                            ? errorMessage
+                            : JSON.stringify(errorMessage),
                 },
             };
-            return notifyResult;
         } else {
             // ---- 正常終了 -> Successを返す ----
             // stdout, stderrの内容を文字列に変換
@@ -178,25 +183,23 @@ export const run: Runner<TypeScriptRunnerContext> = async ({ context, code, stdi
                 .map((args) => args.map(stringifyJSObject).join(" "))
                 .join("\n");
             // resultオブジェクトを作成して返す
-            const notifyResult: Awaited<RunnerResult> = {
+            return {
                 status: "success",
-                data: {
+                details: {
                     stdout,
                     stderr,
                 },
             };
-            return notifyResult;
         }
     } catch (error) {
         // ==== なにかあってエラーとなった場合、CE扱いでエラーを返す ====
-        const result: Awaited<RunnerResult> = {
+        return {
             status: "failure",
-            error: {
-                errorType: "CE",
-                error: error instanceof Error ? error.message : String(error),
+            details: {
+                kind: "CE",
+                message: error instanceof Error ? error.message : String(error),
             },
         };
-        return result;
     }
 };
 

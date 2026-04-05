@@ -1,288 +1,203 @@
 // ================================================================================================
-// # entrypoints/background/index.ts
-// Background ScriptのEntrypoint。
-// 各言語向けのテスト実行環境のセットアップや、実際にテストを行う際のRunnerとのやりとりを担当する。
-//
-// ## 通信プロトコル (Content <--> Background)
-// すべての通信はidを伴い、一連の通信をこのidで識別します。
-// idは各プロトコル最初の通信を発する側が生成します。
-//
-// ### Environment Preparing Protocol
-// - message C->B: "request-prepare" (payload: { id: string, language: string })
-//     - 指定された言語向けのテスト実行Runnerの準備をBackgroundに要求する。
-// - task B:
-//     - 指定された言語のRunnerが存在しない場合は新たに立ち上げ、セットアップを行う。
-//     - 指定された言語のRunnerの準備がすでに完了している場合はセットアップが完了しているものとみなす。
-//         - 直前の実行でTLEしてterminateされている場合は立ち上げ直す必要があるので注意。
-// - message: B->C: "notify-ready" (payload: { id: string, language: string })
-//     - テスト実行Runnerの準備が完了した(している)ことをBackgroundに通知する。
-// - message: B->C: "notify-denied" (payload: { id: string, language: string, error: string })
-//     - テスト実行Runnerの準備ができないことをBackgroundに通知する。
-//
-// ### Test Execution Protocol
-// - message C->B: "request-execute" (payload: { id: string, code: string, language: string, stdin: string, timeLimitMs: number })
-//     - codeをlanguageとみなし、stdinを標準入力としてテストを実行するようBackgroundに要求する。
-// - task B:
-//     - 指定された言語のRunnerにcodeの実行とstdinの提供を指示する。
-//     - Runnerからの結果を待ち、Contentに返す。
-//     - ただし、TLEの場合はRunnerをterminateしTLEを返す。
-//         - 注: Runnerは次のtest-run要求時に新たに立ち上げられるので、terminateするだけでよい。
-// - message B->C: "notify-result" (payload: { id: string, result: Result<{stdout: string, stderr: string}, {errorType: "TLE" | "RE" | "CE", error: string}> })
-//     - テスト実行の結果をContentに返す。
-//     - resultはResult型で、以下のいずれかの形をとる。
-//     - テストが正常に終了した場合、Success<{stdout: string, stderr: string}>を返す。
-//         - stdoutは標準出力の内容、stderrは標準エラー出力の内容を表す。
-//     - テストが正常に終了できなかった場合、Failure<{errorType: "TLE" | "RE" | "CE", error: string}>を返す。
-//         - errorTypeはエラーの種類を表す。
-//             - request-runで与えられた実行時間制限を超えた場合は"TLE"。
-//             - プログラムのコンパイルに失敗した場合は"CE"。
-//             - それ以外の実行時エラーが発生した場合は"RE"。
-//         - errorはエラーの内容を表す。
-//             - TLEの場合は"Time Limit Exceeded"などのわかりやすい文言を返す。
-//             - CE/REの場合はコンパイルエラーや実行時エラーの内容を含む文字列を返す。
-//
-// ## Runner Moduleの使用方法
-// ### 初期化
-// - Runner Moduleは、その言語のコード実行に必要なオブジェクトを生成するinit関数をexportする。
-//     - (init関数はPromiseでRunnerContextを返す。)
-// - Background Scriptは、準備要求時にこのinit関数を呼び出し、戻り値を言語名に紐づけて保存する。
-//
-// ### コード実行
-// - Runner Moduleは、コードを実行するrun関数をexportする。
-//     - (run関数はPromiseでRunnerResultを返す。)
-// - Background Scriptは、実行要求時に保存してあるinitの戻り値(RunnerContext)とコード、標準入力をrun関数に渡し、コードの実行を行う。
-// - run関数は、コードの実行結果をResult型で返す。
-//
-// ## 注意点
-// - initが返すContextは、同じ言語の複数回のコード実行要求で共有される。
-//     - Runner Module側はそれを前提として設計すべきだし、Background Script側もそのように扱うべき。
-//     - ただし、コード実行が失敗した(TLE, CE, RE)場合は、現在のContextは破棄して次の要求時にinitし直す。
-//         - Runner Module側は、正常実行の繰り返しは処理できるべきだが、失敗したコード実行の後の再初期化は処理できなくてもよい。Background Script側で対応する。
-// - run()について、TLE検知の実装をRunner Module側で行う必要はない。
-//     - Background Script側で、run()のPromiseと実行時間制限のPromiseをraceさせる形でTLEを検知する。
-//         - さらに、TLEの場合はAbortControllerなどを用いてrun()側の処理を強制終了する。
-//     - run()はコードの実行に集中し、実行結果を返すことに専念すればよい。
+// Background Script
 // ================================================================================================
 
 // ----------------------------------------------------------------
 // imports
 // ----------------------------------------------------------------
 
-/** biome-ignore-all assist/source/organizeImports: Module importを分けて書きたいのでignore */
-import type { Runner, RunnerContext } from "./runners/types";
-import type { Result } from "./../../types/Result";
-
-// 他の言語のModuleも将来的にここに追加
-import PlaintextModule from "./runners/plaintext/index";
-import TypeScriptModule from "./runners/typescript/index";
-import PythonModule from "./runners/python/index";
+import type {
+    ContentScriptMessage,
+    RunnerWorkerExecMessageData,
+    CodeTestResult,
+    CodeTestResultWithTLE,
+} from "@/utils/runners/types";
+import RunnerWorker from "@/utils/runners/worker?worker";
 
 // ----------------------------------------------------------------
 // types
 // ----------------------------------------------------------------
 
-/** Test Execution Protocolのnotify-resultで使用する型 */
-type TestExecutionProtocolResult = Result<
-    { stdout: string; stderr: string },
-    { errorType: "TLE" | "RE" | "CE"; error: string }
->;
-
-type ChromeGlobalWithOffscreen = typeof globalThis & {
-    chrome?: {
-        offscreen?: {
-            closeDocument: () => Promise<void>;
-        };
+type ChromeApiLike = {
+    runtime?: {
+        getURL: (path: string) => string;
+        getContexts?: (filter: {
+            contextTypes?: string[];
+            documentUrls?: string[];
+        }) => Promise<unknown[]>;
+    };
+    offscreen?: {
+        createDocument: (options: {
+            url: string;
+            reasons: string[];
+            justification: string;
+        }) => Promise<void>;
     };
 };
 
-const closeMv3PythonOffscreenDocument = async (): Promise<void> => {
-    if (import.meta.env.MANIFEST_VERSION !== 3) {
-        return;
-    }
-    const chromeGlobal = globalThis as ChromeGlobalWithOffscreen;
-    const closeDocument = chromeGlobal.chrome?.offscreen?.closeDocument;
-    if (!closeDocument) {
-        return;
-    }
-    try {
-        await closeDocument();
-    } catch (error) {
-        console.warn("Failed to close offscreen document:", error);
-    }
-};
+// ----------------------------------------------------------------
+// utilities
+// ----------------------------------------------------------------
 
 // ----------------------------------------------------------------
-// 本体 (background script)
+// Implementation (background script)
 // ----------------------------------------------------------------
 
 export default defineBackground({
     main() {
         console.log("Background script is started.");
         // ----------------------------------------------------------------
-        // 各言語向けのModuleの管理
+        // Workerを保存しておく場所を作る
         // ----------------------------------------------------------------
-        /** Runner Moduleのリスト */
-        const runnerModules: Record<
-            string,
-            // biome-ignore lint/suspicious/noExplicitAny: どの言語のRunnerも来る可能性があるのでanyで受ける
-            { init: () => Promise<RunnerContext>; run: Runner<any> }
-        > = {
-            plaintext: PlaintextModule,
-            javascript: TypeScriptModule,
-            typescript: TypeScriptModule,
-            python: PythonModule,
+        let runnerWorker: Worker | null = null;
+
+        // ----------------------------------------------------------------
+        // マニフェストバージョンを取得 (MV2/MV3で処理を分けるため)
+        // ----------------------------------------------------------------
+        const manifestVersion = import.meta.env.MANIFEST_VERSION;
+
+        // ----------------------------------------------------------------
+        // MV3 Offscreen Document の生成状態を管理する
+        // ----------------------------------------------------------------
+        let creatingMv3OffscreenDocument: Promise<void> | null = null;
+
+        // ----------------------------------------------------------------
+        // MV3 Offscreen Document が存在することを保証する
+        // ----------------------------------------------------------------
+        const ensureMv3OffscreenDocument = async () => {
+            const chromeApi = (globalThis as { chrome?: ChromeApiLike }).chrome;
+            if (!chromeApi?.runtime) {
+                throw new Error("Chrome runtime API is unavailable in MV3 background context.");
+            }
+            if (!chromeApi.offscreen?.createDocument) {
+                throw new Error("Chrome offscreen API is unavailable in MV3 background context.");
+            }
+
+            const offscreenPath = "mv3_runner.html";
+            const offscreenUrl = chromeApi.runtime.getURL(offscreenPath);
+            if (typeof chromeApi.runtime.getContexts === "function") {
+                const contexts = await chromeApi.runtime.getContexts({
+                    contextTypes: ["OFFSCREEN_DOCUMENT"],
+                    documentUrls: [offscreenUrl],
+                });
+                if (contexts.length > 0) {
+                    return;
+                }
+            }
+
+            if (!creatingMv3OffscreenDocument) {
+                creatingMv3OffscreenDocument = chromeApi.offscreen
+                    .createDocument({
+                        url: offscreenPath,
+                        reasons: ["WORKERS"],
+                        justification: "Run code tests in an MV3 offscreen document.",
+                    })
+                    .catch((error) => {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        if (
+                            !errorMessage.includes("Only a single offscreen document") &&
+                            !errorMessage.includes("single offscreen document")
+                        ) {
+                            throw error;
+                        }
+                    })
+                    .finally(() => {
+                        creatingMv3OffscreenDocument = null;
+                    });
+            }
+            await creatingMv3OffscreenDocument;
         };
 
-        /** Runner Contextのリスト (initしたらここに保存) */
-        const runnerContexts: Record<string, RunnerContext> = {};
-
         // ----------------------------------------------------------------
-        // プロトコルごとのメッセージハンドラの登録
+        // メッセージハンドラの登録 (MV2版)
         // ----------------------------------------------------------------
-        // ==== Environment Preparing Protocol (Worker Initialization Protocol) ====
         browser.runtime.onMessage.addListener(async (message, sender) => {
-            if (message.type === "request-prepare") {
-                const { id, language } = message.payload;
-                console.log(
-                    `[Background] Received request-prepare: id=${id}, language=${language}`,
-                );
-                // ==== Ensure sender tab exists ====
-                const tabId = sender.tab?.id;
-                if (!tabId) {
-                    console.error("Received `request-prepare` from a sender without a tab ID.");
-                    return;
-                }
-                // ==== 未対応言語の場合はエラーを返す ====
-                const runnerModule = runnerModules[language];
-                if (!runnerModule) {
-                    console.error(`Unsupported language in request-prepare: ${language}`);
-                    await browser.tabs.sendMessage(tabId, {
-                        type: "notify-denied",
-                        payload: {
-                            id,
-                            language,
-                            error: `Unsupported language: ${language}`,
-                        },
-                    });
-                    return;
-                }
-                // ==== すでにContextが存在する場合はすぐにnotify-readyを返す ====
-                if (runnerContexts[language]) {
-                    await browser.tabs.sendMessage(tabId, {
-                        type: "notify-ready",
-                        payload: {
-                            id,
-                            language,
-                        },
-                    });
-                    return;
-                }
-                // ==== 新しいContextを生成する ====
-                console.log(`Initializing Runner Context for language=${language}`);
-                try {
-                    const context = await runnerModule.init();
-                    runnerContexts[language] = context;
-                } catch (error) {
-                    console.error(
-                        `Failed to initialize Runner Context for language=${language}:`,
-                        error,
-                    );
-                    await browser.tabs.sendMessage(tabId, {
-                        type: "notify-denied",
-                        payload: {
-                            id,
-                            language,
-                            error: `Failed to initialize Runner Context: ${
-                                error instanceof Error ? error.message : String(error)
-                            }`,
-                        },
-                    });
-                    return;
-                }
-                // ==== Contextの準備ができたらnotify-readyを返す ====
-                await browser.tabs.sendMessage(tabId, {
-                    type: "notify-ready",
-                    payload: {
-                        id,
-                        language,
-                    },
+            // ==== exec メッセージ以外は無視 ====
+            if (message.type !== "exec") return;
+            // ==== MV2でない場合は無視 ====
+            if (manifestVersion !== 2) return;
+            // ==== メッセージからコード実行に必要な情報を取り出す ====
+            const { language, code, stdin, timeLimitMs } = message as ContentScriptMessage;
+            // ==== Workerがまだ生成されていない場合は生成する ====
+            if (!runnerWorker) {
+                runnerWorker = new RunnerWorker();
+            }
+            // ==== Workerにコード実行を依頼する ====
+            const execMessageData = {
+                type: "exec",
+                language,
+                code,
+                stdin,
+            } as RunnerWorkerExecMessageData;
+            runnerWorker.postMessage(execMessageData);
+            // ==== Workerからreadyメッセージが来るのを待つ ====
+            await new Promise<void>((resolve) => {
+                runnerWorker?.addEventListener("message", function handleMessage(event) {
+                    if (event.data?.type === "ready") {
+                        runnerWorker?.removeEventListener("message", handleMessage);
+                        resolve();
+                    }
                 });
+            });
+            // ==== readyメッセージを受信したら、打ち切りPromiseとresult待ちPromiseをraceさせる ====
+            const waitForResult = new Promise<CodeTestResult>((resolve) => {
+                runnerWorker?.addEventListener("message", function handleMessage(event) {
+                    if (event.data?.type === "result") {
+                        runnerWorker?.removeEventListener("message", handleMessage);
+                        resolve(event.data?.data as CodeTestResult);
+                    }
+                });
+            });
+            const timeoutPromise = new Promise<CodeTestResultWithTLE>((resolve) => {
+                setTimeout(() => {
+                    resolve({
+                        status: "failure",
+                        details: {
+                            kind: "TLE",
+                            message: `Time limit (${timeLimitMs}ms) exceeded`,
+                        },
+                    });
+                }, timeLimitMs);
+            });
+            const raceResult = await Promise.race([waitForResult, timeoutPromise]);
+            // ==== 結果をContent Scriptに返す ====
+            if (sender.tab?.id) {
+                await browser.tabs.sendMessage(sender.tab.id, raceResult as CodeTestResultWithTLE);
+            } else {
+                console.error("Cannot send execution result: sender does not have a tab ID.");
             }
         });
-        // ==== Test Execution Protocol (Worker Run Protocol) ====
+
+        // ----------------------------------------------------------------
+        // メッセージハンドラの登録 (MV3版)
+        // ----------------------------------------------------------------
         browser.runtime.onMessage.addListener(async (message, sender) => {
-            if (message.type === "request-execute") {
-                const { id, code, language, stdin, timeLimitMs } = message.payload;
-                console.log(
-                    `[Background] Received request-execute: id=${id}, language=${language}, code=${code}, stdin=${stdin}, timeLimitMs=${timeLimitMs}`,
-                );
-                // ==== Ensure sender tab exists ====
-                const tabId = sender.tab?.id;
-                if (!tabId) {
-                    console.error("Received `request-execute` from a sender without a tab ID.");
-                    return;
-                }
-                // ==== 対応するContextが存在しない場合はエラーを返す ====
-                const runnerModule = runnerModules[language];
-                const runnerContext = runnerContexts[language];
-                if (!runnerModule || !runnerContext) {
-                    console.error(
-                        `No Runner Context available for language=${language} in request-execute.`,
-                    );
-                    await browser.tabs.sendMessage(tabId, {
-                        type: "notify-result",
-                        payload: {
-                            id,
-                            result: {
-                                status: "failure",
-                                error: {
-                                    errorType: "RE",
-                                    error: `No Runner Context available for language: ${language}`,
-                                },
-                            },
-                        },
-                    });
-                    return;
-                }
-                const run = runnerModule.run;
-                // ==== 実行に時間がかかる場合に強制終了するために、race用のtimeout Promiseを生成 ====
-                const timeoutPromise = new Promise<TestExecutionProtocolResult>((resolve) => {
-                    setTimeout(() => {
-                        resolve({
-                            status: "failure",
-                            error: {
-                                errorType: "TLE",
-                                error: "Execution time limit exceeded.",
-                            },
-                        });
-                    }, timeLimitMs);
-                });
-                // ==== Runnerにコードの実行を指示 ====
-                const runPromise = run({
-                    context: runnerContext,
-                    code,
-                    stdin,
-                });
-                // ==== raceして結果を待つ ====
-                const result = await Promise.race([runPromise, timeoutPromise]);
-                // ==== 結果をContentに返す ====
-                await browser.tabs.sendMessage(tabId, {
-                    type: "notify-result",
-                    payload: {
-                        id,
-                        result,
+            // ==== exec メッセージ以外は無視 ====
+            if (message.type !== "exec") return;
+            // ==== MV3でない場合は無視 ====
+            if (manifestVersion !== 3) return;
+            // ==== Content Script起点のメッセージのみ処理する ====
+            if (typeof sender.tab?.id !== "number") return;
+
+            const tabId = sender.tab.id;
+            const execMessage = message as ContentScriptMessage;
+            try {
+                // ==== Offscreen Documentを起動し、execを転送する ====
+                await ensureMv3OffscreenDocument();
+                const offscreenResult =
+                    (await browser.runtime.sendMessage(execMessage)) as CodeTestResultWithTLE;
+                // ==== 返ってきた結果をそのままContent Scriptへ渡す ====
+                await browser.tabs.sendMessage(tabId, offscreenResult);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                const failureResult: CodeTestResultWithTLE = {
+                    status: "failure",
+                    details: {
+                        kind: "CE",
+                        message: `Failed to run code test in MV3: ${errorMessage}`,
                     },
-                });
-                // ==== エラー(TLE, RE, CE)の場合はContextを破棄する ====
-                if (result.status === "failure") {
-                    console.warn(
-                        `Execution failed (${result.error.errorType}) for id=${id}. Discarding Runner Context for language=${language}.`,
-                    );
-                    delete runnerContexts[language];
-                    if (language === "python") {
-                        await closeMv3PythonOffscreenDocument();
-                    }
-                }
+                };
+                await browser.tabs.sendMessage(tabId, failureResult);
             }
         });
     },

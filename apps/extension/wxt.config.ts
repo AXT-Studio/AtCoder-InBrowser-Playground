@@ -43,6 +43,7 @@ export default defineConfig({
         plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin()],
         worker: {
             format: "es",
+            plugins: () => [buildPolyfillCodePlugin()],
         },
     }),
     modules: ["@wxt-dev/auto-icons"],

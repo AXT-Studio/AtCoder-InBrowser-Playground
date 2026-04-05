@@ -31,11 +31,22 @@
         }
     },
     "assist": {
-        "enabled": true,
+        "enabled": false,
         "actions": {
             "source": {
-                "organizeImports": "on"
+                "organizeImports": "off"
             }
+        }
+    },
+    "css": {
+        "formatter": {
+            "enabled": true
+        }
+    },
+    "html": {
+        "experimentalFullSupportEnabled": true,
+        "formatter": {
+            "enabled": true
         }
     }
 }
