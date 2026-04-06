@@ -25,8 +25,8 @@
         "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
         "core-js-builder": "^3.49.0",
         "esbuild-wasm": "^0.27.4",
+        "loupe": "^3.2.1",
         "monaco-editor": "^0.55.1",
-        "node-inspect-extracted": "^3.3.1",
         "pyodide": "^0.29.3",
         "quickjs-emscripten-core": "^0.32.0"
     }

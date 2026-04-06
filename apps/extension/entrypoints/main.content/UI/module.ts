@@ -48,6 +48,12 @@ const html = `\
                                 <td><button id="template-ts_deno">Deno</button></td>
                                 <td><button id="template-ts_bun">Bun</button></td>
                             </tr>
+                            <tr>
+                                <th>TypeScript (Interactive)</th>
+                                <td><button id="template-ts_node_interactive">Node.js</button></td>
+                                <td><button id="template-ts_deno_interactive">Deno</button></td>
+                                <td><button id="template-ts_bun_interactive">Bun</button></td>
+                            </tr>
                             <!--
                             <tr>
                                 <th>Python3</th>

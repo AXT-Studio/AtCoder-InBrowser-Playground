@@ -19,8 +19,11 @@ import { generateTemplate as generateTemplate_js_bun } from "./templateGenerator
 import { generateTemplate as generateTemplate_js_deno } from "./templateGenerators/js/deno";
 import { generateTemplate as generateTemplate_js_node } from "./templateGenerators/js/node";
 import { generateTemplate as generateTemplate_ts_bun } from "./templateGenerators/ts/bun";
+import { generateTemplate as generateTemplate_ts_bun_interactive } from "./templateGenerators/ts/bun_interactive";
 import { generateTemplate as generateTemplate_ts_deno } from "./templateGenerators/ts/deno";
+import { generateTemplate as generateTemplate_ts_deno_interactive } from "./templateGenerators/ts/deno_interactive";
 import { generateTemplate as generateTemplate_ts_node } from "./templateGenerators/ts/node";
+import { generateTemplate as generateTemplate_ts_node_interactive } from "./templateGenerators/ts/node_interactive";
 
 // ----------------------------------------------------------------
 // 挿入するテンプレートの用意
@@ -38,6 +41,9 @@ templateGenerators.js_node = generateTemplate_js_node;
 templateGenerators.ts_bun = generateTemplate_ts_bun;
 templateGenerators.ts_deno = generateTemplate_ts_deno;
 templateGenerators.ts_node = generateTemplate_ts_node;
+templateGenerators.ts_bun_interactive = generateTemplate_ts_bun_interactive;
+templateGenerators.ts_deno_interactive = generateTemplate_ts_deno_interactive;
+templateGenerators.ts_node_interactive = generateTemplate_ts_node_interactive;
 
 // ----------------------------------------------------------------
 // 挿入処理を行う関数

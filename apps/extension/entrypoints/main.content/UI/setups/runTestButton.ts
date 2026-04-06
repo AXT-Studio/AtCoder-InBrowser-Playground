@@ -7,7 +7,11 @@
 // ----------------------------------------------------------------
 
 import type { editor as monacoEditor } from "monaco-editor";
-import type { Failure, Result, Success } from "./../../../../types/Result";
+import type {
+    ContentScriptMessage,
+    CodeTestResultWithTLE,
+    CodeTestContext,
+} from "@/utils/runners/types";
 
 // ----------------------------------------------------------------
 // 期待出力とstdoutが「一致」しているかを判定する関数
@@ -133,9 +137,9 @@ const prepareForTestExecution = (
         runTestButton.disabled = true;
         updateTestStatus(statusSpan, "WJ");
         execTimeTd.textContent = "---";
-        return { status: "success", data: undefined };
+        return { status: "success", details: undefined };
     } catch (error) {
-        return { status: "failure", error: error as Error };
+        return { status: "failure", details: error as Error };
     }
 };
 
@@ -168,80 +172,37 @@ const runTest = async (
         // ==== テスト入力と期待出力を取得 ====
         const testInput = testInputTextarea.value;
         const expectedOutput = expectedOutputTextarea.value;
-        // ==== Background Scriptにテスト実行環境のセットアップを要求 (Environment Preparing Protocol) ====
-        const prepareResponse = await new Promise<Result<void, Error>>((resolve) => {
-            // 通信IDを生成
-            const requestId = crypto.randomUUID();
-            // 返ってくるnotify-readyかnotify-deniedを待つためのリスナーを先に作る
-            const notifyListener = (message: any) => {
-                console.log("Received setup response:", message);
-                // notify-readyが返ってきたら成功
-                if (message.type === "notify-ready" && message.payload.id === requestId) {
-                    browser.runtime.onMessage.removeListener(notifyListener);
-                    resolve({ status: "success", data: undefined });
-                } // notify-deniedが返ってきたら失敗
-                else if (message.type === "notify-denied" && message.payload.id === requestId) {
-                    browser.runtime.onMessage.removeListener(notifyListener);
-                    resolve({
-                        status: "failure",
-                        error: new Error(`Environment setup denied: ${message.payload.error}`),
-                    });
-                }
-            };
-            // リスナーを登録
-            browser.runtime.onMessage.addListener(notifyListener);
-            // Background Scriptにrequest-prepareを送る
-            browser.runtime.sendMessage({
-                type: "request-prepare",
-                payload: {
-                    id: requestId,
-                    language: selectedLanguage,
-                },
-            });
-        });
-        if (prepareResponse.status === "failure") {
-            // ==== 環境のセットアップに失敗した場合はエラーメッセージを表示して終了 ====
-            updateTestStatus(statusSpan, "RE");
-            updateOutputAreas(
-                actualStdoutTextarea,
-                actualStderrTextarea,
-                "",
-                `Environment setup failed: ${prepareResponse.error.message}`,
-            );
-            return prepareResponse;
-        }
         // ==== 現在の時刻を取得（実行時間計測用） ====
         const startTime = performance.now();
-        // ==== Background Scriptに実行依頼を送信 ====
-        type RunResult = Result<
-            { stdout: string; stderr: string },
-            { errorType: "TLE" | "RE" | "CE"; error: string }
-        >;
-        const runResponse = await new Promise<RunResult>((resolve) => {
-            // 通信IDを生成
-            const requestId = crypto.randomUUID();
-            // 返ってくるnotify-resultを待つためのリスナーを先に作る
-            const notifyListener = (message: any) => {
+
+        // ==== コード実行をBackground Script / Offscreen Documentに依頼し、結果を待つ ====
+        const runResponse = await new Promise<CodeTestResultWithTLE>((resolve) => {
+            // ---- 使用言語について、対象外ならエラーを返す ----
+            if (!["plaintext", "typescript", "python"].includes(selectedLanguage)) {
+                resolve({
+                    status: "failure",
+                    details: {
+                        kind: "CE",
+                        message: `Unsupported language: ${selectedLanguage}`,
+                    },
+                });
+            }
+            const language = selectedLanguage as keyof CodeTestContext;
+            // ---- Background ScriptはCodeTestResultWithTLEを投げてくるので、それでresolveするよう先に設定 ----
+            browser.runtime.onMessage.addListener(function handleMessage(message: any) {
                 console.log("Received run response:", message);
-                if (message.type === "notify-result" && message.payload.id === requestId) {
-                    console.log("Received run result:", message.payload.result);
-                    browser.runtime.onMessage.removeListener(notifyListener);
-                    resolve(message.payload.result);
-                }
-            };
-            // リスナーを登録
-            browser.runtime.onMessage.addListener(notifyListener);
-            // Background Scriptにrequest-runを送る
-            browser.runtime.sendMessage({
-                type: "request-execute",
-                payload: {
-                    id: requestId,
-                    code,
-                    language: selectedLanguage,
-                    stdin: testInput,
-                    timeLimitMs: timeLimitMs * 1.1, // 実行時間制限の少し余裕を持たせて送る
-                },
+                browser.runtime.onMessage.removeListener(handleMessage);
+                resolve(message as CodeTestResultWithTLE);
             });
+            // ---- Background ScriptはexecでContentScriptMessageを渡せばいい ----
+            const messageData: ContentScriptMessage = {
+                type: "exec",
+                language,
+                code,
+                stdin: testInput,
+                timeLimitMs,
+            };
+            browser.runtime.sendMessage(messageData);
         });
         // ==== 実行時間を計測 ====
         const endTime = performance.now();
@@ -249,13 +210,15 @@ const runTest = async (
         // ==== stdoutが合ってるか確認 ====
         const isCorrect =
             runResponse.status === "success" &&
-            isOutputCorrect(expectedOutput, runResponse.data.stdout, allowableError);
+            isOutputCorrect(expectedOutput, runResponse.details.stdout, allowableError);
         // ==== 結果ステータスによって表示を分ける必要がないところは先に更新 ====
         updateOutputAreas(
             actualStdoutTextarea,
             actualStderrTextarea,
-            runResponse.status === "success" ? runResponse.data.stdout : "",
-            runResponse.status === "success" ? runResponse.data.stderr : runResponse.error.error,
+            runResponse.status === "success" ? runResponse.details.stdout : "",
+            runResponse.status === "success"
+                ? runResponse.details.stderr
+                : runResponse.details.message,
         );
         updateExecutionTime(execTimeTd, execTime, timeLimitMs);
         if (execTime > timeLimitMs) {
@@ -264,7 +227,7 @@ const runTest = async (
             updateTestStatus(statusSpan, "TLE");
         } else if (runResponse.status === "failure") {
             // Failureが返ってきている場合、中身のerrorType(RE, CE, TLEがあり得る)を見て判断
-            switch (runResponse.error.errorType) {
+            switch (runResponse.details.kind) {
                 case "TLE":
                     updateTestStatus(statusSpan, "TLE");
                     break;
@@ -288,7 +251,7 @@ const runTest = async (
         // ==== 最後にRun Testボタンを有効化 ====
         runTestButton.disabled = false;
         // ==== すべて正常に終了したらsuccessを返す ====
-        return { status: "success", data: undefined };
+        return { status: "success", details: undefined };
     } catch (error) {
         // ==== 予期せぬエラーが発生した場合はエラーメッセージを表示しボタンを有効化して終了 ====
         updateTestStatus(statusSpan, "RE");
@@ -299,7 +262,7 @@ const runTest = async (
             `Unexpected error: ${(error as Error).message}`,
         );
         runTestButton.disabled = false;
-        return { status: "failure", error: error as Error };
+        return { status: "failure", details: error as Error };
     }
 };
 
