@@ -13,8 +13,8 @@ export const setupExampleAutoExecButtons = async (container: HTMLDivElement) => 
     };
     const sampleElements = document.querySelectorAll(".lang-ja section:has(h3~pre)");
     sampleElements.forEach((section) => {
-        const sampleH3Text = section.querySelector("h3")?.childNodes[0].textContent ?? "";
-        const samplePreText = section.querySelector("pre")?.childNodes[0].textContent ?? "";
+        const sampleH3Text = section.querySelector("h3")?.childNodes?.[0]?.textContent ?? "";
+        const samplePreText = section.querySelector("pre")?.childNodes?.[0]?.textContent ?? "";
         if (sampleH3Text.startsWith("入力例 ")) {
             const sampleName = sampleH3Text.slice("入力例 ".length).trim();
             samples.names.add(sampleName);
