@@ -25,14 +25,7 @@ export const sidebar: DefaultTheme.Sidebar = [
     {
         text: "更新履歴",
         link: "/changelogs/",
-        items: [
-            { text: "ver0.4.1 (β)", link: "/changelogs/v0.4.1" },
-            { text: "ver0.4.0 (β)", link: "/changelogs/v0.4.0" },
-            { text: "ver0.3.1 (β)", link: "/changelogs/v0.3.1" },
-            { text: "ver0.3.0 (β)", link: "/changelogs/v0.3.0" },
-            { text: "ver0.2.1 (β)", link: "/changelogs/v0.2.1" },
-            { text: "ver0.2.0 (β)", link: "/changelogs/v0.2.0" },
-        ],
+        items: [{ text: "ver1.0.0", link: "/changelogs/v1.0.0" }],
     },
     { text: "プライバシーポリシー", link: "/privacy-policy" },
 ];
