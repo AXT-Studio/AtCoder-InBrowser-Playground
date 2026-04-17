@@ -60,18 +60,24 @@ const downCompileCode = async (code: string): Promise<string> => {
 
 /** コードをQuickJSで実行できる形に変換します。 */
 const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
-    // ==== Main呼び出しについて、Main(__stdin__)に置き換える ====
+    /*
+    以下の3パターンのいずれかにマッチするコードは、標準入力をすべて受け取るコードとみなす。
+    1. Node.js向け: `require("fs").readFileSync("/dev/stdin", "utf8")`
+    2. Deno向け: `await Deno.readTextFile("/dev/stdin")`
+    3. Bun向け: `await Bun.file("/dev/stdin").text()`
+    テスト実行環境ではグローバル変数`__stdin__`に標準入力を入れておくので、これらの文字列を全て`(__stdin__)`に置き換える。
+     */
     const patterns = [
-        // Node.js: Main(require("fs").readFileSync("/dev/stdin", "utf8"));
-        /Main\s*\(\s*require\s*\(\s*['"]fs['"]\s*\)\.readFileSync\s*\(\s*['"]\/dev\/stdin['"]\s*,\s*['"]utf8['"]\s*\)\s*\);?/g,
-        // Deno: Main(await Deno.readTextFile("/dev/stdin"));
-        /Main\s*\(\s*await\s+Deno\.readTextFile\s*\(\s*['"]\/dev\/stdin['"]\s*\)\s*\);?/g,
-        // Bun: Main(await Bun.file("/dev/stdin").text());
-        /Main\s*\(\s*await\s+Bun\.file\s*\(\s*['"]\/dev\/stdin['"]\s*\)\.text\s*\(\s*\)\s*\);?/g,
+        // Node.js向け
+        `require("fs").readFileSync("/dev/stdin", "utf8")`,
+        // Deno向け
+        `await Deno.readTextFile("/dev/stdin")`,
+        // Bun向け
+        `await Bun.file("/dev/stdin").text()`,
     ];
     let result = code;
     for (const pattern of patterns) {
-        result = result.replace(pattern, "Main(__stdin__)");
+        result = result.replaceAll(pattern, "(__stdin__)");
     }
     // ==== ダウンコンパイルに通す ====
     result = await downCompileCode(result);
