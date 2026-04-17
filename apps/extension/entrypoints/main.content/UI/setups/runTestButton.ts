@@ -14,6 +14,16 @@ import type {
 } from "@/utils/runners/types";
 
 // ----------------------------------------------------------------
+// 設定上のlanguageとRunner Workerのlanguageの対応表
+// ----------------------------------------------------------------
+const languageMap: Record<string, keyof CodeTestContext> = {
+    plaintext: "plaintext",
+    typescript: "typescript",
+    python: "python",
+    javascript: "typescript", // <- これだけ例外で、JSはTSのRunnerで動かせるしそうする
+};
+
+// ----------------------------------------------------------------
 // 期待出力とstdoutが「一致」しているかを判定する関数
 // 数値の場合は許容誤差を考慮して比較
 // ----------------------------------------------------------------
@@ -178,7 +188,7 @@ const runTest = async (
         // ==== コード実行をBackground Script / Offscreen Documentに依頼し、結果を待つ ====
         const runResponse = await new Promise<CodeTestResultWithTLE>((resolve) => {
             // ---- 使用言語について、対象外ならエラーを返す ----
-            if (!["plaintext", "typescript", "python"].includes(selectedLanguage)) {
+            if (languageMap[selectedLanguage] == null) {
                 resolve({
                     status: "failure",
                     details: {
@@ -187,7 +197,7 @@ const runTest = async (
                     },
                 });
             }
-            const language = selectedLanguage as keyof CodeTestContext;
+            const language = languageMap[selectedLanguage];
             // ---- Background ScriptはCodeTestResultWithTLEを投げてくるので、それでresolveするよう先に設定 ----
             browser.runtime.onMessage.addListener(function handleMessage(message: any) {
                 console.log("Received run response:", message);
