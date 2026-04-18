@@ -34,12 +34,7 @@ const asCompileErrorResult = (message: string): CodeTestResultWithTLE => {
 
 let runnerWorker: Worker | null = null;
 
-browser.runtime.onMessage.addListener(async (message, sender) => {
-    // ==== exec メッセージ以外は無視 ====
-    if (message.type !== "exec") return;
-    // ==== Content Scriptから直接来たものは無視し、Backgroundからの転送のみ処理する ====
-    if (typeof sender.tab?.id === "number") return;
-
+const execute = async (message: RunnerWorkerExecMessageData): Promise<CodeTestResultWithTLE> => {
     const { language, code, stdin, timeLimitMs } = message as ContentScriptMessage;
     try {
         // ==== Workerがまだ生成されていない場合は生成する ====
@@ -90,4 +85,19 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return asCompileErrorResult(errorMessage);
     }
+};
+
+browser.runtime.onMessage.addListener((message, sender) => {
+    // ==== exec メッセージ以外は無視 ====
+    if (message.type !== "exec") return;
+    // ==== Content Scriptから直接来たものは無視し、Backgroundからの転送のみ処理する ====
+    if (typeof sender.tab?.id === "number") return;
+    // ==== MV2でもMV3でもない場合は無視 ====
+    const manifestVersion = import.meta.env.MANIFEST_VERSION;
+    if (manifestVersion !== 2 && manifestVersion !== 3) return;
+
+    // ==== コード実行処理を呼び出す ====
+    const result = execute(message as RunnerWorkerExecMessageData);
+    // ==== 結果をContent Scriptに返す ====
+    return result;
 });

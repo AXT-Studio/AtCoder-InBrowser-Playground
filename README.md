@@ -82,3 +82,11 @@ pnpm biome check --write
 ### Icon file
 
 `/apps/document/docs/public/icon.svg`にAIBPのアイコンが入っています。
+
+### Firefox 申請
+
+ビルドコマンドを教えなきゃいけないので、以下をコピペする。
+
+```txt
+Build command: `pnpm install` -> `pnpm run build:firefox`(or `pnpm run zip:firefox`)
+```
