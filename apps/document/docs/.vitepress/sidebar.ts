@@ -25,10 +25,10 @@ export const sidebar: DefaultTheme.Sidebar = [
     {
         text: "更新履歴",
         link: "/changelogs/",
-        items: [
-            { text: "ver1.0.1", link: "/changelogs/v1.0.1" },
-            { text: "ver1.0.0", link: "/changelogs/v1.0.0" },
-        ],
+        items: ["1.0.2", "1.0.1", "1.0.0"].map((version) => ({
+            text: `ver${version}`,
+            link: `/changelogs/v${version}`,
+        })),
     },
     { text: "プライバシーポリシー", link: "/privacy-policy" },
 ];

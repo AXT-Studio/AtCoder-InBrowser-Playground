@@ -186,25 +186,18 @@ const runTest = async (
         const startTime = performance.now();
 
         // ==== コード実行をBackground Script / Offscreen Documentに依頼し、結果を待つ ====
-        const runResponse = await new Promise<CodeTestResultWithTLE>((resolve) => {
+        const runResponse = await (async (): Promise<CodeTestResultWithTLE> => {
             // ---- 使用言語について、対象外ならエラーを返す ----
             if (languageMap[selectedLanguage] == null) {
-                resolve({
+                return {
                     status: "failure",
                     details: {
                         kind: "CE",
                         message: `Unsupported language: ${selectedLanguage}`,
                     },
-                });
+                };
             }
             const language = languageMap[selectedLanguage];
-            // ---- Background ScriptはCodeTestResultWithTLEを投げてくるので、それでresolveするよう先に設定 ----
-            browser.runtime.onMessage.addListener(function handleMessage(message: any) {
-                console.log("Received run response:", message);
-                browser.runtime.onMessage.removeListener(handleMessage);
-                resolve(message as CodeTestResultWithTLE);
-            });
-            // ---- Background ScriptはexecでContentScriptMessageを渡せばいい ----
             const messageData: ContentScriptMessage = {
                 type: "exec",
                 language,
@@ -212,8 +205,25 @@ const runTest = async (
                 stdin: testInput,
                 timeLimitMs,
             };
-            browser.runtime.sendMessage(messageData);
-        });
+            // browser.runtime.sendMessageはBackground Scriptからの応答で解決するPromiseを返すので、それを待つ
+            const response = await browser.runtime.sendMessage<
+                ContentScriptMessage,
+                CodeTestResultWithTLE | null | undefined
+            >(messageData);
+            // responseにはnullishが混入しうるらしく、nullishな場合はエラーとして扱う必要がある
+            if (response == null) {
+                return {
+                    status: "failure",
+                    details: {
+                        kind: "CE",
+                        message:
+                            "No response from background script. Possible communication failure.",
+                    },
+                };
+            }
+            // responseがnullishでないことを確認したので、CodeTestResultWithTLEとして返す
+            return response;
+        })();
         // ==== 実行時間を計測 ====
         const endTime = performance.now();
         const execTime = endTime - startTime;
