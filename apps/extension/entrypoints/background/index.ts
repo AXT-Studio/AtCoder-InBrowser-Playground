@@ -111,7 +111,10 @@ export default defineBackground({
         // ----------------------------------------------------------------
         // 実際に行う処理 (MV2版)
         // ----------------------------------------------------------------
-        const execMV2 = async (message: ContentScriptMessage): Promise<CodeTestResultWithTLE> => {
+        const execMV2 = async (
+            message: ContentScriptMessage,
+            sendResponse: (response: CodeTestResultWithTLE) => void,
+        ): Promise<void> => {
             try {
                 // ==== メッセージからコード実行に必要な情報を取り出す ====
                 const { language, code, stdin, timeLimitMs } = message as ContentScriptMessage;
@@ -158,7 +161,7 @@ export default defineBackground({
                 });
                 const raceResult = await Promise.race([waitForResult, timeoutPromise]);
                 // ==== 結果をContent Scriptに返す ====
-                return raceResult;
+                sendResponse(raceResult);
             } catch (error) {
                 // ==== 失敗時はエラーメッセージをContent Scriptに返す ====
                 const errorMessage = error instanceof Error ? error.message : String(error);
@@ -169,14 +172,17 @@ export default defineBackground({
                         message: `Failed to run code test in MV2: ${errorMessage}`,
                     },
                 };
-                return failureResult;
+                sendResponse(failureResult);
             }
         };
 
         // ----------------------------------------------------------------
         // 実際に行う処理 (MV3版)
         // ----------------------------------------------------------------
-        const execMV3 = async (message: ContentScriptMessage): Promise<CodeTestResultWithTLE> => {
+        const execMV3 = async (
+            message: ContentScriptMessage,
+            sendResponse: (response: CodeTestResultWithTLE) => void,
+        ): Promise<void> => {
             const execMessage = message as ContentScriptMessage;
             try {
                 // ==== Offscreen Documentを起動し、execを転送する ====
@@ -185,7 +191,7 @@ export default defineBackground({
                     execMessage,
                 )) as CodeTestResultWithTLE;
                 // ==== 返ってきた結果をそのままContent Scriptへ渡す ====
-                return offscreenResult;
+                sendResponse(offscreenResult);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 const failureResult: CodeTestResultWithTLE = {
@@ -195,14 +201,14 @@ export default defineBackground({
                         message: `Failed to run code test in MV3: ${errorMessage}`,
                     },
                 };
-                return failureResult;
+                sendResponse(failureResult);
             }
         };
 
         // ----------------------------------------------------------------
         // メッセージハンドラ (MV2/MV3両対応, 新規実装)
         // ----------------------------------------------------------------
-        browser.runtime.onMessage.addListener((message, sender) => {
+        browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // ==== exec メッセージ以外は無視 ====
             if (message.type !== "exec") return;
             // ==== MV2でもMV3でもない場合は無視 ====
@@ -211,10 +217,12 @@ export default defineBackground({
             if (typeof sender.tab?.id !== "number") return;
             // ==== MV2とMV3で処理を分ける ====
             if (manifestVersion === 2) {
-                return execMV2(message);
+                execMV2(message, sendResponse);
             } else {
-                return execMV3(message);
+                execMV3(message, sendResponse);
             }
+            // ==== 非同期でレスポンスを返すことを示す ====
+            return true;
         });
     },
 });
