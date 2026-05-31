@@ -49,6 +49,12 @@ const html = `\
                                 <td><button id="template-ts_bun">Bun</button></td>
                             </tr>
                             <tr>
+                                <th>TypeScript (InputScanner)</th>
+                                <td><button id="template-ts_node_scanner">Node.js</button></td>
+                                <td><button id="template-ts_deno_scanner">Deno</button></td>
+                                <td><button id="template-ts_bun_scanner">Bun</button></td>
+                            </tr>
+                            <tr>
                                 <th>TypeScript (Interactive)</th>
                                 <td><button id="template-ts_node_interactive">Node.js</button></td>
                                 <td><button id="template-ts_deno_interactive">Deno</button></td>

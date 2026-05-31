@@ -20,10 +20,13 @@ import { generateTemplate as generateTemplate_js_deno } from "./templateGenerato
 import { generateTemplate as generateTemplate_js_node } from "./templateGenerators/js/node";
 import { generateTemplate as generateTemplate_ts_bun } from "./templateGenerators/ts/bun";
 import { generateTemplate as generateTemplate_ts_bun_interactive } from "./templateGenerators/ts/bun_interactive";
+import { generateTemplate as generateTemplate_ts_bun_scanner } from "./templateGenerators/ts/bun_scanner";
 import { generateTemplate as generateTemplate_ts_deno } from "./templateGenerators/ts/deno";
 import { generateTemplate as generateTemplate_ts_deno_interactive } from "./templateGenerators/ts/deno_interactive";
+import { generateTemplate as generateTemplate_ts_deno_scanner } from "./templateGenerators/ts/deno_scanner";
 import { generateTemplate as generateTemplate_ts_node } from "./templateGenerators/ts/node";
 import { generateTemplate as generateTemplate_ts_node_interactive } from "./templateGenerators/ts/node_interactive";
+import { generateTemplate as generateTemplate_ts_node_scanner } from "./templateGenerators/ts/node_scanner";
 
 // ----------------------------------------------------------------
 // 挿入するテンプレートの用意
@@ -44,6 +47,9 @@ templateGenerators.ts_node = generateTemplate_ts_node;
 templateGenerators.ts_bun_interactive = generateTemplate_ts_bun_interactive;
 templateGenerators.ts_deno_interactive = generateTemplate_ts_deno_interactive;
 templateGenerators.ts_node_interactive = generateTemplate_ts_node_interactive;
+templateGenerators.ts_bun_scanner = generateTemplate_ts_bun_scanner;
+templateGenerators.ts_deno_scanner = generateTemplate_ts_deno_scanner;
+templateGenerators.ts_node_scanner = generateTemplate_ts_node_scanner;
 
 // ----------------------------------------------------------------
 // 挿入処理を行う関数
@@ -76,6 +82,14 @@ const insertTemplate = (
     }
     // ==== エディターにコードを挿入 ====
     editor.setValue(template);
+    // ==== もしTypeScript(InputScanner)系なら、11行目(InputScanner)を折り畳む ====
+    if (templateKey.startsWith("ts_") && templateKey.endsWith("_scanner")) {
+        setTimeout(() => {
+            editor.trigger("aibp", "editor.fold", {
+                selectionLines: [11],
+            });
+        }, 90);
+    }
 };
 
 // ----------------------------------------------------------------
