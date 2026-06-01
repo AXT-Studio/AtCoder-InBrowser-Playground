@@ -15,7 +15,7 @@ export default defineConfig({
             permissions.push("offscreen");
         }
         return {
-            version: "1.1.0",
+            version: "1.1.1",
             name: "AtCoder In-Browser Playground",
             description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
@@ -46,7 +46,11 @@ export default defineConfig({
         };
     },
     vite: () => ({
-        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
+        plugins: [
+            monacoTypescriptLibSplitPlugin(),
+            buildPolyfillCodePlugin(),
+            buildInspectRuntimePlugin(),
+        ],
         worker: {
             format: "es",
             plugins: () => [buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
