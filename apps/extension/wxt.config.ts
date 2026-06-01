@@ -1,5 +1,6 @@
 import { defineConfig } from "wxt";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
+import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
 import bundlePyodidePublicAssetsHook from "./plugins/pyodide-public-assets-hook";
 
@@ -14,7 +15,7 @@ export default defineConfig({
             permissions.push("offscreen");
         }
         return {
-            version: "1.1.0",
+            version: "1.1.1",
             name: "AtCoder In-Browser Playground",
             description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
@@ -45,10 +46,14 @@ export default defineConfig({
         };
     },
     vite: () => ({
-        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin()],
+        plugins: [
+            monacoTypescriptLibSplitPlugin(),
+            buildPolyfillCodePlugin(),
+            buildInspectRuntimePlugin(),
+        ],
         worker: {
             format: "es",
-            plugins: () => [buildPolyfillCodePlugin()],
+            plugins: () => [buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
         },
     }),
     modules: ["@wxt-dev/auto-icons"],

@@ -32,12 +32,12 @@ importers:
       esbuild-wasm:
         specifier: ^0.27.4
         version: 0.27.4
-      loupe:
-        specifier: ^3.2.1
-        version: 3.2.1
       monaco-editor:
         specifier: ^0.55.1
         version: 0.55.1
+      object-inspect:
+        specifier: ^1.13.4
+        version: 1.13.4
       pyodide:
         specifier: ^0.29.3
         version: 0.29.3
@@ -48,6 +48,9 @@ importers:
       '@wxt-dev/auto-icons':
         specifier: ^1.1.1
         version: 1.1.1(wxt@0.20.20(@types/node@25.5.0)(jiti@2.6.1)(rollup@4.60.0))
+      esbuild:
+        specifier: ^0.27.4
+        version: 0.27.4
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -2480,9 +2483,6 @@ packages:
   log-update@6.1.0:
     resolution: {integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==}
     engines: {node: '>=18'}
-
-  loupe@3.2.1:
-    resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
@@ -6004,8 +6004,6 @@ snapshots:
       slice-ansi: 7.1.2
       strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
-
-  loupe@3.2.1: {}
 
   lru-cache@5.1.1:
     dependencies:
