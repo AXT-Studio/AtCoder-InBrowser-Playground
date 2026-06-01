@@ -59,13 +59,15 @@ const execute = async (message: RunnerWorkerExecMessageData): Promise<CodeTestRe
             });
         });
         // ==== readyメッセージを受信したら、打ち切りPromiseとresult待ちPromiseをraceさせる ====
+        let onResultMessage!: (event: MessageEvent) => void;
         const waitForResult = new Promise<CodeTestResult>((resolve) => {
-            runnerWorker?.addEventListener("message", function handleMessage(event) {
+            onResultMessage = (event: MessageEvent) => {
                 if (event.data?.type === "result") {
-                    runnerWorker?.removeEventListener("message", handleMessage);
+                    runnerWorker?.removeEventListener("message", onResultMessage);
                     resolve(event.data?.data as CodeTestResult);
                 }
-            });
+            };
+            runnerWorker?.addEventListener("message", onResultMessage);
         });
         const timeoutPromise = new Promise<CodeTestResultWithTLE>((resolve) => {
             setTimeout(() => {
@@ -79,6 +81,11 @@ const execute = async (message: RunnerWorkerExecMessageData): Promise<CodeTestRe
             }, timeLimitMs);
         });
         const raceResult = await Promise.race([waitForResult, timeoutPromise]);
+        if (raceResult.status === "failure") {
+            runnerWorker?.removeEventListener("message", onResultMessage);
+            runnerWorker?.terminate();
+            runnerWorker = null;
+        }
         // ==== 結果をBackground Scriptに返す ====
         return raceResult as CodeTestResultWithTLE;
     } catch (error) {

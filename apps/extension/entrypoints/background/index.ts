@@ -140,13 +140,15 @@ export default defineBackground({
                     });
                 });
                 // ==== readyメッセージを受信したら、打ち切りPromiseとresult待ちPromiseをraceさせる ====
+                let onResultMessage!: (event: MessageEvent) => void;
                 const waitForResult = new Promise<CodeTestResult>((resolve) => {
-                    runnerWorker?.addEventListener("message", function handleMessage(event) {
+                    onResultMessage = (event: MessageEvent) => {
                         if (event.data?.type === "result") {
-                            runnerWorker?.removeEventListener("message", handleMessage);
+                            runnerWorker?.removeEventListener("message", onResultMessage);
                             resolve(event.data?.data as CodeTestResult);
                         }
-                    });
+                    };
+                    runnerWorker?.addEventListener("message", onResultMessage);
                 });
                 const timeoutPromise = new Promise<CodeTestResultWithTLE>((resolve) => {
                     setTimeout(() => {
@@ -160,6 +162,11 @@ export default defineBackground({
                     }, timeLimitMs);
                 });
                 const raceResult = await Promise.race([waitForResult, timeoutPromise]);
+                if (raceResult.status === "failure") {
+                    runnerWorker?.removeEventListener("message", onResultMessage);
+                    runnerWorker?.terminate();
+                    runnerWorker = null;
+                }
                 // ==== 結果をContent Scriptに返す ====
                 sendResponse(raceResult);
             } catch (error) {
