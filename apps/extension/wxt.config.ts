@@ -1,5 +1,6 @@
 import { defineConfig } from "wxt";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
+import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
 import bundlePyodidePublicAssetsHook from "./plugins/pyodide-public-assets-hook";
 
@@ -45,10 +46,10 @@ export default defineConfig({
         };
     },
     vite: () => ({
-        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin()],
+        plugins: [monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
         worker: {
             format: "es",
-            plugins: () => [buildPolyfillCodePlugin()],
+            plugins: () => [buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
         },
     }),
     modules: ["@wxt-dev/auto-icons"],

@@ -8,32 +8,31 @@
 
 import type { CodeTestContext, Runner } from "../types";
 
+import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
+import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
+import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
+import type { QuickJSContext } from "quickjs-emscripten-core";
+import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
+import coreJsPolyfill from "virtual:corejs-polyfill";
+import inspectRuntime from "virtual:inspect-runtime";
+
 // ----------------------------------------------------------------
 // utilities
 // ----------------------------------------------------------------
 
-import { inspect } from "loupe";
-
-/** JavaScriptオブジェクトを標準出力風の文字列に変換します (loupeを使用) */
-const stringifyJSObject = (data: unknown): string => {
-    // string -> そのまま返す
-    if (typeof data === "string") {
-        return data;
+/** QuickJS グローバル上の string[] を dump して改行区切り文字列に変換します */
+const dumpJoinedLines = (
+    quickJsVm: QuickJSContext,
+    propName: "__stdout__" | "__stderr__",
+): string => {
+    const arrayHandle = quickJsVm.getProp(quickJsVm.global, propName);
+    const dumped = quickJsVm.dump(arrayHandle);
+    arrayHandle.dispose();
+    if (!Array.isArray(dumped)) {
+        return "";
     }
-    // 0 -> +0になっちゃうので特例で"0"を返す
-    if (data === 0) {
-        return "0";
-    }
-    // Error -> 一応自前シリアライズを入れておく
-    if (data instanceof Error) {
-        return `${data.name}: ${data.message}\n[Stack]\n${data.stack}\n[Cause]\n${data.cause}`;
-    }
-    // それ以外 -> loupeで文字列化する
-    return inspect(data);
+    return dumped.map(String).join("\n");
 };
-
-import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
-import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
 
 /** TS/JSコードをES2023相当までダウンコンパイルします (esbuild-wasmを使用) */
 const downCompileCode = async (code: string): Promise<string> => {
@@ -95,10 +94,6 @@ const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
 // コード実行に必要な初期化処理を行い、Contextを返す。
 // ----------------------------------------------------------------
 
-import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
-import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
-import coreJsPolyfill from "virtual:corejs-polyfill";
-
 export const init = async (): Promise<CodeTestContext["typescript"]> => {
     // ==== QuickJSの初期化 ====
     const quickJs = await newQuickJSWASMModuleFromVariant(quickJSVariant);
@@ -114,6 +109,15 @@ export const init = async (): Promise<CodeTestContext["typescript"]> => {
             quickJsVm.dump(coreJsPolyfillResult.error),
         );
         throw new Error("Failed to apply core-js polyfill");
+    }
+    // ==== object-inspect + console formatter を QuickJS に注入 ====
+    const inspectRuntimeResult = quickJsVm.evalCode(inspectRuntime, "inspect-runtime.js");
+    if (inspectRuntimeResult.error) {
+        console.error(
+            "Failed to apply inspect runtime:",
+            quickJsVm.dump(inspectRuntimeResult.error),
+        );
+        throw new Error("Failed to apply inspect runtime");
     }
     // ==== Contextを返す ====
     return {
@@ -134,32 +138,21 @@ export const run: Runner<"typescript"> = async ({ context, code, stdin }) => {
             throw new Error("Runner context is missing quickJsVm");
         }
         const { quickJsVm } = context;
-        // ==== stdout, stderrのキャプチャのために配列を用意 ====
-        const stdoutArray: unknown[][] = [];
-        const stderrArray: unknown[][] = [];
-        // ==== console.logとconsole.errorをオーバーライドして、stdout/stderrArrayに投げ込むようにする ====
-        // biome-ignore lint/suspicious/noExplicitAny: 向こう側がanyなんだからしょうがないだろ
-        const logFn = quickJsVm.newFunction("log", (...args: any[]) => {
-            stdoutArray.push(
-                args.map((arg) => {
-                    if (!quickJsVm) return "";
-                    return quickJsVm.dump(arg);
-                }),
-            );
-        });
-        // biome-ignore lint/suspicious/noExplicitAny: 向こう側がanyなんだからしょうがないだろ その2
-        const errorFn = quickJsVm.newFunction("error", (...args: any[]) => {
-            stderrArray.push(
-                args.map((arg) => {
-                    if (!quickJsVm) return "";
-                    return quickJsVm.dump(arg);
-                }),
-            );
-        });
-        const consoleObj = quickJsVm.newObject();
-        quickJsVm.setProp(consoleObj, "log", logFn);
-        quickJsVm.setProp(consoleObj, "error", errorFn);
-        quickJsVm.setProp(quickJsVm.global, "console", consoleObj);
+        // ==== __stdout__/__stderr__ をリセットし console を再設定 ====
+        const setupResult = quickJsVm.evalCode("__aibpSetupConsole();", "setup-console.js");
+        if (setupResult.error) {
+            const setupError = quickJsVm.dump(setupResult.error);
+            return {
+                status: "failure",
+                details: {
+                    kind: "CE",
+                    message:
+                        typeof setupError === "string"
+                            ? setupError
+                            : JSON.stringify(setupError),
+                },
+            };
+        }
         // ==== stdinをグローバル変数__stdin__にセット ====
         quickJsVm.setProp(quickJsVm.global, "__stdin__", quickJsVm.newString(stdin));
         // ==== codeを実行 ====
@@ -181,14 +174,8 @@ export const run: Runner<"typescript"> = async ({ context, code, stdin }) => {
             };
         } else {
             // ---- 正常終了 -> Successを返す ----
-            // stdout, stderrの内容を文字列に変換
-            const stdout = stdoutArray
-                .map((args) => args.map(stringifyJSObject).join(" "))
-                .join("\n");
-            const stderr = stderrArray
-                .map((args) => args.map(stringifyJSObject).join(" "))
-                .join("\n");
-            // resultオブジェクトを作成して返す
+            const stdout = dumpJoinedLines(quickJsVm, "__stdout__");
+            const stderr = dumpJoinedLines(quickJsVm, "__stderr__");
             return {
                 status: "success",
                 details: {
