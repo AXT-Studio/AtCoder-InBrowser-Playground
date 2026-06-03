@@ -6,7 +6,13 @@
 // imports
 // ----------------------------------------------------------------
 
-import type { editor as monacoEditor } from "monaco-editor";
+import {
+    type editor as monacoEditor,
+    editor as monacoEditorApi,
+    MarkerSeverity,
+} from "monaco-editor";
+
+type ModelErrorMarker = ReturnType<typeof monacoEditorApi.getModelMarkers>[number];
 
 // ----------------------------------------------------------------
 // AtCoder本来のソースコード欄にコードをセットする関数
@@ -47,6 +53,44 @@ const setSourceCode = (code: string) => {
 };
 
 // ----------------------------------------------------------------
+// TypeScriptの型エラー（severity: Error）を先頭から1件取得する
+// ----------------------------------------------------------------
+
+const getFirstTypeScriptErrorMarker = (
+    model: monacoEditor.ITextModel,
+): ModelErrorMarker | undefined => {
+    const errorMarkers = monacoEditorApi
+        .getModelMarkers({ resource: model.uri })
+        .filter((m) => m.severity === MarkerSeverity.Error);
+    if (errorMarkers.length === 0) {
+        return undefined;
+    }
+    return errorMarkers.sort((a, b) => {
+        if (a.startLineNumber !== b.startLineNumber) {
+            return a.startLineNumber - b.startLineNumber;
+        }
+        return a.startColumn - b.startColumn;
+    })[0];
+};
+
+// ----------------------------------------------------------------
+// エディタを型エラー位置へスクロールし、カーソルを移動する
+// ----------------------------------------------------------------
+
+const focusTypeScriptError = (
+    editor: monacoEditor.IStandaloneCodeEditor,
+    marker: ModelErrorMarker,
+) => {
+    const position = {
+        lineNumber: marker.startLineNumber,
+        column: marker.startColumn,
+    };
+    editor.revealPositionInCenter(position);
+    editor.setPosition(position);
+    editor.focus();
+};
+
+// ----------------------------------------------------------------
 // コードに`dfs`と`Bun`が両方含まれているときに出す警告文章
 // ----------------------------------------------------------------
 const warningMessageOnDfsAndBun = `\
@@ -70,6 +114,15 @@ export const setupPrepareSubmissionButton = async (
     prepareButton.addEventListener("click", () => {
         // Monaco Editorからコードを取得
         const code = editor.getValue();
+        const model = editor.getModel();
+        // TypeScriptのときのみ、型エラーがあれば転記を拒否してエラー位置へ移動
+        if (model?.getLanguageId() === "typescript") {
+            const firstError = getFirstTypeScriptErrorMarker(model);
+            if (firstError) {
+                focusTypeScriptError(editor, firstError);
+                return;
+            }
+        }
         // もしコードに`dfs`と`Bun`が両方含まれていたら、ダイアログで警告する
         if (code.includes("dfs") && code.includes("Bun")) {
             const proceed = window.confirm(warningMessageOnDfsAndBun);
