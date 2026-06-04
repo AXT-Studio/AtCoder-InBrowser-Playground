@@ -10,9 +10,13 @@ import {
     type editor as monacoEditor,
     editor as monacoEditorApi,
     MarkerSeverity,
+    Range,
 } from "monaco-editor";
 
 type ModelErrorMarker = ReturnType<typeof monacoEditorApi.getModelMarkers>[number];
+
+const ERROR_FLASH_DURATION_MS = 500;
+const ERROR_FLASH_LINE_CLASS = "aibp-ts-error-flash-line";
 
 // ----------------------------------------------------------------
 // AtCoder本来のソースコード欄にコードをセットする関数
@@ -74,29 +78,27 @@ const getFirstTypeScriptErrorMarker = (
 };
 
 // ----------------------------------------------------------------
-// エディタを型エラー位置へスクロールし、カーソルを移動する
+// マーカー座標をモデル内に収める
 // ----------------------------------------------------------------
 
-const focusTypeScriptError = (
-    editor: monacoEditor.IStandaloneCodeEditor,
-    marker: ModelErrorMarker,
-) => {
-    const position = {
-        lineNumber: marker.startLineNumber,
-        column: marker.startColumn,
-    };
-    editor.revealPositionInCenter(position);
-    editor.setPosition(position);
-    editor.focus();
-};
+const clampColumn = (model: monacoEditor.ITextModel, lineNumber: number, column: number) =>
+    Math.min(Math.max(1, column), model.getLineMaxColumn(lineNumber));
 
-// ----------------------------------------------------------------
-// コードに`dfs`と`Bun`が両方含まれているときに出す警告文章
-// ----------------------------------------------------------------
-const warningMessageOnDfsAndBun = `\
-警告: Bun環境で再帰DFSをしようとしていませんか？コールスタック超過によりペナルティ(Runtime Error)を受ける可能性があります。続行しますか？
-Warning: Are you trying to do recursive DFS in the Bun environment? You may get a penalty (Runtime Error) due to stack overflow. Do you want to proceed?
-`;
+const markerToSelectionRange = (model: monacoEditor.ITextModel, marker: ModelErrorMarker) =>
+    new Range(
+        marker.startLineNumber,
+        clampColumn(model, marker.startLineNumber, marker.startColumn),
+        marker.endLineNumber,
+        clampColumn(model, marker.endLineNumber, marker.endColumn),
+    );
+
+const markerToFlashLineRange = (model: monacoEditor.ITextModel, marker: ModelErrorMarker) =>
+    new Range(
+        marker.startLineNumber,
+        1,
+        marker.endLineNumber,
+        model.getLineMaxColumn(marker.endLineNumber),
+    );
 
 // ----------------------------------------------------------------
 // 本体
@@ -107,6 +109,51 @@ export const setupPrepareSubmissionButton = async (
     container: HTMLDivElement,
     editor: monacoEditor.IStandaloneCodeEditor,
 ) => {
+    const errorFlashDecorations = editor.createDecorationsCollection([]);
+    let errorFlashTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const clearErrorFlash = () => {
+        if (errorFlashTimeoutId !== undefined) {
+            clearTimeout(errorFlashTimeoutId);
+            errorFlashTimeoutId = undefined;
+        }
+        errorFlashDecorations.clear();
+    };
+
+    const flashErrorLines = (model: monacoEditor.ITextModel, marker: ModelErrorMarker) => {
+        clearErrorFlash();
+        errorFlashDecorations.set([
+            {
+                range: markerToFlashLineRange(model, marker),
+                options: {
+                    isWholeLine: true,
+                    className: ERROR_FLASH_LINE_CLASS,
+                },
+            },
+        ]);
+        errorFlashTimeoutId = setTimeout(() => {
+            errorFlashTimeoutId = undefined;
+            errorFlashDecorations.clear();
+        }, ERROR_FLASH_DURATION_MS);
+    };
+
+    // 転記拒否時: エラー範囲へスクロール・選択・行フラッシュ
+    const focusTypeScriptError = (model: monacoEditor.ITextModel, marker: ModelErrorMarker) => {
+        const errorRange = markerToSelectionRange(model, marker);
+        editor.setSelection(errorRange);
+        editor.revealRangeInCenter(errorRange);
+        flashErrorLines(model, marker);
+        editor.focus();
+    };
+
+    // ----------------------------------------------------------------
+    // コードに`dfs`と`Bun`が両方含まれているときに出す警告文章
+    // ----------------------------------------------------------------
+    const warningMessageOnDfsAndBun = `\
+警告: Bun環境で再帰DFSをしようとしていませんか？コールスタック超過によりペナルティ(Runtime Error)を受ける可能性があります。続行しますか？
+Warning: Are you trying to do recursive DFS in the Bun environment? You may get a penalty (Runtime Error) due to stack overflow. Do you want to proceed?
+`;
+
     // ==== Prepare Submissionボタンにクリックイベントリスナーを追加 ====
     const prepareButton = container.querySelector(
         "#button-prepare-submission",
@@ -119,7 +166,7 @@ export const setupPrepareSubmissionButton = async (
         if (model?.getLanguageId() === "typescript") {
             const firstError = getFirstTypeScriptErrorMarker(model);
             if (firstError) {
-                focusTypeScriptError(editor, firstError);
+                focusTypeScriptError(model, firstError);
                 return;
             }
         }
