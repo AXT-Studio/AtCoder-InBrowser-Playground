@@ -1,0 +1,14 @@
+diff --git a/esm/vs/language/typescript/languageFeatures.js b/esm/vs/language/typescript/languageFeatures.js
+index 485cbd9239469d5168907e2250d5bf1615116c2b..6d94930ccd0a11846a4c0a28374e7a869ccb6d17 100644
+--- a/esm/vs/language/typescript/languageFeatures.js
++++ b/esm/vs/language/typescript/languageFeatures.js
+@@ -490,7 +490,8 @@ function tagToString(tag) {
+     tagLabel += `\`${paramName.text}\``;
+     if (rest.length > 0) tagLabel += ` \u2014 ${rest.map((r) => r.text).join(" ")}`;
+   } else if (Array.isArray(tag.text)) {
+-    tagLabel += ` \u2014 ${tag.text.map((r) => r.text).join(" ")}`;
++    const text = tag.text.map((r) => r.text).join(" ");
++    tagLabel += `${text.startsWith("```") ? "\n" : " \u2014 "}${text}`;
+   } else if (tag.text) {
+     tagLabel += ` \u2014 ${tag.text}`;
+   }
