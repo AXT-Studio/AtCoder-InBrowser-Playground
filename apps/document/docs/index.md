@@ -8,10 +8,10 @@ hero:
   tagline: "AtCoderの問題ページ上に、ブラウザ上で動作が完結するコードエディター・テスターを追加する"
   actions:
     - theme: brand
-      text: AIBPを使い始める
+      text: インストール
       link: /getting-started
     - theme: alt
-      text: AIBPを選ぶ理由
+      text: Why AIBP?
       link: /why-aibp
 
 features:
