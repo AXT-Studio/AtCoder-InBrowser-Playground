@@ -28,6 +28,8 @@ import { generateTemplate as generateTemplate_ts_node } from "./templateGenerato
 import { generateTemplate as generateTemplate_ts_node_interactive } from "./templateGenerators/ts/node_interactive";
 import { generateTemplate as generateTemplate_ts_node_scanner } from "./templateGenerators/ts/node_scanner";
 
+import { foldLines } from "./foldLines";
+
 // ----------------------------------------------------------------
 // 挿入するテンプレートの用意
 // ----------------------------------------------------------------
@@ -82,14 +84,10 @@ const insertTemplate = (
     }
     // ==== エディターにコードを挿入 ====
     editor.setValue(template);
-    // ==== もしTypeScript(InputScanner)系なら、11行目(InputScanner)を折り畳む ====
-    if (templateKey.startsWith("ts_") && templateKey.endsWith("_scanner")) {
-        setTimeout(() => {
-            editor.trigger("aibp", "editor.fold", {
-                selectionLines: [11],
-            });
-        }, 90);
-    }
+    // ==== もしTypeScriptかJavaScriptなら、class宣言を折り畳む ====
+    foldLines(editor, (txt) => {
+        return /^s*class\b/.test(txt);
+    }, { delayMs: 100 });
 };
 
 // ----------------------------------------------------------------

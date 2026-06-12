@@ -17,12 +17,12 @@ export const generateTemplate = (
 // TypeScript (Bun) Submission [using InputScanner]
 // ================================================================
 
-${inputScanner}
-
 function Main(inputText: string): void {
     const scanner = new InputScanner(inputText);
     // Add your code here
 }
+
+${inputScanner.trim()}
 
 // Please do not change the following code.
 export {}; // <- An empty export is required so that ts-check can determine it as a module.

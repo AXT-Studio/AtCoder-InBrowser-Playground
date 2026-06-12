@@ -5,12 +5,12 @@
 AtCoder In-Browser Playground (AIBP)は、ChromeとFirefoxの両方で利用可能なブラウザ拡張機能です。
 Chrome Web StoreとFirefox Add-onsからインストールできます。
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok)
-- [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
+- [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok) (Chrome向け)
+- [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/) (Firefox向け)
 
 ## 使い方
 
-拡張機能の[インストール](./../intro/installation.md)が完了したら、適当なAtCoderの問題ページを開いてみましょう！
+拡張機能の[インストール](#インストール)が完了したら、適当なAtCoderの問題ページを開いてみましょう！
 すると、問題文がページの左側に寄り、右側に新たなウィンドウが表示されるはずです。
 この新しいウィンドウが、AtCoder In-Browser Playgroundです。
 
