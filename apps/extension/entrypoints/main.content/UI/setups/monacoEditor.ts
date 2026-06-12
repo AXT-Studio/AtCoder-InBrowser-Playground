@@ -6,6 +6,7 @@
 // imports
 // ----------------------------------------------------------------
 import { editor as monacoEditor, typescript as monacoTS } from "monaco-editor";
+import { foldLines } from "./foldLines";
 
 type MonacoWorkerAssetPath =
     | "unlisted_monaco-ts-lib.js"
@@ -136,6 +137,10 @@ export const setupMonacoEditor = async (container: HTMLDivElement) => {
         if (!model) return;
         monacoEditor.setModelLanguage(model, newLanguage);
     });
+    // ==== もしTypeScriptかJavaScriptなら、class宣言を折り畳む ====
+    foldLines(editor, (txt) => {
+        return /^s*class\b/.test(txt);
+    }, { delayMs: 150 });
     // ==== 他の処理の都合でeditorを返す ====
     return editor;
 };
