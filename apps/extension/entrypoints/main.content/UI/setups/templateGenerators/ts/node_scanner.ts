@@ -17,12 +17,12 @@ export const generateTemplate = (
 // TypeScript (Node.js) Submission [using InputScanner]
 // ================================================================
 
-${inputScanner}
-
 function Main(inputText: string): void {
     const scanner = new InputScanner(inputText);
     // Add your code here
 }
+
+${inputScanner.trim()}
 
 // Please do not change the following code.
 Main(require("fs").readFileSync("/dev/stdin", "utf8"));

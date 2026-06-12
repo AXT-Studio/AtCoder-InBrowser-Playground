@@ -15,7 +15,7 @@ export default defineConfig({
             permissions.push("offscreen");
         }
         return {
-            version: "1.2.0",
+            version: "1.3.0",
             name: "AtCoder In-Browser Playground",
             description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
@@ -53,7 +53,10 @@ export default defineConfig({
         ],
         worker: {
             format: "es",
-            plugins: () => [buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
+            plugins: () => [
+                buildPolyfillCodePlugin(),
+                buildInspectRuntimePlugin(),
+            ],
         },
     }),
     modules: ["@wxt-dev/auto-icons"],
