@@ -54,6 +54,11 @@ pnpm --filter atcoder-inbrowser-playground-extension run zip:chrome
 pnpm --filter atcoder-inbrowser-playground-extension run zip:firefox
 ```
 
+> [!CAUTION]
+> Chrome向け開発環境(`... run dev:chrome`)ではコードテスト実行機能が動作しないことが確認されています。  
+> 当該機能の開発をChromeで行う場合は、都度`build:chrome`したものを読み込むようにしてください。  
+> 詳細は[Issue #72](https://github.com/AXT-Studio/AtCoder-InBrowser-Playground/issues/72)を参照してください。
+
 拡張機能のバージョンは`wxt.config.ts`の`version`フィールドで管理されます。
 
 ### Load as Unpacked Extension (Firefox)
