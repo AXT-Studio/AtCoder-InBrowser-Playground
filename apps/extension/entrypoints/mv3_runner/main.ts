@@ -9,9 +9,9 @@
 import type {
     ContentScriptMessage,
     RunnerWorkerExecMessageData,
-    CodeTestResult,
     CodeTestResultWithTLE,
 } from "@/utils/runners/types";
+import { createRunnerWorkerExecutor } from "@/utils/runners/executeWithRunnerWorker";
 import RunnerWorker from "@/utils/runners/worker?worker";
 
 // ----------------------------------------------------------------
@@ -32,62 +32,12 @@ const asCompileErrorResult = (message: string): CodeTestResultWithTLE => {
 // implementation
 // ----------------------------------------------------------------
 
-let runnerWorker: Worker | null = null;
+const executeWithRunnerWorker = createRunnerWorkerExecutor(() => new RunnerWorker());
 
 const execute = async (message: RunnerWorkerExecMessageData): Promise<CodeTestResultWithTLE> => {
     const { language, code, stdin, timeLimitMs } = message as ContentScriptMessage;
     try {
-        // ==== Workerがまだ生成されていない場合は生成する ====
-        if (!runnerWorker) {
-            runnerWorker = new RunnerWorker();
-        }
-        // ==== Workerにコード実行を依頼する ====
-        const execMessageData = {
-            type: "exec",
-            language,
-            code,
-            stdin,
-        } as RunnerWorkerExecMessageData;
-        runnerWorker.postMessage(execMessageData);
-        // ==== Workerからreadyメッセージが来るのを待つ ====
-        await new Promise<void>((resolve) => {
-            runnerWorker?.addEventListener("message", function handleMessage(event) {
-                if (event.data?.type === "ready") {
-                    runnerWorker?.removeEventListener("message", handleMessage);
-                    resolve();
-                }
-            });
-        });
-        // ==== readyメッセージを受信したら、打ち切りPromiseとresult待ちPromiseをraceさせる ====
-        let onResultMessage!: (event: MessageEvent) => void;
-        const waitForResult = new Promise<CodeTestResult>((resolve) => {
-            onResultMessage = (event: MessageEvent) => {
-                if (event.data?.type === "result") {
-                    runnerWorker?.removeEventListener("message", onResultMessage);
-                    resolve(event.data?.data as CodeTestResult);
-                }
-            };
-            runnerWorker?.addEventListener("message", onResultMessage);
-        });
-        const timeoutPromise = new Promise<CodeTestResultWithTLE>((resolve) => {
-            setTimeout(() => {
-                resolve({
-                    status: "failure",
-                    details: {
-                        kind: "TLE",
-                        message: `Time limit (${timeLimitMs}ms) exceeded`,
-                    },
-                });
-            }, timeLimitMs);
-        });
-        const raceResult = await Promise.race([waitForResult, timeoutPromise]);
-        if (raceResult.status === "failure") {
-            runnerWorker?.removeEventListener("message", onResultMessage);
-            runnerWorker?.terminate();
-            runnerWorker = null;
-        }
-        // ==== 結果をBackground Scriptに返す ====
-        return raceResult as CodeTestResultWithTLE;
+        return await executeWithRunnerWorker({ language, code, stdin, timeLimitMs });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return asCompileErrorResult(errorMessage);

@@ -43,6 +43,7 @@ Background Scriptの責務は以下です。
 
 - Content Scriptから渡される`{言語, コード, stdin, 実行時間制限}`をRunner Workerに渡して実行しながら、実行打ち切りを行う
 - Runner Workerを使い回せる(Success)ならキャッシュし、使い回せない(FailureかTLE打ち切り)なら再起動する
+    - ただし、メモリ消費量削減のために一定時間経過したらキャッシュされているRunner Workerもterminateする
 
 Content ScriptとBackground Scriptの間の通信プロトコルは以下のとおりです。
 

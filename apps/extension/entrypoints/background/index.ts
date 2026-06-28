@@ -6,12 +6,8 @@
 // imports
 // ----------------------------------------------------------------
 
-import type {
-    ContentScriptMessage,
-    RunnerWorkerExecMessageData,
-    CodeTestResult,
-    CodeTestResultWithTLE,
-} from "@/utils/runners/types";
+import type { ContentScriptMessage, CodeTestResultWithTLE } from "@/utils/runners/types";
+import { createRunnerWorkerExecutor } from "@/utils/runners/executeWithRunnerWorker";
 import RunnerWorker from "@/utils/runners/worker?worker";
 
 // ----------------------------------------------------------------
@@ -46,10 +42,7 @@ type ChromeApiLike = {
 export default defineBackground({
     main() {
         console.log("Background script is started.");
-        // ----------------------------------------------------------------
-        // Workerを保存しておく場所を作る
-        // ----------------------------------------------------------------
-        let runnerWorker: Worker | null = null;
+        const executeWithRunnerWorker = createRunnerWorkerExecutor(() => new RunnerWorker());
 
         // ----------------------------------------------------------------
         // マニフェストバージョンを取得 (MV2/MV3で処理を分けるため)
@@ -116,59 +109,14 @@ export default defineBackground({
             sendResponse: (response: CodeTestResultWithTLE) => void,
         ): Promise<void> => {
             try {
-                // ==== メッセージからコード実行に必要な情報を取り出す ====
-                const { language, code, stdin, timeLimitMs } = message as ContentScriptMessage;
-                // ==== Workerがまだ生成されていない場合は生成する ====
-                if (!runnerWorker) {
-                    runnerWorker = new RunnerWorker();
-                }
-                // ==== Workerにコード実行を依頼する ====
-                const execMessageData = {
-                    type: "exec",
+                const { language, code, stdin, timeLimitMs } = message;
+                const result = await executeWithRunnerWorker({
                     language,
                     code,
                     stdin,
-                } as RunnerWorkerExecMessageData;
-                runnerWorker.postMessage(execMessageData);
-                // ==== Workerからreadyメッセージが来るのを待つ ====
-                await new Promise<void>((resolve) => {
-                    runnerWorker?.addEventListener("message", function handleMessage(event) {
-                        if (event.data?.type === "ready") {
-                            runnerWorker?.removeEventListener("message", handleMessage);
-                            resolve();
-                        }
-                    });
+                    timeLimitMs,
                 });
-                // ==== readyメッセージを受信したら、打ち切りPromiseとresult待ちPromiseをraceさせる ====
-                let onResultMessage!: (event: MessageEvent) => void;
-                const waitForResult = new Promise<CodeTestResult>((resolve) => {
-                    onResultMessage = (event: MessageEvent) => {
-                        if (event.data?.type === "result") {
-                            runnerWorker?.removeEventListener("message", onResultMessage);
-                            resolve(event.data?.data as CodeTestResult);
-                        }
-                    };
-                    runnerWorker?.addEventListener("message", onResultMessage);
-                });
-                const timeoutPromise = new Promise<CodeTestResultWithTLE>((resolve) => {
-                    setTimeout(() => {
-                        resolve({
-                            status: "failure",
-                            details: {
-                                kind: "TLE",
-                                message: `Time limit (${timeLimitMs}ms) exceeded`,
-                            },
-                        });
-                    }, timeLimitMs);
-                });
-                const raceResult = await Promise.race([waitForResult, timeoutPromise]);
-                if (raceResult.status === "failure") {
-                    runnerWorker?.removeEventListener("message", onResultMessage);
-                    runnerWorker?.terminate();
-                    runnerWorker = null;
-                }
-                // ==== 結果をContent Scriptに返す ====
-                sendResponse(raceResult);
+                sendResponse(result);
             } catch (error) {
                 // ==== 失敗時はエラーメッセージをContent Scriptに返す ====
                 const errorMessage = error instanceof Error ? error.message : String(error);
