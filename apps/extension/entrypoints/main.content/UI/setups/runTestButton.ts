@@ -7,8 +7,7 @@
 // ----------------------------------------------------------------
 
 import type { editor as monacoEditor } from "monaco-editor";
-import { deriveTestVerdict } from "@/utils/stdout/verdict";
-import { executeCode } from "@/entrypoints/main.content/services/executeCode";
+import { runTest } from "@/entrypoints/main.content/services/runTest";
 
 // ----------------------------------------------------------------
 // ボタンクリック時に頻発する処理
@@ -112,57 +111,21 @@ const onRunTestButtonClicked = async (
     if (prepareResult.status === "failure") return prepareResult;
     // ==== stdout/stderr表示エリアをクリア ====
     updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, "", "");
-    // ==== Background Scriptに渡して実行を試みる try-catchでエラーハンドリング ====
-    try {
-        // ==== エディタからコードを取得 ====
-        const code = editor.getValue();
-        // ==== テスト入力と期待出力を取得 ====
-        const testInput = testInputTextarea.value;
-        const expectedOutput = expectedOutputTextarea.value;
-        // ==== 現在の時刻を取得（実行時間計測用） ====
-        const startTime = performance.now();
 
-        // ==== コード実行をBackground Script / Offscreen Documentに依頼し、結果を待つ ====
-        // apps/extension/entrypoints/main.content/services/executeCode.ts の executeCode を使う形に書き換え
-        const runResponse = await executeCode(selectedLanguage, code, testInput, timeLimitMs);
+    const result = await runTest({
+        code: editor.getValue(),
+        stdin: testInputTextarea.value,
+        expected: expectedOutputTextarea.value,
+        selectedLanguage,
+        timeLimitMs,
+        allowableError,
+    });
 
-        // ==== 実行時間を計測 ====
-        const endTime = performance.now();
-        const execTime = endTime - startTime;
-        // ==== 結果ステータスによって表示を分ける必要がないところは先に更新 ====
-        updateOutputAreas(
-            actualStdoutTextarea,
-            actualStderrTextarea,
-            runResponse.status === "success" ? runResponse.details.stdout : "",
-            runResponse.status === "success"
-                ? runResponse.details.stderr
-                : runResponse.details.message,
-        );
-        updateExecutionTime(execTimeTd, execTime, timeLimitMs);
-        const verdict = deriveTestVerdict(
-            runResponse,
-            execTime,
-            timeLimitMs,
-            expectedOutput,
-            allowableError,
-        );
-        updateTestStatus(statusSpan, verdict);
-        // ==== 最後にRun Testボタンを有効化 ====
-        runTestButton.disabled = false;
-        // ==== すべて正常に終了したらsuccessを返す ====
-        return { status: "success", details: undefined };
-    } catch (error) {
-        // ==== 予期せぬエラーが発生した場合はエラーメッセージを表示しボタンを有効化して終了 ====
-        updateTestStatus(statusSpan, "RE");
-        updateOutputAreas(
-            actualStdoutTextarea,
-            actualStderrTextarea,
-            "",
-            `Unexpected error: ${(error as Error).message}`,
-        );
-        runTestButton.disabled = false;
-        return { status: "failure", details: error as Error };
-    }
+    updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, result.stdout, result.stderr);
+    updateExecutionTime(execTimeTd, result.execTimeMs, timeLimitMs);
+    updateTestStatus(statusSpan, result.verdict);
+    runTestButton.disabled = false;
+    return { status: "success", details: undefined };
 };
 
 // ----------------------------------------------------------------
