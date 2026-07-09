@@ -8,12 +8,14 @@ import {
     MarkerSeverity,
 } from "monaco-editor";
 
+import { setSourceCode } from "@/utils/atcoder/submission";
+
 export type ModelErrorMarker = ReturnType<typeof monacoEditorApi.getModelMarkers>[number];
 
 export type PrepareSubmissionResult =
     | { action: "blocked"; marker: ModelErrorMarker }
-    | { action: "confirm"; message: string }
-    | { action: "submit" };
+    | { action: "cancelled" }
+    | { action: "submitted" };
 
 export const WARNING_MESSAGE_ON_DFS_AND_BUN = `\
 警告: Bun環境で再帰DFSをしようとしていませんか？コールスタック超過によりペナルティ(Runtime Error)を受ける可能性があります。続行しますか？
@@ -45,14 +47,15 @@ export const shouldWarnDfsAndBun = (code: string): boolean =>
     code.includes("dfs") && code.includes("Bun");
 
 // ----------------------------------------------------------------
-// 提出準備の可否を判定する
+// 提出準備の可否を判定し、可能なら提出欄へ転記する
 // ----------------------------------------------------------------
 
-export const evaluatePrepareSubmission = (params: {
+export const prepareSubmission = (params: {
     code: string;
     model: monacoEditor.ITextModel | null;
+    confirm: (message: string) => boolean;
 }): PrepareSubmissionResult => {
-    const { code, model } = params;
+    const { code, model, confirm } = params;
 
     if (model?.getLanguageId() === "typescript") {
         const firstError = getFirstTypeScriptErrorMarker(model);
@@ -61,9 +64,10 @@ export const evaluatePrepareSubmission = (params: {
         }
     }
 
-    if (shouldWarnDfsAndBun(code)) {
-        return { action: "confirm", message: WARNING_MESSAGE_ON_DFS_AND_BUN };
+    if (shouldWarnDfsAndBun(code) && !confirm(WARNING_MESSAGE_ON_DFS_AND_BUN)) {
+        return { action: "cancelled" };
     }
 
-    return { action: "submit" };
+    setSourceCode(code);
+    return { action: "submitted" };
 };

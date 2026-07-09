@@ -8,9 +8,10 @@
 
 import { type editor as monacoEditor, Range } from "monaco-editor";
 
-import { setSourceCode } from "@/utils/atcoder/submission";
-
-import { type ModelErrorMarker, evaluatePrepareSubmission } from "../../services/prepareSubmission";
+import {
+    type ModelErrorMarker,
+    prepareSubmission,
+} from "@/entrypoints/main.content/services/prepareSubmission";
 
 const ERROR_FLASH_DURATION_MS = 500;
 const ERROR_FLASH_LINE_CLASS = "aibp-ts-error-flash-line";
@@ -89,19 +90,15 @@ export const setupPrepareSubmissionButton = async (
         "#button-prepare-submission",
     ) as HTMLButtonElement;
     prepareButton.addEventListener("click", () => {
-        const code = editor.getValue();
         const model = editor.getModel();
-        const result = evaluatePrepareSubmission({ code, model });
+        const result = prepareSubmission({
+            code: editor.getValue(),
+            model,
+            confirm: (message) => window.confirm(message),
+        });
 
-        if (result.action === "blocked") {
-            if (model) {
-                focusTypeScriptError(model, result.marker);
-            }
-            return;
+        if (result.action === "blocked" && model) {
+            focusTypeScriptError(model, result.marker);
         }
-        if (result.action === "confirm" && !window.confirm(result.message)) {
-            return;
-        }
-        setSourceCode(code);
     });
 };

@@ -8,7 +8,7 @@
 
 import type { editor as monacoEditor } from "monaco-editor";
 import { runTest } from "@/entrypoints/main.content/services/runTest";
-import { getEditorLanguage } from "../../services/settings";
+import { getEditorLanguage } from "@/entrypoints/main.content/services/settings";
 
 // ----------------------------------------------------------------
 // ボタンクリック時に頻発する処理
@@ -70,63 +70,98 @@ const updateExecutionTime = (
 };
 
 // ----------------------------------------------------------------
-// ボタンクリック時に行う処理の各フェーズ
-// (ここにある関数はすべてResultを返すようにしてエラーハンドリングをします。)
+// UIからテスト実行し、結果をDOMへ反映する
 // ----------------------------------------------------------------
 
-/** [Run Test]ボタンを無効化し、statusをWJにします。 */
-const prepareForTestExecution = (
-    statusSpan: HTMLSpanElement,
-    execTimeTd: HTMLTableCellElement,
-    runTestButton: HTMLButtonElement,
-): Result<void, Error> => {
+export type RunTestFromUIOptions = {
+    stdin?: string;
+    expected?: string;
+};
+
+/** コンテナ内のテストUIを読み取り、runTest serviceを呼んで結果を反映します。 */
+export const runTestFromUI = async (
+    container: HTMLDivElement,
+    editor: monacoEditor.IStandaloneCodeEditor,
+    options?: RunTestFromUIOptions,
+): Promise<Result<void, Error>> => {
+    const statusSpan = container.querySelector("#span-test-status") as HTMLSpanElement | null;
+    const execTimeTd = container.querySelector("#td-execution-time") as HTMLTableCellElement | null;
+    const testInputTextarea = container.querySelector(
+        "#textarea-test-input",
+    ) as HTMLTextAreaElement | null;
+    const expectedOutputTextarea = container.querySelector(
+        "#textarea-expected-output",
+    ) as HTMLTextAreaElement | null;
+    const timeLimitInput = container.querySelector(
+        "#input-settings-test-time-limit",
+    ) as HTMLInputElement | null;
+    const timeMarginInput = container.querySelector(
+        "#input-settings-allowable-error",
+    ) as HTMLInputElement | null;
+    const actualStdoutTextarea = container.querySelector(
+        "#textarea-actual-stdout",
+    ) as HTMLTextAreaElement | null;
+    const actualStderrTextarea = container.querySelector(
+        "#textarea-actual-stderr",
+    ) as HTMLTextAreaElement | null;
+    const runTestButton = container.querySelector("#button-run-test") as HTMLButtonElement | null;
+
+    if (
+        !statusSpan ||
+        !execTimeTd ||
+        !testInputTextarea ||
+        !expectedOutputTextarea ||
+        !timeLimitInput ||
+        !timeMarginInput ||
+        !actualStdoutTextarea ||
+        !actualStderrTextarea ||
+        !runTestButton
+    ) {
+        return {
+            status: "failure",
+            details: new Error("Required test UI elements not found"),
+        };
+    }
+
+    if (runTestButton.disabled) {
+        return { status: "success", details: undefined };
+    }
+
+    if (options?.stdin !== undefined) {
+        testInputTextarea.value = options.stdin;
+    }
+    if (options?.expected !== undefined) {
+        expectedOutputTextarea.value = options.expected;
+    }
+
     try {
         runTestButton.disabled = true;
         updateTestStatus(statusSpan, "WJ");
         execTimeTd.textContent = "---";
+        updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, "", "");
+
+        const selectedLanguage = (await getEditorLanguage()) || "plaintext";
+        const timeLimitMs = Number(timeLimitInput.value) || 1000;
+        const allowableError = Number(timeMarginInput.value) || 0;
+
+        const result = await runTest({
+            code: editor.getValue(),
+            stdin: testInputTextarea.value,
+            expected: expectedOutputTextarea.value,
+            selectedLanguage,
+            timeLimitMs,
+            allowableError,
+        });
+
+        updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, result.stdout, result.stderr);
+        updateExecutionTime(execTimeTd, result.execTimeMs, timeLimitMs);
+        updateTestStatus(statusSpan, result.verdict);
         return { status: "success", details: undefined };
     } catch (error) {
         return { status: "failure", details: error as Error };
+    } finally {
+        runTestButton.disabled = false;
     }
-};
-
-// ----------------------------------------------------------------
-// ボタンクリック時の処理本体
-// ----------------------------------------------------------------
-
-const onRunTestButtonClicked = async (
-    statusSpan: HTMLSpanElement,
-    execTimeTd: HTMLTableCellElement,
-    testInputTextarea: HTMLTextAreaElement,
-    expectedOutputTextarea: HTMLTextAreaElement,
-    actualStdoutTextarea: HTMLTextAreaElement,
-    actualStderrTextarea: HTMLTextAreaElement,
-    timeLimitMs: number,
-    allowableError: number,
-    runTestButton: HTMLButtonElement,
-    editor: monacoEditor.IStandaloneCodeEditor,
-    selectedLanguage: string,
-): Promise<Result<void, Error>> => {
-    // ==== まずボタン自体を無効化し、statusをWJにする ====
-    const prepareResult = prepareForTestExecution(statusSpan, execTimeTd, runTestButton);
-    if (prepareResult.status === "failure") return prepareResult;
-    // ==== stdout/stderr表示エリアをクリア ====
-    updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, "", "");
-
-    const result = await runTest({
-        code: editor.getValue(),
-        stdin: testInputTextarea.value,
-        expected: expectedOutputTextarea.value,
-        selectedLanguage,
-        timeLimitMs,
-        allowableError,
-    });
-
-    updateOutputAreas(actualStdoutTextarea, actualStderrTextarea, result.stdout, result.stderr);
-    updateExecutionTime(execTimeTd, result.execTimeMs, timeLimitMs);
-    updateTestStatus(statusSpan, result.verdict);
-    runTestButton.disabled = false;
-    return { status: "success", details: undefined };
 };
 
 // ----------------------------------------------------------------
@@ -137,57 +172,8 @@ export const setupRunTestButton = async (
     container: HTMLDivElement,
     editor: monacoEditor.IStandaloneCodeEditor,
 ) => {
-    // ==== 先にStatus・Exec. Timeの要素を取得 ====
-    const statusSpan = container.querySelector("#span-test-status") as HTMLSpanElement;
-    const execTimeTd = container.querySelector("#td-execution-time") as HTMLTableCellElement;
-
-    // ==== 先にtest inputとexpected outputの要素を取得 ====
-    const testInputTextarea = container.querySelector(
-        "#textarea-test-input",
-    ) as HTMLTextAreaElement;
-    const expectedOutputTextarea = container.querySelector(
-        "#textarea-expected-output",
-    ) as HTMLTextAreaElement;
-
-    // ==== 先に実行時間制限・許容誤差の要素を取得 ====
-    const timeLimitInput = container.querySelector(
-        "#input-settings-test-time-limit",
-    ) as HTMLInputElement;
-    const timeMarginInput = container.querySelector(
-        "#input-settings-allowable-error",
-    ) as HTMLInputElement;
-
-    // ==== stdout/stderr表示エリアの要素を取得 ====
-    const actualStdoutTextarea = container.querySelector(
-        "#textarea-actual-stdout",
-    ) as HTMLTextAreaElement;
-    const actualStderrTextarea = container.querySelector(
-        "#textarea-actual-stderr",
-    ) as HTMLTextAreaElement;
-
-    // ==== Run Testボタンの要素を取得 ====
     const runTestButton = container.querySelector("#button-run-test") as HTMLButtonElement;
-
-    // ==== ボタンにクリックイベントリスナーを追加 ====
     runTestButton.addEventListener("click", async () => {
-        // ==== Languageの設定をbrowser.storage.localから取得 ====
-        const selectedLanguage = (await getEditorLanguage()) || "plaintext";
-        // 実行時間制限・許容誤差を取得
-        const timeLimitMs = Number(timeLimitInput.value) || 1000;
-        const allowableError = Number(timeMarginInput.value) || 0;
-        // Run Test処理を実行
-        await onRunTestButtonClicked(
-            statusSpan,
-            execTimeTd,
-            testInputTextarea,
-            expectedOutputTextarea,
-            actualStdoutTextarea,
-            actualStderrTextarea,
-            timeLimitMs,
-            allowableError,
-            runTestButton,
-            editor,
-            selectedLanguage,
-        );
+        await runTestFromUI(container, editor);
     });
 };

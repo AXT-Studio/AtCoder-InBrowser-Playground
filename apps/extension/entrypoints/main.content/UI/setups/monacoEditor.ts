@@ -141,7 +141,7 @@ export const setupMonacoEditor = async (container: HTMLDivElement) => {
     foldLines(
         editor,
         (txt) => {
-            return /^s*class\b/.test(txt);
+            return /^\s*class\b/.test(txt);
         },
         { delayMs: 150 },
     );

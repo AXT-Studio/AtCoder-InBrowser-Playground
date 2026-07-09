@@ -192,7 +192,7 @@ export const createUI = async (): Promise<HTMLDivElement> => {
     await setupInPageSettingsSetter(container);
     const editor = await setupMonacoEditor(container);
     await setupTemplateInserter(container, editor);
-    await setupExampleAutoExecButtons(container);
+    await setupExampleAutoExecButtons(container, editor);
     await setupPrepareSubmissionButton(container, editor);
     await setupRunTestButton(container, editor);
 

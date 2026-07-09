@@ -37,7 +37,7 @@ export const setupTemplateInserter = async (
                 taskTitle,
                 taskURL,
                 currentCode: editor.getValue(),
-                confirm: window.confirm,
+                confirm: (message) => window.confirm(message),
             });
 
             if (result.action !== "insert") {
@@ -48,7 +48,7 @@ export const setupTemplateInserter = async (
             foldLines(
                 editor,
                 (txt) => {
-                    return /^s*class\b/.test(txt);
+                    return /^\s*class\b/.test(txt);
                 },
                 { delayMs: 100 },
             );
