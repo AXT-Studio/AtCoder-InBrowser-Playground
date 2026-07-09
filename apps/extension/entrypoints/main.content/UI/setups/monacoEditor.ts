@@ -7,6 +7,7 @@
 // ----------------------------------------------------------------
 import { editor as monacoEditor, typescript as monacoTS } from "monaco-editor";
 import { foldLines } from "./foldLines";
+import { getSavedCode, saveCode } from "@/entrypoints/main.content/services/settings";
 
 type MonacoWorkerAssetPath =
     | "unlisted_monaco-ts-lib.js"
@@ -100,8 +101,7 @@ for (const [fileName, libContent] of Object.entries(extraLibs)) {
 // ----------------------------------------------------------------
 export const setupMonacoEditor = async (container: HTMLDivElement) => {
     // ==== 保存されているコードがあればそれを取得 ====
-    const codeSaveKey: `local:${string}` = `local:editor.code.${window.location.pathname}`;
-    const savedCode = (await storage.getItem<string>(codeSaveKey)) || "";
+    const savedCode = await getSavedCode();
     // ==== Monaco Editorを入れるコンテナ要素を取得 ====
     const monacoContainer = container.querySelector<HTMLDivElement>("#monaco-editor-container");
     if (!monacoContainer) {
@@ -128,7 +128,7 @@ export const setupMonacoEditor = async (container: HTMLDivElement) => {
     // ==== コード変更時に保存するように設定 ====
     editor.onDidChangeModelContent(async () => {
         const code = editor.getValue();
-        await storage.setItem(codeSaveKey, code);
+        await saveCode(code);
     });
     // ==== 言語変更時にエディタの言語を変更するように設定 ====
     languageSelect?.addEventListener("change", () => {
@@ -138,9 +138,13 @@ export const setupMonacoEditor = async (container: HTMLDivElement) => {
         monacoEditor.setModelLanguage(model, newLanguage);
     });
     // ==== もしTypeScriptかJavaScriptなら、class宣言を折り畳む ====
-    foldLines(editor, (txt) => {
-        return /^s*class\b/.test(txt);
-    }, { delayMs: 150 });
+    foldLines(
+        editor,
+        (txt) => {
+            return /^s*class\b/.test(txt);
+        },
+        { delayMs: 150 },
+    );
     // ==== 他の処理の都合でeditorを返す ====
     return editor;
 };

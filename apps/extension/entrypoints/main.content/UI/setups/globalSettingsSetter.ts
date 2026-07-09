@@ -4,6 +4,8 @@
 // - UI操作時に設定を保存するようにする
 // ================================================================================================
 
+import { getEditorLanguage, setEditorLanguage } from "@/entrypoints/main.content/services/settings";
+
 // ----------------------------------------------------------------
 // 反映先のDOM要素の取得と、保存されている設定のUIへの反映、UI操作時の設定保存の実装
 // ----------------------------------------------------------------
@@ -18,7 +20,7 @@ export const setupGlobalSettingsSetter = async (container: HTMLDivElement) => {
     // ==== storageに保存されている設定をUIに反映する ====
     // 設定値を取得
     const settings = {
-        editorLanguage: await storage.getItem<string>("local:settings.editorLanguage"),
+        editorLanguage: await getEditorLanguage(),
     };
     // 反映
     if (settingsElement.editorLanguage && settings.editorLanguage !== null) {
@@ -29,7 +31,7 @@ export const setupGlobalSettingsSetter = async (container: HTMLDivElement) => {
         settingsElement.editorLanguage.addEventListener("change", async () => {
             const value = settingsElement.editorLanguage?.value;
             if (value) {
-                await storage.setItem("local:settings.editorLanguage", value);
+                await setEditorLanguage(value);
             }
         });
     }

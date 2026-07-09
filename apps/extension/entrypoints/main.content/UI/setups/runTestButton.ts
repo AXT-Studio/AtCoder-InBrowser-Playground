@@ -8,6 +8,7 @@
 
 import type { editor as monacoEditor } from "monaco-editor";
 import { runTest } from "@/entrypoints/main.content/services/runTest";
+import { getEditorLanguage } from "../../services/settings";
 
 // ----------------------------------------------------------------
 // ボタンクリック時に頻発する処理
@@ -170,8 +171,7 @@ export const setupRunTestButton = async (
     // ==== ボタンにクリックイベントリスナーを追加 ====
     runTestButton.addEventListener("click", async () => {
         // ==== Languageの設定をbrowser.storage.localから取得 ====
-        const selectedLanguage =
-            (await storage.getItem<string>("local:settings.editorLanguage")) || "plaintext";
+        const selectedLanguage = (await getEditorLanguage()) || "plaintext";
         // 実行時間制限・許容誤差を取得
         const timeLimitMs = Number(timeLimitInput.value) || 1000;
         const allowableError = Number(timeMarginInput.value) || 0;
