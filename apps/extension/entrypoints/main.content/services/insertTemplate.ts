@@ -2,18 +2,18 @@
 // コードテンプレート挿入のオーケストレーション
 // ================================================================================================
 
-import { generateTemplate as generateTemplate_js_bun } from "../UI/setups/templateGenerators/js/bun";
-import { generateTemplate as generateTemplate_js_deno } from "../UI/setups/templateGenerators/js/deno";
-import { generateTemplate as generateTemplate_js_node } from "../UI/setups/templateGenerators/js/node";
-import { generateTemplate as generateTemplate_ts_bun } from "../UI/setups/templateGenerators/ts/bun";
-import { generateTemplate as generateTemplate_ts_bun_interactive } from "../UI/setups/templateGenerators/ts/bun_interactive";
-import { generateTemplate as generateTemplate_ts_bun_scanner } from "../UI/setups/templateGenerators/ts/bun_scanner";
-import { generateTemplate as generateTemplate_ts_deno } from "../UI/setups/templateGenerators/ts/deno";
-import { generateTemplate as generateTemplate_ts_deno_interactive } from "../UI/setups/templateGenerators/ts/deno_interactive";
-import { generateTemplate as generateTemplate_ts_deno_scanner } from "../UI/setups/templateGenerators/ts/deno_scanner";
-import { generateTemplate as generateTemplate_ts_node } from "../UI/setups/templateGenerators/ts/node";
-import { generateTemplate as generateTemplate_ts_node_interactive } from "../UI/setups/templateGenerators/ts/node_interactive";
-import { generateTemplate as generateTemplate_ts_node_scanner } from "../UI/setups/templateGenerators/ts/node_scanner";
+import { generateTemplate as generateTemplate_js_bun } from "@/utils/templates/js/bun";
+import { generateTemplate as generateTemplate_js_deno } from "@/utils/templates/js/deno";
+import { generateTemplate as generateTemplate_js_node } from "@/utils/templates/js/node";
+import { generateTemplate as generateTemplate_ts_bun } from "@/utils/templates/ts/bun";
+import { generateTemplate as generateTemplate_ts_bun_interactive } from "@/utils/templates/ts/bun_interactive";
+import { generateTemplate as generateTemplate_ts_bun_scanner } from "@/utils/templates/ts/bun_scanner";
+import { generateTemplate as generateTemplate_ts_deno } from "@/utils/templates/ts/deno";
+import { generateTemplate as generateTemplate_ts_deno_interactive } from "@/utils/templates/ts/deno_interactive";
+import { generateTemplate as generateTemplate_ts_deno_scanner } from "@/utils/templates/ts/deno_scanner";
+import { generateTemplate as generateTemplate_ts_node } from "@/utils/templates/ts/node";
+import { generateTemplate as generateTemplate_ts_node_interactive } from "@/utils/templates/ts/node_interactive";
+import { generateTemplate as generateTemplate_ts_node_scanner } from "@/utils/templates/ts/node_scanner";
 
 type TemplateGenerator = (contestTitle: string, taskTitle: string, taskURL: string) => string;
 
@@ -31,7 +31,7 @@ export type InsertTemplateResult =
 
 export const getTemplateGenerators = (): Record<string, TemplateGenerator> => {
     const result: Record<string, TemplateGenerator> = {};
-    // ※`button#template-<templateKey>`の`<templateKey>`と対応させる形で、templateGeneratorsに関数を追加する
+    // ※`button#template-<templateKey>`の`<templateKey>`と対応させる形で、templatesに関数を追加する
     result.js_bun = generateTemplate_js_bun;
     result.js_deno = generateTemplate_js_deno;
     result.js_node = generateTemplate_js_node;
