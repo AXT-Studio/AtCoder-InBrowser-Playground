@@ -6,40 +6,16 @@
 // imports
 // ----------------------------------------------------------------
 
-import {
-    type editor as monacoEditor,
-    editor as monacoEditorApi,
-    MarkerSeverity,
-    Range,
-} from "monaco-editor";
+import { type editor as monacoEditor, Range } from "monaco-editor";
 
 import { setSourceCode } from "@/utils/atcoder/submission";
 
-type ModelErrorMarker = ReturnType<typeof monacoEditorApi.getModelMarkers>[number];
+import { getFirstTypeScriptErrorMarker } from "../../services/prepareSubmission";
+
+type ModelErrorMarker = ReturnType<typeof monacoEditor.getModelMarkers>[number];
 
 const ERROR_FLASH_DURATION_MS = 500;
 const ERROR_FLASH_LINE_CLASS = "aibp-ts-error-flash-line";
-
-// ----------------------------------------------------------------
-// TypeScriptの型エラー（severity: Error）を先頭から1件取得する
-// ----------------------------------------------------------------
-
-const getFirstTypeScriptErrorMarker = (
-    model: monacoEditor.ITextModel,
-): ModelErrorMarker | undefined => {
-    const errorMarkers = monacoEditorApi
-        .getModelMarkers({ resource: model.uri })
-        .filter((m) => m.severity === MarkerSeverity.Error);
-    if (errorMarkers.length === 0) {
-        return undefined;
-    }
-    return errorMarkers.sort((a, b) => {
-        if (a.startLineNumber !== b.startLineNumber) {
-            return a.startLineNumber - b.startLineNumber;
-        }
-        return a.startColumn - b.startColumn;
-    })[0];
-};
 
 // ----------------------------------------------------------------
 // マーカー座標をモデル内に収める
