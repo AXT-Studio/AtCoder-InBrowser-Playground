@@ -2,6 +2,10 @@
 // Page SettingsのUI設定を行う
 // - ロード時に保存されている設定をUIに反映する
 // ================================================================================================
+
+import { parseTimeLimit } from "@/utils/atcoder/parse_timeLimit";
+import { parseAllowableError } from "@/utils/atcoder/parse_allowableError";
+
 // ----------------------------------------------------------------
 // 本体
 // ----------------------------------------------------------------
@@ -17,24 +21,8 @@ export const setupInPageSettingsSetter = async (container: HTMLDivElement) => {
     };
     // 問題文から設定値を取得
     const settingsValue = {
-        testTimeLimit: (() => {
-            const problemInfoDivs = document.querySelectorAll<HTMLElement>(".row > .col-sm-12");
-            for (const div of problemInfoDivs) {
-                const text = div.innerText;
-                const match = text.match(/実行時間制限:\s*([\d.]+)\s*sec/);
-                if (match) {
-                    const timeLimitSec = Number.parseFloat(match[1]);
-                    if (!Number.isNaN(timeLimitSec)) {
-                        return Math.ceil(timeLimitSec * 1000).toString();
-                    }
-                }
-            }
-            return (2000).toString(); // デフォルト値は2000ms
-        })(),
-        allowableError: (() => {
-            // 今のところ固定値で1e-6を返す
-            return "1e-6";
-        })(),
+        testTimeLimit: String(parseTimeLimit()),
+        allowableError: parseAllowableError(),
     };
     // 反映
     if (settingsElement.testTimeLimit) {

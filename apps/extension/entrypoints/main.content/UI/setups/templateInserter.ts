@@ -29,6 +29,7 @@ import { generateTemplate as generateTemplate_ts_node_interactive } from "./temp
 import { generateTemplate as generateTemplate_ts_node_scanner } from "./templateGenerators/ts/node_scanner";
 
 import { foldLines } from "./foldLines";
+import { getPageContext } from "@/utils/atcoder/pageContext";
 
 // ----------------------------------------------------------------
 // 挿入するテンプレートの用意
@@ -85,9 +86,13 @@ const insertTemplate = (
     // ==== エディターにコードを挿入 ====
     editor.setValue(template);
     // ==== もしTypeScriptかJavaScriptなら、class宣言を折り畳む ====
-    foldLines(editor, (txt) => {
-        return /^s*class\b/.test(txt);
-    }, { delayMs: 100 });
+    foldLines(
+        editor,
+        (txt) => {
+            return /^s*class\b/.test(txt);
+        },
+        { delayMs: 100 },
+    );
 };
 
 // ----------------------------------------------------------------
@@ -100,11 +105,7 @@ export const setupTemplateInserter = async (
     editor: monacoEditor.IStandaloneCodeEditor,
 ) => {
     // ==== contestTitle, taskTitle, taskURLを取得 ====
-    const contestTitle =
-        (window.document.querySelector("nav .contest-title") as HTMLElement)?.innerText.trim() ??
-        "Unknown Contest";
-    const taskTitle = window.document.title.trim() ?? "Unknown Task";
-    const taskURL = window.location.href ?? "<Unknown URL>";
+    const { contestTitle, taskTitle, taskURL } = getPageContext();
     // ==== 実際の挿入処理を設定 ====
     const table = container.querySelector("#table-op-template");
     if (!table) {
