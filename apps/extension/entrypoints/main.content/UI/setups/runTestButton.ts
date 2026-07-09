@@ -7,71 +7,8 @@
 // ----------------------------------------------------------------
 
 import type { editor as monacoEditor } from "monaco-editor";
-import type {
-    ContentScriptMessage,
-    CodeTestResultWithTLE,
-    CodeTestContext,
-} from "@/utils/runners/types";
-
-// ----------------------------------------------------------------
-// 設定上のlanguageとRunner Workerのlanguageの対応表
-// ----------------------------------------------------------------
-const languageMap: Record<string, keyof CodeTestContext> = {
-    plaintext: "plaintext",
-    typescript: "typescript",
-    python: "python",
-    javascript: "typescript", // <- これだけ例外で、JSはTSのRunnerで動かせるしそうする
-};
-
-// ----------------------------------------------------------------
-// 期待出力とstdoutが「一致」しているかを判定する関数
-// 数値の場合は許容誤差を考慮して比較
-// ----------------------------------------------------------------
-
-const isOutputCorrect = (expected: string, actual: string, allowableError: number): boolean => {
-    // 両方を改行・スペース区切りで2次元配列にする
-    const expectedLines = expected
-        .trim()
-        .split("\n")
-        .map((row) => row.trim().split(" "));
-    const actualLines = actual
-        .trim()
-        .split("\n")
-        .map((row) => row.trim().split(" "));
-    // 行数・列数が異なる場合は不一致
-    if (expectedLines.length !== actualLines.length) {
-        return false;
-    }
-    // 各行・各要素ごとに比較
-    for (let i = 0; i < expectedLines.length; i++) {
-        const expectedRow = expectedLines[i];
-        const actualRow = actualLines[i];
-        if (expectedRow.length !== actualRow.length) {
-            return false;
-        }
-        for (let j = 0; j < expectedRow.length; j++) {
-            // 数値として比較可能かどうかをチェック
-            const expectedValue = expectedRow[j];
-            const actualValue = actualRow[j];
-            const expectedNumber = Number(expectedValue);
-            const actualNumber = Number(actualValue);
-            const expectedIsNumber = !Number.isNaN(expectedNumber);
-            const actualIsNumber = !Number.isNaN(actualNumber);
-            if (expectedIsNumber && actualIsNumber) {
-                // 両方数値の場合、許容誤差内かどうかをチェック
-                if (Math.abs(expectedNumber - actualNumber) > allowableError) {
-                    return false;
-                }
-            } else {
-                // どちらかが数値でない場合、文字列として完全一致かどうかをチェック
-                if (expectedValue !== actualValue) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-};
+import { deriveTestVerdict } from "@/utils/stdout/verdict";
+import { executeCode } from "@/entrypoints/main.content/services/executeCode";
 
 // ----------------------------------------------------------------
 // ボタンクリック時に頻発する処理
@@ -157,7 +94,7 @@ const prepareForTestExecution = (
 // ボタンクリック時の処理本体
 // ----------------------------------------------------------------
 
-const runTest = async (
+const onRunTestButtonClicked = async (
     statusSpan: HTMLSpanElement,
     execTimeTd: HTMLTableCellElement,
     testInputTextarea: HTMLTextAreaElement,
@@ -186,51 +123,12 @@ const runTest = async (
         const startTime = performance.now();
 
         // ==== コード実行をBackground Script / Offscreen Documentに依頼し、結果を待つ ====
-        const runResponse = await (async (): Promise<CodeTestResultWithTLE> => {
-            // ---- 使用言語について、対象外ならエラーを返す ----
-            if (languageMap[selectedLanguage] == null) {
-                return {
-                    status: "failure",
-                    details: {
-                        kind: "CE",
-                        message: `Unsupported language: ${selectedLanguage}`,
-                    },
-                };
-            }
-            const language = languageMap[selectedLanguage];
-            const messageData: ContentScriptMessage = {
-                type: "exec",
-                language,
-                code,
-                stdin: testInput,
-                timeLimitMs,
-            };
-            // browser.runtime.sendMessageはBackground Scriptからの応答で解決するPromiseを返すので、それを待つ
-            const response = await browser.runtime.sendMessage<
-                ContentScriptMessage,
-                CodeTestResultWithTLE | null | undefined
-            >(messageData);
-            // responseにはnullishが混入しうるらしく、nullishな場合はエラーとして扱う必要がある
-            if (response == null) {
-                return {
-                    status: "failure",
-                    details: {
-                        kind: "CE",
-                        message:
-                            "No response from background script. Possible communication failure.",
-                    },
-                };
-            }
-            // responseがnullishでないことを確認したので、CodeTestResultWithTLEとして返す
-            return response;
-        })();
+        // apps/extension/entrypoints/main.content/services/executeCode.ts の executeCode を使う形に書き換え
+        const runResponse = await executeCode(selectedLanguage, code, testInput, timeLimitMs);
+
         // ==== 実行時間を計測 ====
         const endTime = performance.now();
         const execTime = endTime - startTime;
-        // ==== stdoutが合ってるか確認 ====
-        const isCorrect =
-            runResponse.status === "success" &&
-            isOutputCorrect(expectedOutput, runResponse.details.stdout, allowableError);
         // ==== 結果ステータスによって表示を分ける必要がないところは先に更新 ====
         updateOutputAreas(
             actualStdoutTextarea,
@@ -241,33 +139,14 @@ const runTest = async (
                 : runResponse.details.message,
         );
         updateExecutionTime(execTimeTd, execTime, timeLimitMs);
-        if (execTime > timeLimitMs) {
-            // ==== execTime・isCorrectに応じて場合分けして適切に結果を更新 ====
-            // 実行時間が制限を超えている場合はTLE
-            updateTestStatus(statusSpan, "TLE");
-        } else if (runResponse.status === "failure") {
-            // Failureが返ってきている場合、中身のerrorType(RE, CE, TLEがあり得る)を見て判断
-            switch (runResponse.details.kind) {
-                case "TLE":
-                    updateTestStatus(statusSpan, "TLE");
-                    break;
-                case "RE":
-                    updateTestStatus(statusSpan, "RE");
-                    break;
-                case "CE":
-                    updateTestStatus(statusSpan, "CE");
-                    break;
-                default:
-                    updateTestStatus(statusSpan, "RE");
-                    break;
-            }
-        } else if (isCorrect) {
-            // stdoutが正しい場合はAC
-            updateTestStatus(statusSpan, "AC");
-        } else {
-            // stdoutが正しくない場合はWA
-            updateTestStatus(statusSpan, "WA");
-        }
+        const verdict = deriveTestVerdict(
+            runResponse,
+            execTime,
+            timeLimitMs,
+            expectedOutput,
+            allowableError,
+        );
+        updateTestStatus(statusSpan, verdict);
         // ==== 最後にRun Testボタンを有効化 ====
         runTestButton.disabled = false;
         // ==== すべて正常に終了したらsuccessを返す ====
@@ -334,7 +213,7 @@ export const setupRunTestButton = async (
         const timeLimitMs = Number(timeLimitInput.value) || 1000;
         const allowableError = Number(timeMarginInput.value) || 0;
         // Run Test処理を実行
-        await runTest(
+        await onRunTestButtonClicked(
             statusSpan,
             execTimeTd,
             testInputTextarea,
