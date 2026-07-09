@@ -10,9 +10,7 @@ import { type editor as monacoEditor, Range } from "monaco-editor";
 
 import { setSourceCode } from "@/utils/atcoder/submission";
 
-import { getFirstTypeScriptErrorMarker } from "../../services/prepareSubmission";
-
-type ModelErrorMarker = ReturnType<typeof monacoEditor.getModelMarkers>[number];
+import { type ModelErrorMarker, evaluatePrepareSubmission } from "../../services/prepareSubmission";
 
 const ERROR_FLASH_DURATION_MS = 500;
 const ERROR_FLASH_LINE_CLASS = "aibp-ts-error-flash-line";
@@ -86,38 +84,24 @@ export const setupPrepareSubmissionButton = async (
         editor.focus();
     };
 
-    // ----------------------------------------------------------------
-    // コードに`dfs`と`Bun`が両方含まれているときに出す警告文章
-    // ----------------------------------------------------------------
-    const warningMessageOnDfsAndBun = `\
-警告: Bun環境で再帰DFSをしようとしていませんか？コールスタック超過によりペナルティ(Runtime Error)を受ける可能性があります。続行しますか？
-Warning: Are you trying to do recursive DFS in the Bun environment? You may get a penalty (Runtime Error) due to stack overflow. Do you want to proceed?
-`;
-
     // ==== Prepare Submissionボタンにクリックイベントリスナーを追加 ====
     const prepareButton = container.querySelector(
         "#button-prepare-submission",
     ) as HTMLButtonElement;
     prepareButton.addEventListener("click", () => {
-        // Monaco Editorからコードを取得
         const code = editor.getValue();
         const model = editor.getModel();
-        // TypeScriptのときのみ、型エラーがあれば転記を拒否してエラー位置へ移動
-        if (model?.getLanguageId() === "typescript") {
-            const firstError = getFirstTypeScriptErrorMarker(model);
-            if (firstError) {
-                focusTypeScriptError(model, firstError);
-                return;
+        const result = evaluatePrepareSubmission({ code, model });
+
+        if (result.action === "blocked") {
+            if (model) {
+                focusTypeScriptError(model, result.marker);
             }
+            return;
         }
-        // もしコードに`dfs`と`Bun`が両方含まれていたら、ダイアログで警告する
-        if (code.includes("dfs") && code.includes("Bun")) {
-            const proceed = window.confirm(warningMessageOnDfsAndBun);
-            if (!proceed) {
-                return;
-            }
+        if (result.action === "confirm" && !window.confirm(result.message)) {
+            return;
         }
-        // AtCoderのソースコード欄にセットする
         setSourceCode(code);
     });
 };
