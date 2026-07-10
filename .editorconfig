@@ -1,0 +1,19 @@
+# Indent / line length / EOL are owned here.
+# Do not duplicate them in .oxfmtrc.json (Oxfmt falls back to this file).
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+max_line_length = 120
+
+
+[*.{yaml,yml}]
+indent_size = 2
+
+[*.{md,mdx}]
+trim_trailing_whitespace = false

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="100%" height="100%" viewBox="0 0 128 128" xml:space="preserve">
+    <!-- グラデーション -->
+    <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="oklch(0.7043 0.1561 143.7)" />
+            <stop offset="100%" stop-color="oklch(0.4771 0.1561 143.7)" />
+        </linearGradient>
+        <filter id="drop-shadow">
+            <feDropShadow dx="0" dy="0.2" stdDeviation="0.4" flood-color="#0006" />
+        </filter>
+    </defs>
+    <!-- 背景 -->
+    <rect width="128" height="128" rx="16" ry="16" fill="url(#gradient)"/>
+    <!-- トレース用 -->
+    <!-- ACの下の線 -->
+    <path opacity="1" fill="white" d="M40.3 88.0 H122.0 V93.3H40.3Z" filter="url(#drop-shadow)" />
+    <!-- > -->
+    <path opacity="1" fill="white" d="M 6.6 44.5 L 41.5 60.3 V66.1L 6.5 82.0V75.4L 34.0 63.5L 6.6 51.3Z" filter="url(#drop-shadow)" />
+    <!-- Cの上の方 -->
+    <path opacity="1" fill="white" d="M 80.5 49.3 A20 20 0 0 1 116.8 50.8L110.4 50.8A 15 15 0 0 084.4 55.8Z" filter="url(#drop-shadow)" />
+    <!-- A・Cの下の方 -->
+    <path opacity="1" fill="white" d="M 48.4 78.0 L 69.0 34.4 L86.0 64.9 A 14 14 0 0 0 110.1 66.0 H116.8 A20 20 0 0 1 81.0 68.6L69.4 47.8L54.9 78.0 Z" filter="url(#drop-shadow)" />
+</svg>

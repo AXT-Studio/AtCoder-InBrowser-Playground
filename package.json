@@ -1,0 +1,43 @@
+{
+    "name": "AtCoder-InBrowser-Playground",
+    "version": "0.0.0",
+    "private": true,
+    "description": "AtCoder In-Browser Playground",
+    "type": "module",
+    "scripts": {
+        "dev": "wxt",
+        "dev:firefox": "wxt -b firefox",
+        "build": "wxt build",
+        "build:firefox": "wxt build -b firefox",
+        "zip": "wxt zip",
+        "zip:firefox": "wxt zip -b firefox",
+        "compile": "tsc --noEmit",
+        "postinstall": "wxt prepare",
+        "fmt": "oxfmt",
+        "fmt:check": "oxfmt --check",
+        "lint": "oxlint .",
+        "lint:fix": "oxlint --fix .",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@preact/signals": "^2.9.3",
+        "preact": "^10.29.7"
+    },
+    "devDependencies": {
+        "@preact/preset-vite": "^2.10.5",
+        "@wxt-dev/auto-icons": "^1.1.1",
+        "oxfmt": "^0.58.0",
+        "oxlint": "^1.73.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.1.10",
+        "wxt": "^0.20.27"
+    },
+    "devEngines": {
+        "packageManager": {
+            "name": "pnpm",
+            "version": ">=11.0.0 <12.0.0",
+            "onFail": "download"
+        }
+    }
+}
