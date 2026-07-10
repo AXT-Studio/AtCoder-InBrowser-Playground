@@ -69,11 +69,11 @@ const html = `\
                                 <th>Ruby</th>
                                 <td><button id="template-rb_ruby">Ruby</button></td>
                             </tr>
-                            -->
                             <tr>
                                 <th>Text</th>
                                 <td><button id="template-txt_cat">Text (cat)</button></td>
                             </tr>
+                            -->
                         </tbody>
                     </table>
                 </section>
