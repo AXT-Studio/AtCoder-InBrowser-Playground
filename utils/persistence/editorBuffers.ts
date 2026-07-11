@@ -9,15 +9,12 @@ const LANGUAGE_KEYS = {
 } as const satisfies Record<BufferKind, `local:${string}`>;
 
 /** 問題ページ pathname 付きのコード保存キー */
-export const bufferCodeStorageKey = (
-    kind: BufferKind,
-    pathname: string = location.pathname,
-): `local:${string}` => `local:buffer.${kind}.code.${pathname}`;
+export const bufferCodeStorageKey = (kind: BufferKind, pathname: string = location.pathname): `local:${string}` =>
+    `local:buffer.${kind}.code.${pathname}`;
 
 /** 旧実装の提出用コードキー（刷新時に submission へ移行） */
-export const legacySubmissionCodeStorageKey = (
-    pathname: string = location.pathname,
-): `local:${string}` => `local:editor.code.${pathname}`;
+export const legacySubmissionCodeStorageKey = (pathname: string = location.pathname): `local:${string}` =>
+    `local:editor.code.${pathname}`;
 
 export const DEFAULT_EDITOR_LANGUAGE = "typescript";
 
@@ -30,10 +27,7 @@ export const saveEditorLanguage = async (kind: BufferKind, language: string): Pr
     await storage.setItem(LANGUAGE_KEYS[kind], language);
 };
 
-export const loadBufferCode = async (
-    kind: BufferKind,
-    pathname: string = location.pathname,
-): Promise<string> => {
+export const loadBufferCode = async (kind: BufferKind, pathname: string = location.pathname): Promise<string> => {
     const key = bufferCodeStorageKey(kind, pathname);
     const value = await storage.getItem<string>(key);
     if (value != null) {

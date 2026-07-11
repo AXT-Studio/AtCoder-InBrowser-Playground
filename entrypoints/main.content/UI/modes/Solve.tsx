@@ -3,10 +3,19 @@ import { useSignal } from "@preact/signals";
 import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
 import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
+import { listTemplates } from "@/utils/templates";
 import { judgeSolveVerdict } from "@/utils/stdout/judgeSolveVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
-import { epsExponent, setBufferCode, setBufferLanguage, submissionCode, submissionLanguage, timeLimitMs } from "../state";
+import {
+    epsExponent,
+    setBufferCode,
+    setBufferLanguage,
+    submissionCode,
+    submissionLanguage,
+    timeLimitMs,
+} from "../state";
 
 export function Solve() {
     const samplesRef = useRef<ReturnType<typeof parseSampleCases> | null>(null);
@@ -24,6 +33,8 @@ export function Solve() {
     const statusText = useSignal("--"); // Not executed(未実行)のときは--と表示
     const execTimeText = useSignal("-- ms");
     const running = useSignal(false);
+    const selectedTemplate = useSignal(defaultTemplateId(submissionLanguage.value, "submission"));
+    const templateOptions = listTemplates(submissionLanguage.value, "submission");
 
     const runTest = async (override?: { stdin?: string; expected?: string }) => {
         if (running.value) return;
@@ -99,7 +110,9 @@ export function Solve() {
                         id="aibp-editor-toolbar__language-select"
                         value={submissionLanguage.value}
                         onChange={(e) => {
-                            setBufferLanguage("submission", (e.target as HTMLSelectElement).value);
+                            const language = (e.target as HTMLSelectElement).value;
+                            setBufferLanguage("submission", language);
+                            selectedTemplate.value = defaultTemplateId(language, "submission");
                         }}
                     >
                         <option value="javascript">JavaScript</option>
@@ -114,13 +127,37 @@ export function Solve() {
                         Template
                     </label>
                     <div class="aibp-field__row">
-                        <select class="aibp-select" id="aibp-editor-toolbar__template-select">
-                            <option value="default">Default</option>
-                            <option value="template1">Template 1</option>
-                            <option value="template2">Template 2</option>
-                            <option value="template3">Template 3</option>
+                        <select
+                            class="aibp-select"
+                            id="aibp-editor-toolbar__template-select"
+                            value={selectedTemplate.value}
+                            disabled={templateOptions.length === 0}
+                            onChange={(e) => {
+                                selectedTemplate.value = (e.target as HTMLSelectElement).value;
+                            }}
+                        >
+                            {templateOptions.length === 0 ? (
+                                <option value="">No templates</option>
+                            ) : (
+                                templateOptions.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.label}
+                                    </option>
+                                ))
+                            )}
                         </select>
-                        <button class="aibp-btn aibp-btn--ghost" type="button">
+                        <button
+                            class="aibp-btn aibp-btn--ghost"
+                            type="button"
+                            disabled={templateOptions.length === 0}
+                            onClick={() => {
+                                applyTemplateInsert({
+                                    buffer: "submission",
+                                    templateKey: selectedTemplate.value,
+                                    currentCode: submissionCode.value,
+                                });
+                            }}
+                        >
                             Insert
                         </button>
                     </div>

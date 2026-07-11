@@ -3,8 +3,10 @@ import { useSignal } from "@preact/signals";
 import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
 import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
+import { listTemplates } from "@/utils/templates";
 import { judgeCompareVerdict } from "@/utils/stdout/judgeCompareVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
     epsExponent,
@@ -33,6 +35,8 @@ export function Compare() {
     const naiveStderr = useSignal("");
     const statusText = useSignal("--");
     const running = useSignal(false);
+    const selectedTemplate = useSignal(defaultTemplateId(naiveLanguage.value, "naive"));
+    const templateOptions = listTemplates(naiveLanguage.value, "naive");
 
     const execOnce = async (language: string, code: string, stdinValue: string) => {
         const req = {
@@ -120,7 +124,9 @@ export function Compare() {
                         id="aibp-editor-toolbar__language-select"
                         value={naiveLanguage.value}
                         onChange={(e) => {
-                            setBufferLanguage("naive", (e.target as HTMLSelectElement).value);
+                            const language = (e.target as HTMLSelectElement).value;
+                            setBufferLanguage("naive", language);
+                            selectedTemplate.value = defaultTemplateId(language, "naive");
                         }}
                     >
                         <option value="javascript">JavaScript</option>
@@ -135,13 +141,37 @@ export function Compare() {
                         Template
                     </label>
                     <div class="aibp-field__row">
-                        <select class="aibp-select" id="aibp-editor-toolbar__template-select">
-                            <option value="default">Default</option>
-                            <option value="template1">Template 1</option>
-                            <option value="template2">Template 2</option>
-                            <option value="template3">Template 3</option>
+                        <select
+                            class="aibp-select"
+                            id="aibp-editor-toolbar__template-select"
+                            value={selectedTemplate.value}
+                            disabled={templateOptions.length === 0}
+                            onChange={(e) => {
+                                selectedTemplate.value = (e.target as HTMLSelectElement).value;
+                            }}
+                        >
+                            {templateOptions.length === 0 ? (
+                                <option value="">No templates</option>
+                            ) : (
+                                templateOptions.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.label}
+                                    </option>
+                                ))
+                            )}
                         </select>
-                        <button class="aibp-btn aibp-btn--ghost" type="button">
+                        <button
+                            class="aibp-btn aibp-btn--ghost"
+                            type="button"
+                            disabled={templateOptions.length === 0}
+                            onClick={() => {
+                                applyTemplateInsert({
+                                    buffer: "naive",
+                                    templateKey: selectedTemplate.value,
+                                    currentCode: naiveCode.value,
+                                });
+                            }}
+                        >
                             Insert
                         </button>
                     </div>

@@ -7,3 +7,8 @@ declare module "virtual:corejs-polyfill" {
     const coreJsPolyfill: string;
     export default coreJsPolyfill;
 }
+
+declare module "*.ts?raw" {
+    const source: string;
+    export default source;
+}

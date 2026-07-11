@@ -1,8 +1,10 @@
 import { useSignal } from "@preact/signals";
 import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
+import { listTemplates } from "@/utils/templates";
 import { judgeStressIteration } from "@/utils/stdout/judgeStressIteration";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
     epsExponent,
@@ -27,6 +29,8 @@ export function Stress() {
     const naiveStderr = useSignal("");
     const statusText = useSignal("--");
     const running = useSignal(false);
+    const selectedTemplate = useSignal(defaultTemplateId(generatorLanguage.value, "generator"));
+    const templateOptions = listTemplates(generatorLanguage.value, "generator");
 
     const execOnce = async (language: string, code: string, stdinValue: string) => {
         const req = {
@@ -86,17 +90,12 @@ export function Stress() {
                 if (naiveResult.status !== "completed") {
                     solveStdout.value = "";
                     solveStderr.value = "";
-                    statusText.value =
-                        judgeStressIteration(genResult, naiveResult, null, allowableError) ?? "CE";
+                    statusText.value = judgeStressIteration(genResult, naiveResult, null, allowableError) ?? "CE";
                     return;
                 }
 
                 // 3) Solve (submission)
-                const solveResult = await execOnce(
-                    submissionLanguage.value,
-                    submissionCode.value,
-                    generatedInput,
-                );
+                const solveResult = await execOnce(submissionLanguage.value, submissionCode.value, generatedInput);
                 solveStdout.value = solveResult.stdout;
                 solveStderr.value = solveResult.stderr;
 
@@ -142,7 +141,9 @@ export function Stress() {
                         id="aibp-editor-toolbar__language-select"
                         value={generatorLanguage.value}
                         onChange={(e) => {
-                            setBufferLanguage("generator", (e.target as HTMLSelectElement).value);
+                            const language = (e.target as HTMLSelectElement).value;
+                            setBufferLanguage("generator", language);
+                            selectedTemplate.value = defaultTemplateId(language, "generator");
                         }}
                     >
                         <option value="javascript">JavaScript</option>
@@ -157,13 +158,37 @@ export function Stress() {
                         Template
                     </label>
                     <div class="aibp-field__row">
-                        <select class="aibp-select" id="aibp-editor-toolbar__template-select">
-                            <option value="default">Default</option>
-                            <option value="template1">Template 1</option>
-                            <option value="template2">Template 2</option>
-                            <option value="template3">Template 3</option>
+                        <select
+                            class="aibp-select"
+                            id="aibp-editor-toolbar__template-select"
+                            value={selectedTemplate.value}
+                            disabled={templateOptions.length === 0}
+                            onChange={(e) => {
+                                selectedTemplate.value = (e.target as HTMLSelectElement).value;
+                            }}
+                        >
+                            {templateOptions.length === 0 ? (
+                                <option value="">No templates</option>
+                            ) : (
+                                templateOptions.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.label}
+                                    </option>
+                                ))
+                            )}
                         </select>
-                        <button class="aibp-btn aibp-btn--ghost" type="button">
+                        <button
+                            class="aibp-btn aibp-btn--ghost"
+                            type="button"
+                            disabled={templateOptions.length === 0}
+                            onClick={() => {
+                                applyTemplateInsert({
+                                    buffer: "generator",
+                                    templateKey: selectedTemplate.value,
+                                    currentCode: generatorCode.value,
+                                });
+                            }}
+                        >
                             Insert
                         </button>
                     </div>
