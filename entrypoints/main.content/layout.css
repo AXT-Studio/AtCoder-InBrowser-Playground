@@ -3,7 +3,7 @@
 /* 幅が1400px以上のときだけAIBPの画面が見えるようにする */
 @media (min-width: 1400px) {
     :root {
-        --container-width: clamp(750px, 55vw, 1200px);
+        --container-width: clamp(750px, 50vw, 1200px);
     }
     /*
       Chrome では拡張の content CSS がページ CSS より先に入り、

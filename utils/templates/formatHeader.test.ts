@@ -41,7 +41,8 @@ describe("listTemplates", () => {
     it("returns solver templates for submission/naive and generator ones for generator", () => {
         const solve = listTemplates("typescript", "submission");
         expect(solve[0]?.id).toBe("ts_bun_scanner");
-        expect(solve.some((t) => t.id === "ts_bun")).toBe(true);
+        expect(solve.some((t) => t.id === "ts_bun_scanner")).toBe(true);
+        expect(solve.some((t) => t.id === "ts_bun")).toBe(false);
         expect(solve.every((t) => t.kind === "solver")).toBe(true);
 
         const gen = listTemplates("typescript", "generator");
@@ -58,7 +59,7 @@ describe("listTemplates", () => {
 describe("insertTemplate", () => {
     it("inserts with role-aware header and confirms overwrite", () => {
         const result = insertTemplate({
-            templateKey: "ts_bun",
+            templateKey: "ts_bun_scanner",
             contestTitle: "C",
             taskTitle: "T",
             taskURL: "U",
@@ -68,11 +69,13 @@ describe("insertTemplate", () => {
         });
         expect(result.action).toBe("insert");
         if (result.action === "insert") {
-            expect(result.template).toContain("// TypeScript (Bun) [Naive] Comparative Implementation");
+            expect(result.template).toContain(
+                "// TypeScript (Bun, using InputScanner) [Naive] Comparative Implementation",
+            );
         }
 
         const cancelled = insertTemplate({
-            templateKey: "ts_bun",
+            templateKey: "ts_bun_scanner",
             contestTitle: "C",
             taskTitle: "T",
             taskURL: "U",

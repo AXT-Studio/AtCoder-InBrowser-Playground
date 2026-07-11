@@ -7,13 +7,10 @@ import { generateTemplate as generateGenJsNode } from "./generator/js/node";
 import { generateTemplate as generateGenTsBun } from "./generator/ts/bun";
 import { generateTemplate as generateGenTsDeno } from "./generator/ts/deno";
 import { generateTemplate as generateGenTsNode } from "./generator/ts/node";
-import { generateTemplate as generateTsBun } from "./ts/bun";
 import { generateTemplate as generateTsBunInteractive } from "./ts/bun_interactive";
 import { generateTemplate as generateTsBunScanner } from "./ts/bun_scanner";
-import { generateTemplate as generateTsDeno } from "./ts/deno";
 import { generateTemplate as generateTsDenoInteractive } from "./ts/deno_interactive";
 import { generateTemplate as generateTsDenoScanner } from "./ts/deno_scanner";
-import { generateTemplate as generateTsNode } from "./ts/node";
 import { generateTemplate as generateTsNodeInteractive } from "./ts/node_interactive";
 import { generateTemplate as generateTsNodeScanner } from "./ts/node_scanner";
 import type { TemplateDefinition, TemplateKind, TemplateLanguage, TemplateRole } from "./types";
@@ -37,7 +34,6 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
         kind: "solver",
         generate: generateTsBunScanner,
     },
-    { id: "ts_bun", label: "TypeScript (Bun)", language: "typescript", kind: "solver", generate: generateTsBun },
     {
         id: "ts_bun_interactive",
         label: "TypeScript (Bun) Interactive",
@@ -45,7 +41,6 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
         kind: "solver",
         generate: generateTsBunInteractive,
     },
-    { id: "ts_deno", label: "TypeScript (Deno)", language: "typescript", kind: "solver", generate: generateTsDeno },
     {
         id: "ts_deno_scanner",
         label: "TypeScript (Deno) + Scanner",
@@ -59,13 +54,6 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
         language: "typescript",
         kind: "solver",
         generate: generateTsDenoInteractive,
-    },
-    {
-        id: "ts_node",
-        label: "TypeScript (Node.js)",
-        language: "typescript",
-        kind: "solver",
-        generate: generateTsNode,
     },
     {
         id: "ts_node_scanner",
