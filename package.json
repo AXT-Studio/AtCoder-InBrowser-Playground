@@ -24,7 +24,7 @@
         "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
         "@preact/signals": "^2.9.3",
         "esbuild-wasm": "^0.28.1",
-        "monaco-editor": "^0.55.1",
+        "monaco-editor": "0.55.1",
         "object-inspect": "^1.13.4",
         "preact": "^10.29.7",
         "quickjs-emscripten-core": "^0.32.0"
