@@ -6,9 +6,15 @@ export function statusColor(status: string): StatusColor {
         case "AC":
             return "green";
         case "RE":
+        case "Solve RE":
+        case "Naive RE":
+        case "Gen RE":
         case "CE":
             return "purple";
         case "TLE":
+        case "Solve TLE":
+        case "Naive TLE":
+        case "Gen TLE":
         case "WA":
             return "yellow";
         default:

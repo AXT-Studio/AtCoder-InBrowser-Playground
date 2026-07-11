@@ -1,14 +1,136 @@
 import { useSignal } from "@preact/signals";
 import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
-import { epsExponent, submissionCode, timeLimitMs } from "../state";
+import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
+import { judgeStressIteration } from "@/utils/stdout/judgeStressIteration";
+import { statusColor } from "@/utils/stdout/statusColor";
+import {
+    epsExponent,
+    generatorCode,
+    generatorLanguage,
+    naiveCode,
+    naiveLanguage,
+    setBufferCode,
+    setBufferLanguage,
+    submissionCode,
+    submissionLanguage,
+    timeLimitMs,
+} from "../state";
 
 export function Stress() {
     const panelOpen = useSignal(false);
+    const loopMax = useSignal(20);
+    const generated = useSignal("");
+    const solveStdout = useSignal("");
+    const solveStderr = useSignal("");
+    const naiveStdout = useSignal("");
+    const naiveStderr = useSignal("");
+    const statusText = useSignal("--");
+    const running = useSignal(false);
+
+    const execOnce = async (language: string, code: string, stdinValue: string) => {
+        const req = {
+            type: "execRequest",
+            id: crypto.randomUUID(),
+            language,
+            code,
+            stdin: stdinValue,
+            timeLimitMs: timeLimitMs.value,
+        } satisfies ExecRequestMessage;
+        const res = (await browser.runtime.sendMessage(req)) as ExecResponseMessage;
+        return res.codeTestResult;
+    };
+
+    const runTest = async () => {
+        if (running.value) return;
+
+        const max = Math.floor(loopMax.value);
+        running.value = true;
+        statusText.value = "WJ";
+        generated.value = "";
+        solveStdout.value = "";
+        solveStderr.value = "";
+        naiveStdout.value = "";
+        naiveStderr.value = "";
+
+        try {
+            const allowableError = 10 ** -epsExponent.value;
+
+            if (max < 1) {
+                statusText.value = "AC";
+                return;
+            }
+
+            for (let i = 0; i < max; i++) {
+                statusText.value = `WJ (${i + 1}/${max})`;
+
+                // 1) Generator（stdin なし）
+                const genResult = await execOnce(generatorLanguage.value, generatorCode.value, "");
+                generated.value = genResult.stdout;
+                if (genResult.status !== "completed") {
+                    // Gen の stderr を見える場所へ
+                    naiveStderr.value = genResult.stderr;
+                    solveStderr.value = "";
+                    solveStdout.value = "";
+                    naiveStdout.value = "";
+                    statusText.value = judgeStressIteration(genResult, null, null, allowableError) ?? "CE";
+                    return;
+                }
+
+                const generatedInput = genResult.stdout;
+
+                // 2) Naive
+                const naiveResult = await execOnce(naiveLanguage.value, naiveCode.value, generatedInput);
+                naiveStdout.value = naiveResult.stdout;
+                naiveStderr.value = naiveResult.stderr;
+                if (naiveResult.status !== "completed") {
+                    solveStdout.value = "";
+                    solveStderr.value = "";
+                    statusText.value =
+                        judgeStressIteration(genResult, naiveResult, null, allowableError) ?? "CE";
+                    return;
+                }
+
+                // 3) Solve (submission)
+                const solveResult = await execOnce(
+                    submissionLanguage.value,
+                    submissionCode.value,
+                    generatedInput,
+                );
+                solveStdout.value = solveResult.stdout;
+                solveStderr.value = solveResult.stderr;
+
+                const round = judgeStressIteration(genResult, naiveResult, solveResult, allowableError);
+                if (round !== null) {
+                    statusText.value = round;
+                    return;
+                }
+            }
+
+            statusText.value = "AC";
+        } catch (error) {
+            statusText.value = "Error";
+            naiveStderr.value = String(error);
+            generated.value = "";
+            solveStdout.value = "";
+            solveStderr.value = "";
+            naiveStdout.value = "";
+        } finally {
+            running.value = false;
+        }
+    };
 
     return (
         <>
             <div class="aibp-editor">
-                <textarea class="aibp-editor__textarea" spellcheck={false} placeholder="// code (testcase generator)" />
+                <textarea
+                    class="aibp-editor__textarea"
+                    spellcheck={false}
+                    placeholder="// code (testcase generator)"
+                    value={generatorCode.value}
+                    onInput={(e) => {
+                        setBufferCode("generator", (e.target as HTMLTextAreaElement).value);
+                    }}
+                />
                 {/* ↑仮置き。あとで Monaco Editor に差し替える */}
             </div>
 
@@ -17,7 +139,14 @@ export function Stress() {
                     <label class="aibp-label" for="aibp-editor-toolbar__language-select">
                         Language
                     </label>
-                    <select class="aibp-select" id="aibp-editor-toolbar__language-select">
+                    <select
+                        class="aibp-select"
+                        id="aibp-editor-toolbar__language-select"
+                        value={generatorLanguage.value}
+                        onChange={(e) => {
+                            setBufferLanguage("generator", (e.target as HTMLSelectElement).value);
+                        }}
+                    >
                         <option value="javascript">JavaScript</option>
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
@@ -61,13 +190,9 @@ export function Stress() {
                     <div class="aibp-status">
                         <span class="aibp-status__item">
                             <span class="aibp-label">Status</span>
-                            <span class="aibp-status__value" data-color="gray">
-                                Not executed
+                            <span class="aibp-status__value" data-color={statusColor(statusText.value)}>
+                                {statusText.value}
                             </span>
-                        </span>
-                        <span class="aibp-status__item">
-                            <span class="aibp-label">Time</span>
-                            <span class="aibp-status__value aibp-status__value--plain">-- ms</span>
                         </span>
                     </div>
 
@@ -110,7 +235,10 @@ export function Stress() {
                                 min="0"
                                 max="100"
                                 step="10"
-                                value="20"
+                                value={loopMax.value}
+                                onInput={(e) => {
+                                    loopMax.value = Number((e.target as HTMLInputElement).value);
+                                }}
                             />
                             <span class="aibp-unit">times</span>
                         </label>
@@ -130,8 +258,7 @@ export function Stress() {
 
                 {/*
                     折りたたみは unmount せず hidden で隠す。
-                    Examples 実行後に開いても入出力・結果が残る（DOM 維持）。
-                    本実装では Signals に載せて value バインドする想定。
+                    実行後に開いても結果が残る（DOM 維持）。
                 */}
                 <div class="aibp-test-section__panel" hidden={!panelOpen.value}>
                     <div class="aibp-io-grid">
@@ -144,57 +271,70 @@ export function Stress() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={generated.value}
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-solve-stdout">
+                            <label class="aibp-label" for="aibp-stress-solve-stdout">
                                 Solve Stdout
                             </label>
                             <textarea
-                                id="aibp-testcase-solve-stdout"
+                                id="aibp-stress-solve-stdout"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={solveStdout.value}
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-naive-stdout">
+                            <label class="aibp-label" for="aibp-stress-naive-stdout">
                                 Naive Stdout
                             </label>
                             <textarea
-                                id="aibp-testcase-naive-stdout"
+                                id="aibp-stress-naive-stdout"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={naiveStdout.value}
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-solve-stderr">
+                            <label class="aibp-label" for="aibp-stress-solve-stderr">
                                 Solve Stderr
                             </label>
                             <textarea
-                                id="aibp-testcase-solve-stderr"
+                                id="aibp-stress-solve-stderr"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={solveStderr.value}
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-naive-stderr">
+                            <label class="aibp-label" for="aibp-stress-naive-stderr">
                                 Naive Stderr
                             </label>
                             <textarea
-                                id="aibp-testcase-naive-stderr"
+                                id="aibp-stress-naive-stderr"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={naiveStderr.value}
                             />
                         </div>
                     </div>
 
                     <div class="aibp-test-section__run-row">
-                        <button type="button" class="aibp-btn aibp-btn--accent" id="aibp-test-section__run-btn">
-                            Run Test
+                        <button
+                            type="button"
+                            class="aibp-btn aibp-btn--accent"
+                            id="aibp-test-section__run-btn"
+                            disabled={running.value}
+                            onClick={() => {
+                                void runTest();
+                            }}
+                        >
+                            {running.value ? "Running…" : "Run Test"}
                         </button>
                     </div>
                 </div>

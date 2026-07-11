@@ -1,14 +1,114 @@
+import { useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
 import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
-import { epsExponent, submissionCode, timeLimitMs } from "../state";
+import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
+import { judgeCompareVerdict } from "@/utils/stdout/judgeCompareVerdict";
+import { statusColor } from "@/utils/stdout/statusColor";
+import {
+    epsExponent,
+    naiveCode,
+    naiveLanguage,
+    setBufferCode,
+    setBufferLanguage,
+    submissionCode,
+    submissionLanguage,
+    timeLimitMs,
+} from "../state";
 
 export function Compare() {
+    const samplesRef = useRef<ReturnType<typeof parseSampleCases> | null>(null);
+    if (samplesRef.current === null) {
+        samplesRef.current = parseSampleCases();
+    }
+    const samples = samplesRef.current;
+    const sampleNames = [...samples.names];
+
     const panelOpen = useSignal(false);
+    const stdin = useSignal("");
+    const solveStdout = useSignal("");
+    const solveStderr = useSignal("");
+    const naiveStdout = useSignal("");
+    const naiveStderr = useSignal("");
+    const statusText = useSignal("--");
+    const running = useSignal(false);
+
+    const execOnce = async (language: string, code: string, stdinValue: string) => {
+        const req = {
+            type: "execRequest",
+            id: crypto.randomUUID(),
+            language,
+            code,
+            stdin: stdinValue,
+            timeLimitMs: timeLimitMs.value,
+        } satisfies ExecRequestMessage;
+        const res = (await browser.runtime.sendMessage(req)) as ExecResponseMessage;
+        return res.codeTestResult;
+    };
+
+    const runTest = async (override?: { stdin?: string }) => {
+        if (running.value) return;
+
+        if (override?.stdin !== undefined) {
+            stdin.value = override.stdin;
+        }
+        const stdinToUse = override?.stdin ?? stdin.value;
+
+        running.value = true;
+        statusText.value = "WJ";
+        solveStdout.value = "";
+        solveStderr.value = "";
+        naiveStdout.value = "";
+        naiveStderr.value = "";
+
+        try {
+            const allowableError = 10 ** -epsExponent.value;
+
+            // 1) Naive 先
+            const naiveResult = await execOnce(naiveLanguage.value, naiveCode.value, stdinToUse);
+            naiveStdout.value = naiveResult.stdout;
+            naiveStderr.value = naiveResult.stderr;
+
+            if (naiveResult.status !== "completed") {
+                statusText.value = judgeCompareVerdict(naiveResult, null, allowableError);
+                return;
+            }
+
+            // 2) Solve (submission)
+            const solveResult = await execOnce(submissionLanguage.value, submissionCode.value, stdinToUse);
+            solveStdout.value = solveResult.stdout;
+            solveStderr.value = solveResult.stderr;
+
+            statusText.value = judgeCompareVerdict(naiveResult, solveResult, allowableError);
+        } catch (error) {
+            statusText.value = "Error";
+            naiveStderr.value = String(error);
+            solveStdout.value = "";
+            solveStderr.value = "";
+            naiveStdout.value = "";
+        } finally {
+            running.value = false;
+        }
+    };
+
+    const runExample = (name: string) => {
+        void runTest({
+            stdin: samples.input.get(name) ?? "",
+        });
+    };
 
     return (
         <>
             <div class="aibp-editor">
-                <textarea class="aibp-editor__textarea" spellcheck={false} placeholder="// code (naive)" />
+                <textarea
+                    class="aibp-editor__textarea"
+                    spellcheck={false}
+                    placeholder="// code (naive)"
+                    value={naiveCode.value}
+                    onInput={(e) => {
+                        setBufferCode("naive", (e.target as HTMLTextAreaElement).value);
+                    }}
+                />
                 {/* ↑仮置き。あとで Monaco Editor に差し替える */}
             </div>
 
@@ -17,7 +117,14 @@ export function Compare() {
                     <label class="aibp-label" for="aibp-editor-toolbar__language-select">
                         Language
                     </label>
-                    <select class="aibp-select" id="aibp-editor-toolbar__language-select">
+                    <select
+                        class="aibp-select"
+                        id="aibp-editor-toolbar__language-select"
+                        value={naiveLanguage.value}
+                        onChange={(e) => {
+                            setBufferLanguage("naive", (e.target as HTMLSelectElement).value);
+                        }}
+                    >
                         <option value="javascript">JavaScript</option>
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
@@ -58,32 +165,35 @@ export function Compare() {
 
             <div class="aibp-test-section">
                 <div class="aibp-test-section__bar">
-                    <div class="aibp-examples">
-                        <span class="aibp-label">Examples</span>
-                        <ol class="aibp-examples__list">
-                            <li>
-                                <button type="button" class="aibp-chip">
-                                    1
-                                </button>
-                            </li>
-                            <li>
-                                <button type="button" class="aibp-chip">
-                                    2
-                                </button>
-                            </li>
-                        </ol>
-                    </div>
+                    {sampleNames.length > 0 && (
+                        <div class="aibp-examples">
+                            <span class="aibp-label">Examples</span>
+                            <ol class="aibp-examples__list">
+                                {sampleNames.map((name) => (
+                                    <li key={name}>
+                                        <button
+                                            type="button"
+                                            class="aibp-chip"
+                                            disabled={running.value}
+                                            title={`入力例 ${name} で Compare`}
+                                            onClick={() => {
+                                                runExample(name);
+                                            }}
+                                        >
+                                            {name}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    )}
 
                     <div class="aibp-status">
                         <span class="aibp-status__item">
                             <span class="aibp-label">Status</span>
-                            <span class="aibp-status__value" data-color="gray">
-                                Not executed
+                            <span class="aibp-status__value" data-color={statusColor(statusText.value)}>
+                                {statusText.value}
                             </span>
-                        </span>
-                        <span class="aibp-status__item">
-                            <span class="aibp-label">Time</span>
-                            <span class="aibp-status__value aibp-status__value--plain">-- ms</span>
                         </span>
                     </div>
 
@@ -135,15 +245,22 @@ export function Compare() {
                 {/*
                     折りたたみは unmount せず hidden で隠す。
                     Examples 実行後に開いても入出力・結果が残る（DOM 維持）。
-                    本実装では Signals に載せて value バインドする想定。
                 */}
                 <div class="aibp-test-section__panel" hidden={!panelOpen.value}>
                     <div class="aibp-io-grid">
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-input">
+                            <label class="aibp-label" for="aibp-compare-testcase-input">
                                 Input
                             </label>
-                            <textarea id="aibp-testcase-input" class="aibp-textarea" spellcheck={false} />
+                            <textarea
+                                id="aibp-compare-testcase-input"
+                                class="aibp-textarea"
+                                spellcheck={false}
+                                value={stdin.value}
+                                onInput={(e) => {
+                                    stdin.value = (e.target as HTMLTextAreaElement).value;
+                                }}
+                            />
                         </div>
                         <div class="aibp-io">
                             <label class="aibp-label" for="aibp-testcase-solve-stdout">
@@ -154,6 +271,7 @@ export function Compare() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={solveStdout.value}
                             />
                         </div>
                         <div class="aibp-io">
@@ -165,6 +283,7 @@ export function Compare() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={solveStderr.value}
                             />
                         </div>
                         <div class="aibp-io">
@@ -176,6 +295,7 @@ export function Compare() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={naiveStdout.value}
                             />
                         </div>
                         <div class="aibp-io">
@@ -187,13 +307,22 @@ export function Compare() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={naiveStderr.value}
                             />
                         </div>
                     </div>
 
                     <div class="aibp-test-section__run-row">
-                        <button type="button" class="aibp-btn aibp-btn--accent" id="aibp-test-section__run-btn">
-                            Run Test
+                        <button
+                            type="button"
+                            class="aibp-btn aibp-btn--accent"
+                            id="aibp-test-section__run-btn"
+                            disabled={running.value}
+                            onClick={() => {
+                                void runTest();
+                            }}
+                        >
+                            {running.value ? "Running…" : "Run Test"}
                         </button>
                     </div>
                 </div>

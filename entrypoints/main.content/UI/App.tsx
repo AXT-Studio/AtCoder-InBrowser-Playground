@@ -1,11 +1,16 @@
+import { useEffect } from "preact/hooks";
 import "./App.css";
 import "./controls.css";
-import { mode } from "./state";
+import { editorBuffersHydrated, hydrateEditorBuffers, mode } from "./state";
 import { Solve } from "./modes/Solve";
 import { Compare } from "./modes/Compare";
 import { Stress } from "./modes/Stress";
 
 export function App() {
+    useEffect(() => {
+        void hydrateEditorBuffers();
+    }, []);
+
     return (
         <div class="aibp-panel">
             <div class="aibp-panel__chrome">
@@ -44,7 +49,8 @@ export function App() {
                     </nav>
                 </header>
                 <main class="aibp-panel__body">
-                    {mode.value === "solve" && (
+                    {/* storage 読み込み前に編集すると上書きレースになるので待つ */}
+                    {editorBuffersHydrated.value && mode.value === "solve" && (
                         <section
                             id="aibp-panel-solve"
                             role="tabpanel"
@@ -54,7 +60,7 @@ export function App() {
                             <Solve />
                         </section>
                     )}
-                    {mode.value === "compare" && (
+                    {editorBuffersHydrated.value && mode.value === "compare" && (
                         <section
                             id="aibp-panel-compare"
                             role="tabpanel"
@@ -64,7 +70,7 @@ export function App() {
                             <Compare />
                         </section>
                     )}
-                    {mode.value === "stress" && (
+                    {editorBuffersHydrated.value && mode.value === "stress" && (
                         <section
                             id="aibp-panel-stress"
                             role="tabpanel"

@@ -5,7 +5,7 @@ import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { judgeSolveVerdict } from "@/utils/stdout/judgeSolveVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
-import { epsExponent, submissionCode, timeLimitMs } from "../state";
+import { epsExponent, setBufferCode, setBufferLanguage, submissionCode, submissionLanguage, timeLimitMs } from "../state";
 
 export function Solve() {
     const samplesRef = useRef<ReturnType<typeof parseSampleCases> | null>(null);
@@ -16,7 +16,6 @@ export function Solve() {
     const sampleNames = [...samples.names];
 
     const panelOpen = useSignal(false);
-    const language = useSignal("typescript");
     const stdin = useSignal("");
     const expected = useSignal("");
     const stdout = useSignal("");
@@ -45,7 +44,7 @@ export function Solve() {
             const req = {
                 type: "execRequest",
                 id: crypto.randomUUID(),
-                language: language.value,
+                language: submissionLanguage.value,
                 code: submissionCode.value,
                 stdin: stdinToUse,
                 timeLimitMs: timeLimitMs.value,
@@ -86,7 +85,7 @@ export function Solve() {
                     placeholder="// code (submission)"
                     value={submissionCode.value}
                     onInput={(e) => {
-                        submissionCode.value = (e.target as HTMLTextAreaElement).value;
+                        setBufferCode("submission", (e.target as HTMLTextAreaElement).value);
                     }}
                 />
                 {/* ↑仮置き。あとで Monaco Editor に差し替える */}
@@ -100,9 +99,9 @@ export function Solve() {
                     <select
                         class="aibp-select"
                         id="aibp-editor-toolbar__language-select"
-                        value={language.value}
+                        value={submissionLanguage.value}
                         onChange={(e) => {
-                            language.value = (e.target as HTMLSelectElement).value;
+                            setBufferLanguage("submission", (e.target as HTMLSelectElement).value);
                         }}
                     >
                         <option value="javascript">JavaScript</option>
