@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import "./fonts";
+import "./fonts.css";
 import "./App.css";
 import "./controls.css";
 import { editorBuffersHydrated, hydrateEditorBuffers, mode } from "./state";

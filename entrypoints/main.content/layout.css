@@ -11,9 +11,10 @@
       セレクタを強めて勝つ（Firefox でも害はない）。
     */
     html body .container {
-        width: var(--container-width) !important;
-        max-width: var(--container-width) !important;
-        margin-left: 2rem !important;
+        width: var(--container-width);
+        max-width: var(--container-width);
+        margin-left: 2rem;
+        margin-right: calc(-1 * var(--container-width));
     }
     /* もとのcontainerの影が強いので弱める */
     html body .float-container > #main-container {

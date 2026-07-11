@@ -210,12 +210,6 @@ importers:
 
   .:
     dependencies:
-      '@fontsource/m-plus-1':
-        specifier: ^5.2.9
-        version: 5.2.9
-      '@fontsource/m-plus-1-code':
-        specifier: ^5.2.9
-        version: 5.2.9
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: ^0.32.0
         version: 0.32.0
@@ -711,12 +705,6 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
-
-  '@fontsource/m-plus-1-code@5.2.9':
-    resolution: {integrity: sha512-GHIn0C0Wm3/w3RfoxUpBZvJUZl3IJNnUa/h9zJEnI2Ynat86z+oxSXzMIc6KkB9pZ0crSFs/lyHHV6SFa3V4dA==}
-
-  '@fontsource/m-plus-1@5.2.9':
-    resolution: {integrity: sha512-/QhKBcdfpfCPwlDVY4dBXQgQwlTGT5Un0HDFRMFcOJ7ZcV/X4cTjAlxl2LO8VyRyP6qJ8itoOU0czlCSUj9djQ==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -4432,10 +4420,6 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.1':
     optional: true
-
-  '@fontsource/m-plus-1-code@5.2.9': {}
-
-  '@fontsource/m-plus-1@5.2.9': {}
 
   '@img/colour@1.1.0': {}
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { editor } from "monaco-editor";
 import { foldClassDeclarations } from "./foldLines";
-import { createMonacoEditor, setMonacoLanguage } from "./setup";
+import { createMonacoEditor, setEditorValueExternal, setMonacoLanguage } from "./setup";
 
 export type MonacoEditorProps = {
     value: string;
@@ -22,6 +22,8 @@ export function MonacoEditor(props: MonacoEditorProps) {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const onChangeRef = useRef(props.onChange);
     onChangeRef.current = props.onChange;
+    /** 自分が onChange で吐き出した値（外部同期と区別する） */
+    const lastEmittedRef = useRef(props.value);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -32,10 +34,12 @@ export function MonacoEditor(props: MonacoEditorProps) {
             value: props.value,
             language: props.language,
             onChange: (value) => {
+                lastEmittedRef.current = value;
                 onChangeRef.current(value);
             },
         });
         editorRef.current = instance;
+        lastEmittedRef.current = props.value;
         if (props.editorRef) {
             props.editorRef.current = instance;
         }
@@ -53,10 +57,15 @@ export function MonacoEditor(props: MonacoEditorProps) {
     useEffect(() => {
         const instance = editorRef.current;
         if (!instance) return;
-        if (instance.getValue() !== props.value) {
-            instance.setValue(props.value);
-            foldClassDeclarations(instance, { delayMs: 100 });
+        // 自分の入力で上がってきた value では setValue しない（補完中の往復を避ける）
+        if (props.value === lastEmittedRef.current) return;
+        if (instance.getValue() === props.value) {
+            lastEmittedRef.current = props.value;
+            return;
         }
+        setEditorValueExternal(instance, props.value);
+        lastEmittedRef.current = props.value;
+        foldClassDeclarations(instance, { delayMs: 100 });
     }, [props.value]);
 
     useEffect(() => {

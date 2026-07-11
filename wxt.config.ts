@@ -16,10 +16,20 @@ export default defineConfig({
             permissions.push("offscreen");
         }
         return {
+            version: "2.0.0",
+            name: "AtCoder In-Browser Playground",
+            description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
             content_security_policy: {
-                extension_pages:
-                    "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' ws:;",
+                extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' ws:;",
+            },
+            browser_specific_settings: {
+                gecko: {
+                    id: "atcoder-in-browser-playground@axtech.dev",
+                    data_collection_permissions: {
+                        required: ["none"], // This extension does not collect or transmit any data
+                    },
+                },
             },
             web_accessible_resources: [
                 {
@@ -27,8 +37,6 @@ export default defineConfig({
                         "unlisted_monaco-editor.js",
                         "unlisted_monaco-ts-lib.js",
                         "unlisted_monaco-ts.js",
-                        "*.woff",
-                        "*.woff2",
                     ],
                     matches: ["https://atcoder.jp/*"],
                 },
@@ -36,12 +44,7 @@ export default defineConfig({
         };
     },
     vite: () => ({
-        plugins: [
-            preact(),
-            monacoTypescriptLibSplitPlugin(),
-            buildPolyfillCodePlugin(),
-            buildInspectRuntimePlugin(),
-        ],
+        plugins: [preact(), monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
         // Runner Worker からも virtual modules を import するため
         worker: {
             format: "es",
