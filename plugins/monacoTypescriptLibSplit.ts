@@ -43,9 +43,7 @@ export default function monacoTypescriptLibSplitPlugin() {
                 );
 
                 if (!monacoLibScriptSource.includes(`self.${MONACO_TS_LIB_GLOBAL_KEY}`)) {
-                    throw new Error(
-                        "AIBP: Failed to generate unlisted_monaco-ts-lib.js from Monaco lib.js",
-                    );
+                    throw new Error("AIBP: Failed to generate unlisted_monaco-ts-lib.js from Monaco lib.js");
                 }
 
                 this.emitFile({

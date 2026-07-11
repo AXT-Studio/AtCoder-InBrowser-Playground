@@ -2,14 +2,7 @@ import type { CodeTestResult } from "@/utils/execution/types";
 import { isOutputCorrect } from "./isOutputCorrect";
 
 /** Compare mode の Status 欄に出す判定 */
-export type CompareVerdict =
-    | "AC"
-    | "WA"
-    | "Solve TLE"
-    | "Naive TLE"
-    | "Solve RE"
-    | "Naive RE"
-    | "CE";
+export type CompareVerdict = "AC" | "WA" | "Solve TLE" | "Naive TLE" | "Solve RE" | "Naive RE" | "CE";
 
 /**
  * Naive → Solve の順で得た実行結果から Compare 用ステータスを決める。

@@ -45,7 +45,10 @@ export const extractImports = (code: string): string[] => {
         }
 
         for (const part of importMatch[1].split(",")) {
-            const modulePath = part.trim().split(/\s+as\s+/i)[0]?.trim();
+            const modulePath = part
+                .trim()
+                .split(/\s+as\s+/i)[0]
+                ?.trim();
             if (!modulePath || modulePath.startsWith(".")) {
                 continue;
             }

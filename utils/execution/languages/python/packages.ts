@@ -65,11 +65,7 @@ export const resolveMicropipRequirementForTest = (requirement: string): string =
  * micropip は `moz-extension:` / `chrome-extension:` を remote URL とみなさず拒否する。
  * そのため同梱 wheel は JS の fetch（拡張内では可）→ FS 書き込み → `emfs:` で入れる。
  */
-const installBundledWheel = async (
-    pyodide: PyodideInterface,
-    micropip: Micropip,
-    fileName: string,
-): Promise<void> => {
+const installBundledWheel = async (pyodide: PyodideInterface, micropip: Micropip, fileName: string): Promise<void> => {
     const baseURL = resolveWheelBaseURL();
     if (!baseURL) {
         const fallback = BUNDLED_WHEEL_FALLBACK_PACKAGE[fileName];
@@ -93,10 +89,7 @@ const installBundledWheel = async (
 };
 
 /** コードの import のうち allowlist にあるものを micropip で入れる（先に micropip 自体を loadPackage） */
-export const ensureAllowlistedPackages = async (
-    pyodide: PyodideInterface,
-    code: string,
-): Promise<void> => {
+export const ensureAllowlistedPackages = async (pyodide: PyodideInterface, code: string): Promise<void> => {
     const requirements = [
         ...new Set(
             extractImports(code)

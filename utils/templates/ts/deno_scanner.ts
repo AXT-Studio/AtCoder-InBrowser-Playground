@@ -2,12 +2,7 @@ import { formatTemplateHeader } from "../formatHeader";
 import type { GenerateTemplateParams } from "../types";
 import inputScannerSource from "./InputScanner.ts?raw";
 
-export const generateTemplate = ({
-    contestTitle,
-    taskTitle,
-    taskURL,
-    role,
-}: GenerateTemplateParams): string =>
+export const generateTemplate = ({ contestTitle, taskTitle, taskURL, role }: GenerateTemplateParams): string =>
     `\
 ${formatTemplateHeader({
     contestTitle,

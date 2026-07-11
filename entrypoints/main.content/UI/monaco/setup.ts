@@ -171,15 +171,16 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
     });
 
     const originalSetValue = instance.setValue.bind(instance);
-    (instance as editor.IStandaloneCodeEditor & { __aibpSetValue?: typeof originalSetValue }).__aibpSetValue =
-        (value: string) => {
-            suppressChangeEvent = true;
-            try {
-                originalSetValue(value);
-            } finally {
-                suppressChangeEvent = false;
-            }
-        };
+    (instance as editor.IStandaloneCodeEditor & { __aibpSetValue?: typeof originalSetValue }).__aibpSetValue = (
+        value: string,
+    ) => {
+        suppressChangeEvent = true;
+        try {
+            originalSetValue(value);
+        } finally {
+            suppressChangeEvent = false;
+        }
+    };
 
     return instance;
 };

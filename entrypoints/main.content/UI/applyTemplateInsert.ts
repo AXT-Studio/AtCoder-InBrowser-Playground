@@ -8,11 +8,7 @@ export const defaultTemplateId = (language: string, role: BufferKind): string =>
     listTemplates(language, role)[0]?.id ?? "";
 
 /** Template Insert ボタンの共通処理 */
-export const applyTemplateInsert = (params: {
-    buffer: BufferKind;
-    templateKey: string;
-    currentCode: string;
-}): void => {
+export const applyTemplateInsert = (params: { buffer: BufferKind; templateKey: string; currentCode: string }): void => {
     if (!params.templateKey) return;
 
     const { contestTitle, taskTitle, taskURL } = getPageContext();

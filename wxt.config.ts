@@ -39,11 +39,7 @@ export default defineConfig({
             },
             web_accessible_resources: [
                 {
-                    resources: [
-                        "unlisted_monaco-editor.js",
-                        "unlisted_monaco-ts-lib.js",
-                        "unlisted_monaco-ts.js",
-                    ],
+                    resources: ["unlisted_monaco-editor.js", "unlisted_monaco-ts-lib.js", "unlisted_monaco-ts.js"],
                     matches: ["https://atcoder.jp/*"],
                 },
             ],

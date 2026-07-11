@@ -132,17 +132,13 @@ print(d.same(0, 1))
     ];
 
     for (const { name, code, stdout } of cases) {
-        it(
-            `${name} を入れて実行できる`,
-            async () => {
-                const outcome = await python.run(ctx, code, "");
-                expect(outcome).toEqual({
-                    status: "completed",
-                    stdout,
-                    stderr: "",
-                });
-            },
-            180_000,
-        );
+        it(`${name} を入れて実行できる`, async () => {
+            const outcome = await python.run(ctx, code, "");
+            expect(outcome).toEqual({
+                status: "completed",
+                stdout,
+                stderr: "",
+            });
+        }, 180_000);
     }
 });

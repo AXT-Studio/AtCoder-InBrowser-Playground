@@ -35,9 +35,7 @@ const decodeRawStream = (bytes: number[]): string => {
 /** Syntax / Indentation / TabError → CE、それ以外の PythonError → RE */
 const classifyPythonError = (error: unknown): "CE" | "RE" => {
     const type =
-        error !== null && typeof error === "object" && "type" in error
-            ? String((error as { type: unknown }).type)
-            : "";
+        error !== null && typeof error === "object" && "type" in error ? String((error as { type: unknown }).type) : "";
     if (type === "SyntaxError" || type === "IndentationError" || type === "TabError") {
         return "CE";
     }

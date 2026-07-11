@@ -1,9 +1,4 @@
-import {
-    type editor as monacoEditor,
-    editor as monacoEditorApi,
-    MarkerSeverity,
-    Range,
-} from "monaco-editor";
+import { type editor as monacoEditor, editor as monacoEditorApi, MarkerSeverity, Range } from "monaco-editor";
 import { WARNING_MESSAGE_ON_DFS_AND_BUN, shouldWarnDfsAndBun } from "./prepareSubmissionGuards";
 import { setSourceCode } from "./setSourceCode";
 
@@ -19,9 +14,7 @@ export { WARNING_MESSAGE_ON_DFS_AND_BUN, shouldWarnDfsAndBun } from "./prepareSu
 const ERROR_FLASH_DURATION_MS = 500;
 const ERROR_FLASH_LINE_CLASS = "aibp-ts-error-flash-line";
 
-export const getFirstTypeScriptErrorMarker = (
-    model: monacoEditor.ITextModel,
-): ModelErrorMarker | undefined => {
+export const getFirstTypeScriptErrorMarker = (model: monacoEditor.ITextModel): ModelErrorMarker | undefined => {
     const errorMarkers = monacoEditorApi
         .getModelMarkers({ resource: model.uri })
         .filter((m) => m.severity === MarkerSeverity.Error);
@@ -48,12 +41,7 @@ const markerToSelectionRange = (model: monacoEditor.ITextModel, marker: ModelErr
     );
 
 const markerToFlashLineRange = (model: monacoEditor.ITextModel, marker: ModelErrorMarker) =>
-    new Range(
-        marker.startLineNumber,
-        1,
-        marker.endLineNumber,
-        model.getLineMaxColumn(marker.endLineNumber),
-    );
+    new Range(marker.startLineNumber, 1, marker.endLineNumber, model.getLineMaxColumn(marker.endLineNumber));
 
 /**
  * Prepare Submission の可否判定と転記。
@@ -89,10 +77,7 @@ export const prepareSubmission = (params: {
 };
 
 /** 転記拒否時: エラー範囲へスクロール・選択・行フラッシュ */
-export const focusTypeScriptError = (
-    editor: monacoEditor.IStandaloneCodeEditor,
-    marker: ModelErrorMarker,
-): void => {
+export const focusTypeScriptError = (editor: monacoEditor.IStandaloneCodeEditor, marker: ModelErrorMarker): void => {
     const model = editor.getModel();
     if (!model) return;
 

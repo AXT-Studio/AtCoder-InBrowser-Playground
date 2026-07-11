@@ -19,11 +19,9 @@ describe("python packages allowlist", () => {
 
     it("Node では wheel: を PyPI パッケージ名へフォールバックする", () => {
         expect(resolveMicropipRequirementForTest("numpy")).toBe("numpy");
-        expect(resolveMicropipRequirementForTest("wheel:networkx-3.6.1-py3-none-any.whl")).toBe(
-            "networkx",
+        expect(resolveMicropipRequirementForTest("wheel:networkx-3.6.1-py3-none-any.whl")).toBe("networkx");
+        expect(resolveMicropipRequirementForTest("wheel:ac_library_python-0.1.0-py3-none-any.whl")).toBe(
+            "ac-library-python",
         );
-        expect(
-            resolveMicropipRequirementForTest("wheel:ac_library_python-0.1.0-py3-none-any.whl"),
-        ).toBe("ac-library-python");
     });
 });

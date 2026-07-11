@@ -98,9 +98,7 @@ describe("insertTemplate", () => {
         });
         expect(scanner.action).toBe("insert");
         if (scanner.action === "insert") {
-            expect(scanner.template).toContain(
-                "// TypeScript (Bun, using InputScanner) [Main] Submission",
-            );
+            expect(scanner.template).toContain("// TypeScript (Bun, using InputScanner) [Main] Submission");
             expect(scanner.template).toContain("class InputScanner");
         }
 

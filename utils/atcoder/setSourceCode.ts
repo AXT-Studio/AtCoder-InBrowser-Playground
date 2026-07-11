@@ -8,9 +8,7 @@ export const setSourceCode = (code: string): void => {
     }
     const sourceCodeElement = document.querySelector("#sourceCode") as HTMLElement;
     const aceEditorElement = document.querySelector("#sourceCode #editor") as HTMLElement;
-    const plainTextareaElement = document.querySelector(
-        "#sourceCode #plain-textarea",
-    ) as HTMLTextAreaElement;
+    const plainTextareaElement = document.querySelector("#sourceCode #plain-textarea") as HTMLTextAreaElement;
     if (!aceEditorElement || !plainTextareaElement) {
         console.error("[AIBP] #editor or #plain-textarea element not found inside #sourceCode");
         return;

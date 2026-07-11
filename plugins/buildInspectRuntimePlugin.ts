@@ -11,10 +11,7 @@ import * as esbuild from "esbuild";
 
 const require = createRequire(import.meta.url);
 const pluginDir = dirname(fileURLToPath(import.meta.url));
-const consoleShimPath = join(
-    pluginDir,
-    "../utils/execution/languages/typescript/consoleShim.js",
-);
+const consoleShimPath = join(pluginDir, "../utils/execution/languages/typescript/consoleShim.js");
 
 export const buildInspectRuntimePlugin = () => {
     const VIRTUAL_ID = "virtual:inspect-runtime";

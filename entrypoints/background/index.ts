@@ -9,17 +9,10 @@ import type {
 type ChromeOffscreenApi = {
     runtime: {
         getURL: (path: string) => string;
-        getContexts?: (filter: {
-            contextTypes?: string[];
-            documentUrls?: string[];
-        }) => Promise<unknown[]>;
+        getContexts?: (filter: { contextTypes?: string[]; documentUrls?: string[] }) => Promise<unknown[]>;
     };
     offscreen: {
-        createDocument: (options: {
-            url: string;
-            reasons: string[];
-            justification: string;
-        }) => Promise<void>;
+        createDocument: (options: { url: string; reasons: string[]; justification: string }) => Promise<void>;
     };
 };
 

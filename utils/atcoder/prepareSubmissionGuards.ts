@@ -3,5 +3,4 @@ export const WARNING_MESSAGE_ON_DFS_AND_BUN = `\
 Warning: Are you trying to do recursive DFS in the Bun environment? You may get a penalty (Runtime Error) due to stack overflow. Do you want to proceed?
 `;
 
-export const shouldWarnDfsAndBun = (code: string): boolean =>
-    code.includes("dfs") && code.includes("Bun");
+export const shouldWarnDfsAndBun = (code: string): boolean => code.includes("dfs") && code.includes("Bun");

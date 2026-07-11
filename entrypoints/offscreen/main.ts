@@ -5,11 +5,7 @@
 // ================================================================================================
 
 import { runInWorker } from "@/utils/execution/host/runInWorker";
-import type {
-    CodeTestResult,
-    ExecInOffscreenMessage,
-    ExecResponseMessage,
-} from "@/utils/execution/types";
+import type { CodeTestResult, ExecInOffscreenMessage, ExecResponseMessage } from "@/utils/execution/types";
 
 const asCe = (message: string): CodeTestResult => ({
     status: "CE",
@@ -40,9 +36,11 @@ browser.runtime.onMessage.addListener((message, sender) => {
                 codeTestResult,
             }),
         )
-        .catch((error: unknown): ExecResponseMessage => ({
-            type: "execResponse",
-            id: req.id,
-            codeTestResult: asCe(error instanceof Error ? error.message : String(error)),
-        }));
+        .catch(
+            (error: unknown): ExecResponseMessage => ({
+                type: "execResponse",
+                id: req.id,
+                codeTestResult: asCe(error instanceof Error ? error.message : String(error)),
+            }),
+        );
 });

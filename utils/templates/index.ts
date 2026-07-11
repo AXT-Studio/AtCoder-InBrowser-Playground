@@ -17,8 +17,7 @@ import type { TemplateDefinition, TemplateKind, TemplateLanguage, TemplateRole }
 
 export type { GenerateTemplateParams, TemplateDefinition, TemplateKind, TemplateLanguage, TemplateRole } from "./types";
 
-export const CONFIRM_REPLACE_MESSAGE =
-    "If you insert it now, the current code will be lost. Do you want to proceed?";
+export const CONFIRM_REPLACE_MESSAGE = "If you insert it now, the current code will be lost. Do you want to proceed?";
 
 export type InsertTemplateResult =
     | { action: "not_found" }
