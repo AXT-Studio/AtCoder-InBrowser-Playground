@@ -1,4 +1,8 @@
-packages:
-  - 'apps/*'
+allowBuilds:
+  core-js: false
+  esbuild: false
+  fsevents: false
+  sharp: false
+  spawn-sync: false
 patchedDependencies:
   monaco-editor@0.55.1: patches/monaco-editor@0.55.1.patch

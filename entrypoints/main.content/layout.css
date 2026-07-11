@@ -1,0 +1,45 @@
+/* ==== AtCoder問題ページに直接適用するCSS ==== */
+
+/* 幅が1400px以上のときだけAIBPの画面が見えるようにする */
+@media (min-width: 1400px) {
+    :root {
+        --container-width: clamp(750px, 50vw, 1200px);
+    }
+    /*
+      Chrome では拡張の content CSS がページ CSS より先に入り、
+      Bootstrap の .container { width: 1170px } に上書きされやすい。
+      セレクタを強めて勝つ（Firefox でも害はない）。
+    */
+    html body .container {
+        width: var(--container-width);
+        max-width: var(--container-width);
+        margin-left: 2rem;
+        margin-right: calc(-1 * var(--container-width));
+    }
+    /* もとのcontainerの影が強いので弱める */
+    html body .float-container > #main-container {
+        box-shadow: 0px 0px 4px 2px #888;
+    }
+    /* AIBPのパネルを見せる */
+    .aibp-panel {
+        position: fixed;
+        /* 上に#navbar-collapse(50px)があるので、上部は50px+2rem空ける */
+        top: calc(50px + 2rem);
+        /* 下に#fixed-server-timer(80px)があるので、下部は80px+2rem空ける */
+        bottom: calc(80px + 2rem);
+        /* 右は何もないので2rem空ける */
+        right: 2rem;
+        /* 左は.container + 余白 */
+        left: calc(var(--container-width) + 2rem + 2rem);
+        /* あまり大きすぎるとAtCoder本体のpopupに勝ってしまうのでz-indexは程々に。1000くらいなら大丈夫そうということがわかっている */
+        z-index: 1000;
+        box-sizing: border-box;
+    }
+}
+
+/* 逆に、幅が1400px未満のときはAIBPのパネルを見せない */
+@media (max-width: 1399px) {
+    .aibp-panel {
+        display: none;
+    }
+}

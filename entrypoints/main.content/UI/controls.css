@@ -1,0 +1,360 @@
+/* Shared mode controls (Solve / Compare / Stress) */
+
+/* ---- Mode layout ---- */
+
+.aibp-mode-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 100%;
+    min-height: 0;
+    color: #0f172a;
+    font-size: 13px;
+    line-height: 1.4;
+    container-type: size;
+    container-name: aibp-mode;
+}
+
+/* ---- Shared controls ---- */
+
+.aibp-label {
+    display: block;
+    margin: 0;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.aibp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.aibp-field--grow {
+    flex: 1;
+}
+
+.aibp-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.aibp-field__row {
+    display: flex;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.aibp-unit {
+    color: #94a3b8;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.aibp-select,
+.aibp-input,
+.aibp-textarea,
+.aibp-editor__textarea {
+    box-sizing: border-box;
+    margin: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    font: inherit;
+}
+
+.aibp-select,
+.aibp-input {
+    height: 32px;
+    padding: 0 0.6rem;
+}
+
+.aibp-select {
+    min-width: 0;
+    width: 100%;
+    cursor: pointer;
+}
+
+.aibp-input--narrow {
+    /* number のスピンボタン分を見込んで広めに */
+    width: 6.5rem;
+    padding-right: 0.35rem;
+}
+
+.aibp-input--tiny {
+    width: 4.25rem;
+    padding: 0 0.35rem;
+    text-align: center;
+}
+
+.aibp-select:focus-visible,
+.aibp-input:focus-visible,
+.aibp-textarea:focus-visible,
+.aibp-editor__textarea:focus-visible,
+.aibp-btn:focus-visible,
+.aibp-chip:focus-visible {
+    outline: 2px solid #94a3b8;
+    outline-offset: 1px;
+}
+
+.aibp-btn {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    margin: 0;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #0f172a;
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.aibp-btn--primary {
+    background: #0f172a;
+    color: #fff;
+}
+
+.aibp-btn--primary:hover {
+    background: #1e293b;
+}
+
+.aibp-btn--accent {
+    background: #334155;
+    color: #fff;
+}
+
+.aibp-btn--accent:hover {
+    background: #1e293b;
+}
+
+.aibp-btn--ghost {
+    border-color: #e2e8f0;
+    background: #fff;
+    color: #334155;
+}
+
+.aibp-btn--ghost:hover {
+    background: #f8fafc;
+}
+
+.aibp-chip {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.aibp-chip:hover {
+    background: #f8fafc;
+}
+
+/* ---- Editor ---- */
+
+.aibp-editor {
+    display: flex;
+    flex: 1;
+    min-height: 8rem;
+    overflow: hidden;
+}
+
+.aibp-editor__monaco {
+    width: 100%;
+    height: 100%;
+    min-height: 8rem;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e1e1e;
+}
+
+.aibp-editor__textarea {
+    width: 100%;
+    height: 100%;
+    min-height: 8rem;
+    padding: 0.75rem;
+    resize: none;
+    background: #f8fafc;
+    font-family: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ---- Toolbar under editor ---- */
+
+.aibp-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.6rem 0.75rem;
+    flex-shrink: 0;
+}
+
+.aibp-editor-toolbar__submit {
+    margin-left: auto;
+}
+
+/* ---- Test section ---- */
+
+.aibp-test-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex-shrink: 0;
+    min-height: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.aibp-test-section__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.85rem;
+    flex-shrink: 0;
+}
+
+.aibp-examples {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.aibp-examples__list {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.aibp-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 0.85rem;
+}
+
+.aibp-status__item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.aibp-status__value {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    line-height: 1.3;
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.aibp-status__value[data-color="green"] {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.aibp-status__value[data-color="purple"] {
+    background: #f3e8ff;
+    color: #6b21a8;
+}
+
+.aibp-status__value[data-color="yellow"] {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.aibp-status__value[data-color="gray"] {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+/* Time など判定色を付けない値 */
+.aibp-status__value--plain {
+    padding: 0;
+    background: transparent;
+    color: #0f172a;
+}
+
+.aibp-limits {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.aibp-test-section__toggle {
+    margin-left: auto;
+}
+
+.aibp-test-section__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    /* mode-view 高さの 45%（親が auto だと % が効かないので cqh） */
+    max-height: 45cqh;
+    overflow: auto;
+    min-height: 0;
+}
+
+/* display:flex が UA の [hidden]{display:none} を上書きするので明示する */
+.aibp-test-section__panel[hidden] {
+    display: none;
+}
+
+.aibp-io-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.aibp-io {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.aibp-textarea {
+    width: 100%;
+    height: 10rem;
+    padding: 0.5rem 0.6rem;
+    resize: none;
+    font-family: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.aibp-textarea--readonly {
+    background: #f8fafc;
+    color: #334155;
+}
+
+.aibp-test-section__run-row {
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
