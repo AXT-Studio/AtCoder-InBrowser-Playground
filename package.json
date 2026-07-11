@@ -27,6 +27,7 @@
         "monaco-editor": "0.55.1",
         "object-inspect": "^1.13.4",
         "preact": "^10.29.7",
+        "pyodide": "^314.0.2",
         "quickjs-emscripten-core": "^0.32.0"
     },
     "devDependencies": {

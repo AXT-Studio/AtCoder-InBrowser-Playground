@@ -3,12 +3,18 @@ import preact from "@preact/preset-vite";
 import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
+import { registerPyodidePublicAssets } from "./plugins/pyodidePublicAssetsHook";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     autoIcons: {
         baseIconPath: "assets/icon.png",
+    },
+    hooks: {
+        "build:publicAssets": (wxt, files) => {
+            registerPyodidePublicAssets(wxt, files);
+        },
     },
     manifest: ({ browser, manifestVersion }) => {
         const permissions = ["storage"];
@@ -45,6 +51,9 @@ export default defineConfig({
     },
     vite: () => ({
         plugins: [preact(), monacoTypescriptLibSplitPlugin(), buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
+        optimizeDeps: {
+            exclude: ["pyodide"],
+        },
         // Runner Worker からも virtual modules を import するため
         worker: {
             format: "es",

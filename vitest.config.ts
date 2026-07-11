@@ -8,8 +8,8 @@ export default defineConfig({
     plugins: [WxtVitest(), buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
     test: {
         // 純関数テストからで十分。UI/E2E は後段
-        // QuickJS / esbuild-wasm の init があるので TS runner は余裕を見る
+        // QuickJS / esbuild-wasm / Pyodide の init があるので余裕を見る
         testTimeout: 30_000,
-        hookTimeout: 30_000,
+        hookTimeout: 60_000,
     },
 });
