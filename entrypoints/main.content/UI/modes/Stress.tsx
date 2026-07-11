@@ -273,6 +273,18 @@ export function Stress() {
 
                     <button
                         type="button"
+                        class="aibp-btn aibp-btn--accent"
+                        id="aibp-test-section__run-btn"
+                        disabled={running.value}
+                        onClick={() => {
+                            void runTest();
+                        }}
+                    >
+                        {running.value ? "Running…" : "Run Test"}
+                    </button>
+
+                    <button
+                        type="button"
                         class="aibp-btn aibp-btn--ghost aibp-test-section__toggle"
                         aria-expanded={panelOpen.value}
                         onClick={() => {
@@ -286,6 +298,7 @@ export function Stress() {
                 {/*
                     折りたたみは unmount せず hidden で隠す。
                     実行後に開いても結果が残る（DOM 維持）。
+                    Stress は DECISIONS どおり折りたたみ時も Run Test をバーに残す。
                 */}
                 <div class="aibp-test-section__panel" hidden={!panelOpen.value}>
                     <div class="aibp-io-grid">
@@ -349,20 +362,6 @@ export function Stress() {
                                 value={naiveStderr.value}
                             />
                         </div>
-                    </div>
-
-                    <div class="aibp-test-section__run-row">
-                        <button
-                            type="button"
-                            class="aibp-btn aibp-btn--accent"
-                            id="aibp-test-section__run-btn"
-                            disabled={running.value}
-                            onClick={() => {
-                                void runTest();
-                            }}
-                        >
-                            {running.value ? "Running…" : "Run Test"}
-                        </button>
                     </div>
                 </div>
             </div>
