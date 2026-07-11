@@ -5,6 +5,7 @@ import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { judgeSolveVerdict } from "@/utils/stdout/judgeSolveVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { MonacoEditor } from "../monaco/MonacoEditor";
 import { epsExponent, setBufferCode, setBufferLanguage, submissionCode, submissionLanguage, timeLimitMs } from "../state";
 
 export function Solve() {
@@ -79,16 +80,13 @@ export function Solve() {
     return (
         <>
             <div class="aibp-editor">
-                <textarea
-                    class="aibp-editor__textarea"
-                    spellcheck={false}
-                    placeholder="// code (submission)"
+                <MonacoEditor
                     value={submissionCode.value}
-                    onInput={(e) => {
-                        setBufferCode("submission", (e.target as HTMLTextAreaElement).value);
+                    language={submissionLanguage.value}
+                    onChange={(value) => {
+                        setBufferCode("submission", value);
                     }}
                 />
-                {/* ↑仮置き。あとで Monaco Editor に差し替える */}
             </div>
 
             <div class="aibp-editor-toolbar">

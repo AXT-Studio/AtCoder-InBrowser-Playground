@@ -5,6 +5,7 @@ import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { judgeCompareVerdict } from "@/utils/stdout/judgeCompareVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
     epsExponent,
     naiveCode,
@@ -100,16 +101,13 @@ export function Compare() {
     return (
         <>
             <div class="aibp-editor">
-                <textarea
-                    class="aibp-editor__textarea"
-                    spellcheck={false}
-                    placeholder="// code (naive)"
+                <MonacoEditor
                     value={naiveCode.value}
-                    onInput={(e) => {
-                        setBufferCode("naive", (e.target as HTMLTextAreaElement).value);
+                    language={naiveLanguage.value}
+                    onChange={(value) => {
+                        setBufferCode("naive", value);
                     }}
                 />
-                {/* ↑仮置き。あとで Monaco Editor に差し替える */}
             </div>
 
             <div class="aibp-editor-toolbar">

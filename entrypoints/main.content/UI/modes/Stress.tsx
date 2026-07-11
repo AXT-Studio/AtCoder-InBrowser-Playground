@@ -3,6 +3,7 @@ import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { judgeStressIteration } from "@/utils/stdout/judgeStressIteration";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
     epsExponent,
     generatorCode,
@@ -122,16 +123,13 @@ export function Stress() {
     return (
         <>
             <div class="aibp-editor">
-                <textarea
-                    class="aibp-editor__textarea"
-                    spellcheck={false}
-                    placeholder="// code (testcase generator)"
+                <MonacoEditor
                     value={generatorCode.value}
-                    onInput={(e) => {
-                        setBufferCode("generator", (e.target as HTMLTextAreaElement).value);
+                    language={generatorLanguage.value}
+                    onChange={(value) => {
+                        setBufferCode("generator", value);
                     }}
                 />
-                {/* ↑仮置き。あとで Monaco Editor に差し替える */}
             </div>
 
             <div class="aibp-editor-toolbar">
