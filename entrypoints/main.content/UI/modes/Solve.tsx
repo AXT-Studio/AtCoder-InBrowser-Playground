@@ -1,12 +1,65 @@
 import { useSignal } from "@preact/signals";
+import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 
 export function Solve() {
     const panelOpen = useSignal(false);
+    const code = useSignal("");
+    const language = useSignal("plaintext");
+    const stdin = useSignal("");
+    const expected = useSignal("");
+    const stdout = useSignal("");
+    const stderr = useSignal("");
+    const timeLimitMs = useSignal(2000);
+    const statusText = useSignal("Not executed");
+    const execTimeText = useSignal("-- ms");
+    const running = useSignal(false);
+
+    const runTest = async () => {
+        if (running.value) return;
+        running.value = true;
+        statusText.value = "Running…";
+        execTimeText.value = "-- ms";
+        try {
+            const req = {
+                type: "execRequest",
+                id: crypto.randomUUID(),
+                language: language.value,
+                code: code.value,
+                stdin: stdin.value,
+                timeLimitMs: timeLimitMs.value,
+            } satisfies ExecRequestMessage;
+
+            const res = (await browser.runtime.sendMessage(req)) as ExecResponseMessage;
+            const { codeTestResult } = res;
+
+            stdout.value = codeTestResult.stdout;
+            stderr.value = codeTestResult.stderr;
+            execTimeText.value =
+                codeTestResult.execTime < 0 ? "-- ms" : `${codeTestResult.execTime} ms`;
+            // TODO: completed のときは expected と比較して AC/WA を出す（今は実行 status を仮表示）
+            statusText.value = codeTestResult.status;
+        } catch (error) {
+            statusText.value = "Error";
+            stderr.value = String(error);
+            stdout.value = "";
+            execTimeText.value = "-- ms";
+        } finally {
+            running.value = false;
+        }
+    };
 
     return (
         <>
             <div class="aibp-editor">
-                <textarea class="aibp-editor__textarea" spellcheck={false} placeholder="// code (submission)" />
+                <textarea
+                    class="aibp-editor__textarea"
+                    spellcheck={false}
+                    placeholder="// code (submission)"
+                    value={code.value}
+                    onInput={(e) => {
+                        code.value = (e.target as HTMLTextAreaElement).value;
+                    }}
+                />
                 {/* ↑仮置き。あとで Monaco Editor に差し替える */}
             </div>
 
@@ -15,11 +68,18 @@ export function Solve() {
                     <label class="aibp-label" for="aibp-editor-toolbar__language-select">
                         Language
                     </label>
-                    <select class="aibp-select" id="aibp-editor-toolbar__language-select">
+                    <select
+                        class="aibp-select"
+                        id="aibp-editor-toolbar__language-select"
+                        value={language.value}
+                        onChange={(e) => {
+                            language.value = (e.target as HTMLSelectElement).value;
+                        }}
+                    >
                         <option value="javascript">JavaScript</option>
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
-                        <option value="text">Text (cat)</option>
+                        <option value="plaintext">Text (cat)</option>
                     </select>
                 </div>
 
@@ -68,11 +128,11 @@ export function Solve() {
                     <div class="aibp-status">
                         <span class="aibp-status__item">
                             <span class="aibp-label">Status</span>
-                            <span class="aibp-status__value">Not executed</span>
+                            <span class="aibp-status__value">{statusText.value}</span>
                         </span>
                         <span class="aibp-status__item">
                             <span class="aibp-label">Time</span>
-                            <span class="aibp-status__value">-- ms</span>
+                            <span class="aibp-status__value">{execTimeText.value}</span>
                         </span>
                     </div>
 
@@ -85,7 +145,10 @@ export function Solve() {
                                 min="0"
                                 max="10000"
                                 step="100"
-                                value="2000"
+                                value={timeLimitMs.value}
+                                onInput={(e) => {
+                                    timeLimitMs.value = Number((e.target as HTMLInputElement).value);
+                                }}
                             />
                             <span class="aibp-unit">ms</span>
                         </label>
@@ -126,13 +189,29 @@ export function Solve() {
                             <label class="aibp-label" for="aibp-testcase-input">
                                 Input
                             </label>
-                            <textarea id="aibp-testcase-input" class="aibp-textarea" spellcheck={false} />
+                            <textarea
+                                id="aibp-testcase-input"
+                                class="aibp-textarea"
+                                spellcheck={false}
+                                value={stdin.value}
+                                onInput={(e) => {
+                                    stdin.value = (e.target as HTMLTextAreaElement).value;
+                                }}
+                            />
                         </div>
                         <div class="aibp-io">
                             <label class="aibp-label" for="aibp-testcase-expected">
                                 Expected
                             </label>
-                            <textarea id="aibp-testcase-expected" class="aibp-textarea" spellcheck={false} />
+                            <textarea
+                                id="aibp-testcase-expected"
+                                class="aibp-textarea"
+                                spellcheck={false}
+                                value={expected.value}
+                                onInput={(e) => {
+                                    expected.value = (e.target as HTMLTextAreaElement).value;
+                                }}
+                            />
                         </div>
                         <div class="aibp-io">
                             <label class="aibp-label" for="aibp-testcase-stdout">
@@ -143,6 +222,7 @@ export function Solve() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={stdout.value}
                             />
                         </div>
                         <div class="aibp-io">
@@ -154,13 +234,22 @@ export function Solve() {
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
+                                value={stderr.value}
                             />
                         </div>
                     </div>
 
                     <div class="aibp-test-section__run-row">
-                        <button type="button" class="aibp-btn aibp-btn--accent" id="aibp-test-section__run-btn">
-                            Run Test
+                        <button
+                            type="button"
+                            class="aibp-btn aibp-btn--accent"
+                            id="aibp-test-section__run-btn"
+                            disabled={running.value}
+                            onClick={() => {
+                                void runTest();
+                            }}
+                        >
+                            {running.value ? "Running…" : "Run Test"}
                         </button>
                     </div>
                 </div>

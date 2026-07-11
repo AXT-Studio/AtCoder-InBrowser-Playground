@@ -19,7 +19,7 @@ export function Compare() {
                         <option value="javascript">JavaScript</option>
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
-                        <option value="text">Text (cat)</option>
+                        <option value="plaintext">Text (cat)</option>
                     </select>
                 </div>
 
