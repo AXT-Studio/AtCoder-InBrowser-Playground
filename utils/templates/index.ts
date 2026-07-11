@@ -13,7 +13,7 @@ import { generateTemplate as generateTsDenoInteractive } from "./ts/deno_interac
 import { generateTemplate as generateTsDenoScanner } from "./ts/deno_scanner";
 import { generateTemplate as generateTsNodeInteractive } from "./ts/node_interactive";
 import { generateTemplate as generateTsNodeScanner } from "./ts/node_scanner";
-import type { TemplateDefinition, TemplateKind, TemplateLanguage, TemplateRole } from "./types";
+import type { TemplateDefinition, TemplateKind, TemplateRole } from "./types";
 
 export type { GenerateTemplateParams, TemplateDefinition, TemplateKind, TemplateLanguage, TemplateRole } from "./types";
 
