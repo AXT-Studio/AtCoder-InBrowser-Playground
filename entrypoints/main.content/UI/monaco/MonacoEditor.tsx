@@ -8,6 +8,8 @@ export type MonacoEditorProps = {
     language: string;
     onChange: (value: string) => void;
     class?: string;
+    /** 親から Prepare Submission 等で editor 実体を触るとき用 */
+    editorRef?: { current: editor.IStandaloneCodeEditor | null };
 };
 
 /**
@@ -34,9 +36,15 @@ export function MonacoEditor(props: MonacoEditorProps) {
             },
         });
         editorRef.current = instance;
+        if (props.editorRef) {
+            props.editorRef.current = instance;
+        }
         foldClassDeclarations(instance, { delayMs: 100 });
 
         return () => {
+            if (props.editorRef) {
+                props.editorRef.current = null;
+            }
             instance.dispose();
             editorRef.current = null;
         };

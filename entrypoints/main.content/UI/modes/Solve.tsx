@@ -1,11 +1,12 @@
 import { useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import type { editor } from "monaco-editor";
 import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
-import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { listTemplates } from "@/utils/templates";
 import { judgeSolveVerdict } from "@/utils/stdout/judgeSolveVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { applyPrepareSubmission } from "../applyPrepareSubmission";
 import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
@@ -35,6 +36,7 @@ export function Solve() {
     const running = useSignal(false);
     const selectedTemplate = useSignal(defaultTemplateId(submissionLanguage.value, "submission"));
     const templateOptions = listTemplates(submissionLanguage.value, "submission");
+    const monacoEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
     const runTest = async (override?: { stdin?: string; expected?: string }) => {
         if (running.value) return;
@@ -94,6 +96,7 @@ export function Solve() {
                 <MonacoEditor
                     value={submissionCode.value}
                     language={submissionLanguage.value}
+                    editorRef={monacoEditorRef}
                     onChange={(value) => {
                         setBufferCode("submission", value);
                     }}
@@ -169,7 +172,11 @@ export function Solve() {
                         type="button"
                         id="aibp-editor-toolbar__submit-button"
                         onClick={() => {
-                            prepareSubmission(submissionCode.value);
+                            applyPrepareSubmission({
+                                code: submissionCode.value,
+                                language: submissionLanguage.value,
+                                editor: monacoEditorRef.current,
+                            });
                         }}
                     >
                         Prepare Submission

@@ -9,6 +9,31 @@
     overflow: hidden; /* 角丸の中に中身をクリップ */
     display: flex;
     flex-direction: column;
+    font-family: "M PLUS 1", ui-sans-serif, system-ui, sans-serif;
+}
+
+.aibp-panel__chrome :is(code, pre, textarea) {
+    font-family: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Prepare Submission 拒否時の行ハイライト（一時フラッシュ） */
+.aibp-panel .monaco-editor .aibp-ts-error-flash-line {
+    background-color: rgba(255, 165, 0, 0.38);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .aibp-panel .monaco-editor .aibp-ts-error-flash-line {
+        animation: aibp-ts-error-flash-fade 500ms ease-out forwards;
+    }
+}
+
+@keyframes aibp-ts-error-flash-fade {
+    from {
+        background-color: rgba(255, 165, 0, 0.38);
+    }
+    to {
+        background-color: transparent;
+    }
 }
 
 .aibp-toolbar {

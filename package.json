@@ -21,6 +21,8 @@
         "test:watch": "vitest"
     },
     "dependencies": {
+        "@fontsource/m-plus-1": "^5.2.9",
+        "@fontsource/m-plus-1-code": "^5.2.9",
         "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
         "@preact/signals": "^2.9.3",
         "esbuild-wasm": "^0.28.1",

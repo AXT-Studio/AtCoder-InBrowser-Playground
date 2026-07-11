@@ -124,11 +124,11 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
         automaticLayout: true,
         theme: "vs-dark",
         minimap: { enabled: false },
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        fontFamily: "'M PLUS 1 Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
         fontSize: 13,
         lineHeight: 20,
         scrollBeyondLastLine: false,
-        glyphMargin: false,
+        glyphMargin: true,
         padding: { top: 8, bottom: 8 },
     });
 

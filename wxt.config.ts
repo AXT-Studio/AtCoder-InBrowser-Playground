@@ -27,6 +27,8 @@ export default defineConfig({
                         "unlisted_monaco-editor.js",
                         "unlisted_monaco-ts-lib.js",
                         "unlisted_monaco-ts.js",
+                        "*.woff",
+                        "*.woff2",
                     ],
                     matches: ["https://atcoder.jp/*"],
                 },

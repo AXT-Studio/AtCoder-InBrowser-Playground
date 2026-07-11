@@ -1,11 +1,11 @@
 import { useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
-import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { listTemplates } from "@/utils/templates";
 import { judgeCompareVerdict } from "@/utils/stdout/judgeCompareVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { applyPrepareSubmission } from "../applyPrepareSubmission";
 import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
@@ -183,7 +183,11 @@ export function Compare() {
                         type="button"
                         id="aibp-editor-toolbar__submit-button"
                         onClick={() => {
-                            prepareSubmission(submissionCode.value);
+                            applyPrepareSubmission({
+                                code: submissionCode.value,
+                                language: submissionLanguage.value,
+                                editor: null,
+                            });
                         }}
                     >
                         Prepare Submission
