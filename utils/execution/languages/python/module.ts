@@ -1,9 +1,10 @@
 // ================================================================================================
-// Language Module - Python (Pyodide, stdlib only for now)
+// Language Module - Python (Pyodide + micropip allowlist)
 // ================================================================================================
 
 import { loadPyodide, type PyodideInterface } from "pyodide";
 import type { LanguageModule } from "../../types";
+import { ensureAllowlistedPackages } from "./packages";
 
 // ----------------------------------------------------------------
 // Helpers
@@ -71,6 +72,19 @@ export const python: LanguageModule<LanguageContext> = {
 
     async run(ctx, code, stdin) {
         const { pyodide } = ctx;
+
+        // loadPackage / micropip の進捗メッセージをユーザー stdout に混ぜない
+        try {
+            pyodide.setStdout({ batched: () => {} });
+            pyodide.setStderr({ batched: () => {} });
+            await ensureAllowlistedPackages(pyodide, code);
+        } catch (error) {
+            return {
+                status: "CE",
+                stdout: "",
+                stderr: formatErrorMessage(error),
+            };
+        }
 
         const stdinLines = stdin.split("\n");
         let stdinIndex = 0;

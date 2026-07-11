@@ -45,4 +45,49 @@ print(a + b)
         expect(outcome.stderr).toMatch(/ValueError/);
         expect(outcome.stderr).toMatch(/nope/);
     });
+
+    it(
+        "allowlist の numpy を micropip で入れて実行できる",
+        async () => {
+            const outcome = await python.run(
+                ctx,
+                `
+import numpy as np
+print(int(np.array([1, 2, 3]).sum()))
+`,
+                "",
+            );
+            expect(outcome).toEqual({
+                status: "completed",
+                stdout: "6\n",
+                stderr: "",
+            });
+        },
+        120_000,
+    );
+
+    it(
+        "atcoder (ac-library-python) を入れて実行できる",
+        async () => {
+            const outcome = await python.run(
+                ctx,
+                `
+from atcoder.dsu import DSU
+d = DSU(3)
+d.merge(0, 1)
+print(d.same(0, 1))
+`,
+                "",
+            );
+            expect(outcome.status).toBe("completed");
+            expect(outcome.stdout).toBe("True\n");
+        },
+        120_000,
+    );
+
+    it("allowlist 外の import は ModuleNotFoundError (RE)", async () => {
+        const outcome = await python.run(ctx, `import scipy\nprint(scipy.__version__)`, "");
+        expect(outcome.status).toBe("RE");
+        expect(outcome.stderr).toMatch(/ModuleNotFoundError|No module named/);
+    });
 });

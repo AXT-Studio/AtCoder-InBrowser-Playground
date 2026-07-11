@@ -12,8 +12,8 @@ export default defineConfig({
         baseIconPath: "assets/icon.png",
     },
     hooks: {
-        "build:publicAssets": (wxt, files) => {
-            registerPyodidePublicAssets(wxt, files);
+        "build:publicAssets": async (wxt, files) => {
+            await registerPyodidePublicAssets(wxt, files);
         },
     },
     manifest: ({ browser, manifestVersion }) => {
