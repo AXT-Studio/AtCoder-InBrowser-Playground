@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { editor } from "monaco-editor";
+import { foldClassDeclarations } from "./foldLines";
 import { createMonacoEditor, setMonacoLanguage } from "./setup";
 
 export type MonacoEditorProps = {
@@ -12,6 +13,7 @@ export type MonacoEditorProps = {
 /**
  * Preact 向け Monaco ラッパ（imperative create / dispose）。
  * value の外部更新はモデルへ同期。入力中の自分自身の onChange はループしないよう参照比較する。
+ * 外部からコードが入ったときは旧実装どおり `class` 行を折る（Insert / hydrate）。
  */
 export function MonacoEditor(props: MonacoEditorProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -32,6 +34,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
             },
         });
         editorRef.current = instance;
+        foldClassDeclarations(instance, { delayMs: 100 });
 
         return () => {
             instance.dispose();
@@ -44,6 +47,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
         if (!instance) return;
         if (instance.getValue() !== props.value) {
             instance.setValue(props.value);
+            foldClassDeclarations(instance, { delayMs: 100 });
         }
     }, [props.value]);
 
