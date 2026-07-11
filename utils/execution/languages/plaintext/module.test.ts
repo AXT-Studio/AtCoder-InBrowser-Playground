@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { plaintext } from "./plaintext";
+import { plaintext } from "./module";
 
 describe("plaintext", () => {
     it("init は null を返す", async () => {

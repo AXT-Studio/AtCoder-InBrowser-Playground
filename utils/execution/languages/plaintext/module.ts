@@ -2,7 +2,7 @@
 // Language Module - plaintext
 // ================================================================================================
 
-import type { LanguageModule } from "../types";
+import type { LanguageModule } from "../../types";
 
 /** Language Context: 実行時に必要なコンテキスト */
 export type LanguageContext = null;

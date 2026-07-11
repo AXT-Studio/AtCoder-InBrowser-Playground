@@ -1,4 +1,6 @@
 allowBuilds:
-  esbuild: true
+  core-js: false
+  esbuild: false
+  fsevents: false
   sharp: false
-  spawn-sync: true
+  spawn-sync: false

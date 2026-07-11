@@ -5,13 +5,18 @@
     :root {
         --container-width: clamp(750px, 50vw, 1000px);
     }
-    /* もとのcontainerを左に寄せる */
-    .container {
-        width: var(--container-width);
-        margin-left: 2rem;
+    /*
+      Chrome では拡張の content CSS がページ CSS より先に入り、
+      Bootstrap の .container { width: 1170px } に上書きされやすい。
+      セレクタを強めて勝つ（Firefox でも害はない）。
+    */
+    html body .container {
+        width: var(--container-width) !important;
+        max-width: var(--container-width) !important;
+        margin-left: 2rem !important;
     }
     /* もとのcontainerの影が強いので弱める */
-    .float-container > #main-container {
+    html body .float-container > #main-container {
         box-shadow: 0px 0px 4px 2px #888;
     }
     /* AIBPのパネルを見せる */
@@ -23,7 +28,7 @@
         bottom: calc(80px + 2rem);
         /* 右は何もないので2rem空ける */
         right: 2rem;
-        /* 左は.container(margin合わせて800px+2rem)があるので、左は800px+2rem+2rem空ける */
+        /* 左は.container + 余白 */
         left: calc(var(--container-width) + 2rem + 2rem);
         /* あまり大きすぎるとAtCoder本体のpopupに勝ってしまうのでz-indexは程々に。1000くらいなら大丈夫そうということがわかっている */
         z-index: 1000;

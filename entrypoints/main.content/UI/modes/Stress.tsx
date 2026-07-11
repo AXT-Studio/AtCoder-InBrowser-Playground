@@ -1,4 +1,6 @@
 import { useSignal } from "@preact/signals";
+import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
+import { epsExponent, submissionCode, timeLimitMs } from "../state";
 
 export function Stress() {
     const panelOpen = useSignal(false);
@@ -41,7 +43,14 @@ export function Stress() {
                 </div>
 
                 <div class="aibp-editor-toolbar__submit">
-                    <button class="aibp-btn aibp-btn--primary" type="button" id="aibp-editor-toolbar__submit-button">
+                    <button
+                        class="aibp-btn aibp-btn--primary"
+                        type="button"
+                        id="aibp-editor-toolbar__submit-button"
+                        onClick={() => {
+                            prepareSubmission(submissionCode.value);
+                        }}
+                    >
                         Prepare Submission
                     </button>
                 </div>
@@ -71,7 +80,10 @@ export function Stress() {
                                 min="0"
                                 max="10000"
                                 step="100"
-                                value="2000"
+                                value={timeLimitMs.value}
+                                onInput={(e) => {
+                                    timeLimitMs.value = Number((e.target as HTMLInputElement).value);
+                                }}
                             />
                             <span class="aibp-unit">ms</span>
                         </label>
@@ -84,7 +96,10 @@ export function Stress() {
                                 min="1"
                                 max="12"
                                 step="1"
-                                value="6"
+                                value={epsExponent.value}
+                                onInput={(e) => {
+                                    epsExponent.value = Number((e.target as HTMLInputElement).value);
+                                }}
                             />
                         </label>
                         <label class="aibp-field aibp-field--inline">

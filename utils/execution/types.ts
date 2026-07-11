@@ -26,6 +26,15 @@ export type ExecRequestMessage = {
     stdin: string;
     timeLimitMs: number;
 };
+/** Background → Offscreen（Chrome）。Content からの execRequest とは type を分ける */
+export type ExecInOffscreenMessage = {
+    type: "execInOffscreen";
+    id: string;
+    language: string;
+    code: string;
+    stdin: string;
+    timeLimitMs: number;
+};
 export type StartMessage = {
     type: "start";
     id: string;

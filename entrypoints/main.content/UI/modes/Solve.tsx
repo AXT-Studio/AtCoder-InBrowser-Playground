@@ -1,24 +1,43 @@
+import { useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
+import { prepareSubmission } from "@/utils/atcoder/prepareSubmission";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { judgeSolveVerdict } from "@/utils/stdout/judgeSolveVerdict";
 import { statusColor } from "@/utils/stdout/statusColor";
+import { epsExponent, submissionCode, timeLimitMs } from "../state";
 
 export function Solve() {
+    const samplesRef = useRef<ReturnType<typeof parseSampleCases> | null>(null);
+    if (samplesRef.current === null) {
+        samplesRef.current = parseSampleCases();
+    }
+    const samples = samplesRef.current;
+    const sampleNames = [...samples.names];
+
     const panelOpen = useSignal(false);
-    const code = useSignal("");
-    const language = useSignal("plaintext");
+    const language = useSignal("typescript");
     const stdin = useSignal("");
     const expected = useSignal("");
     const stdout = useSignal("");
     const stderr = useSignal("");
-    const timeLimitMs = useSignal(2000);
-    const epsExponent = useSignal(6);
     const statusText = useSignal("--"); // Not executed(未実行)のときは--と表示
     const execTimeText = useSignal("-- ms");
     const running = useSignal(false);
 
-    const runTest = async () => {
+    const runTest = async (override?: { stdin?: string; expected?: string }) => {
         if (running.value) return;
+
+        if (override?.stdin !== undefined) {
+            stdin.value = override.stdin;
+        }
+        if (override?.expected !== undefined) {
+            expected.value = override.expected;
+        }
+
+        const stdinToUse = override?.stdin ?? stdin.value;
+        const expectedToUse = override?.expected ?? expected.value;
+
         running.value = true;
         statusText.value = "WJ"; // WJ: Waiting for Judge
         execTimeText.value = "-- ms";
@@ -27,8 +46,8 @@ export function Solve() {
                 type: "execRequest",
                 id: crypto.randomUUID(),
                 language: language.value,
-                code: code.value,
-                stdin: stdin.value,
+                code: submissionCode.value,
+                stdin: stdinToUse,
                 timeLimitMs: timeLimitMs.value,
             } satisfies ExecRequestMessage;
 
@@ -40,7 +59,7 @@ export function Solve() {
             execTimeText.value = codeTestResult.execTime < 0 ? "-- ms" : `${codeTestResult.execTime} ms`;
 
             const allowableError = 10 ** -epsExponent.value;
-            statusText.value = judgeSolveVerdict(codeTestResult, expected.value, allowableError);
+            statusText.value = judgeSolveVerdict(codeTestResult, expectedToUse, allowableError);
         } catch (error) {
             statusText.value = "Error";
             stderr.value = String(error);
@@ -51,6 +70,13 @@ export function Solve() {
         }
     };
 
+    const runExample = (name: string) => {
+        void runTest({
+            stdin: samples.input.get(name) ?? "",
+            expected: samples.output.get(name) ?? "",
+        });
+    };
+
     return (
         <>
             <div class="aibp-editor">
@@ -58,9 +84,9 @@ export function Solve() {
                     class="aibp-editor__textarea"
                     spellcheck={false}
                     placeholder="// code (submission)"
-                    value={code.value}
+                    value={submissionCode.value}
                     onInput={(e) => {
-                        code.value = (e.target as HTMLTextAreaElement).value;
+                        submissionCode.value = (e.target as HTMLTextAreaElement).value;
                     }}
                 />
                 {/* ↑仮置き。あとで Monaco Editor に差し替える */}
@@ -104,7 +130,14 @@ export function Solve() {
                 </div>
 
                 <div class="aibp-editor-toolbar__submit">
-                    <button class="aibp-btn aibp-btn--primary" type="button" id="aibp-editor-toolbar__submit-button">
+                    <button
+                        class="aibp-btn aibp-btn--primary"
+                        type="button"
+                        id="aibp-editor-toolbar__submit-button"
+                        onClick={() => {
+                            prepareSubmission(submissionCode.value);
+                        }}
+                    >
                         Prepare Submission
                     </button>
                 </div>
@@ -112,21 +145,28 @@ export function Solve() {
 
             <div class="aibp-test-section">
                 <div class="aibp-test-section__bar">
-                    <div class="aibp-examples">
-                        <span class="aibp-label">Examples</span>
-                        <ol class="aibp-examples__list">
-                            <li>
-                                <button type="button" class="aibp-chip">
-                                    1
-                                </button>
-                            </li>
-                            <li>
-                                <button type="button" class="aibp-chip">
-                                    2
-                                </button>
-                            </li>
-                        </ol>
-                    </div>
+                    {sampleNames.length > 0 && (
+                        <div class="aibp-examples">
+                            <span class="aibp-label">Examples</span>
+                            <ol class="aibp-examples__list">
+                                {sampleNames.map((name) => (
+                                    <li key={name}>
+                                        <button
+                                            type="button"
+                                            class="aibp-chip"
+                                            disabled={running.value}
+                                            title={`入力例 ${name} を実行`}
+                                            onClick={() => {
+                                                runExample(name);
+                                            }}
+                                        >
+                                            {name}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    )}
 
                     <div class="aibp-status">
                         <span class="aibp-status__item">
@@ -137,9 +177,7 @@ export function Solve() {
                         </span>
                         <span class="aibp-status__item">
                             <span class="aibp-label">Time</span>
-                            <span class="aibp-status__value aibp-status__value--plain">
-                                {execTimeText.value}
-                            </span>
+                            <span class="aibp-status__value aibp-status__value--plain">{execTimeText.value}</span>
                         </span>
                     </div>
 
