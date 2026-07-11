@@ -68,11 +68,13 @@ export function Compare() {
                     <div class="aibp-status">
                         <span class="aibp-status__item">
                             <span class="aibp-label">Status</span>
-                            <span class="aibp-status__value">Not executed</span>
+                            <span class="aibp-status__value" data-color="gray">
+                                Not executed
+                            </span>
                         </span>
                         <span class="aibp-status__item">
                             <span class="aibp-label">Time</span>
-                            <span class="aibp-status__value">-- ms</span>
+                            <span class="aibp-status__value aibp-status__value--plain">-- ms</span>
                         </span>
                     </div>
 

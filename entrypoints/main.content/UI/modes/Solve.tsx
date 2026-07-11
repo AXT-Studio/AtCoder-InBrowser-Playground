@@ -1,5 +1,7 @@
 import { useSignal } from "@preact/signals";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
+import { judgeSolveVerdict } from "@/utils/stdout/judgeSolveVerdict";
+import { statusColor } from "@/utils/stdout/statusColor";
 
 export function Solve() {
     const panelOpen = useSignal(false);
@@ -10,14 +12,15 @@ export function Solve() {
     const stdout = useSignal("");
     const stderr = useSignal("");
     const timeLimitMs = useSignal(2000);
-    const statusText = useSignal("Not executed");
+    const epsExponent = useSignal(6);
+    const statusText = useSignal("--"); // Not executed(未実行)のときは--と表示
     const execTimeText = useSignal("-- ms");
     const running = useSignal(false);
 
     const runTest = async () => {
         if (running.value) return;
         running.value = true;
-        statusText.value = "Running…";
+        statusText.value = "WJ"; // WJ: Waiting for Judge
         execTimeText.value = "-- ms";
         try {
             const req = {
@@ -34,10 +37,10 @@ export function Solve() {
 
             stdout.value = codeTestResult.stdout;
             stderr.value = codeTestResult.stderr;
-            execTimeText.value =
-                codeTestResult.execTime < 0 ? "-- ms" : `${codeTestResult.execTime} ms`;
-            // TODO: completed のときは expected と比較して AC/WA を出す（今は実行 status を仮表示）
-            statusText.value = codeTestResult.status;
+            execTimeText.value = codeTestResult.execTime < 0 ? "-- ms" : `${codeTestResult.execTime} ms`;
+
+            const allowableError = 10 ** -epsExponent.value;
+            statusText.value = judgeSolveVerdict(codeTestResult, expected.value, allowableError);
         } catch (error) {
             statusText.value = "Error";
             stderr.value = String(error);
@@ -128,11 +131,15 @@ export function Solve() {
                     <div class="aibp-status">
                         <span class="aibp-status__item">
                             <span class="aibp-label">Status</span>
-                            <span class="aibp-status__value">{statusText.value}</span>
+                            <span class="aibp-status__value" data-color={statusColor(statusText.value)}>
+                                {statusText.value}
+                            </span>
                         </span>
                         <span class="aibp-status__item">
                             <span class="aibp-label">Time</span>
-                            <span class="aibp-status__value">{execTimeText.value}</span>
+                            <span class="aibp-status__value aibp-status__value--plain">
+                                {execTimeText.value}
+                            </span>
                         </span>
                     </div>
 
@@ -161,7 +168,10 @@ export function Solve() {
                                 min="1"
                                 max="12"
                                 step="1"
-                                value="6"
+                                value={epsExponent.value}
+                                onInput={(e) => {
+                                    epsExponent.value = Number((e.target as HTMLInputElement).value);
+                                }}
                             />
                         </label>
                     </div>

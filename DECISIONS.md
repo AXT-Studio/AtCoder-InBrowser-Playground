@@ -351,6 +351,7 @@ await pyodide.runPythonAsync(code);
 - **入力:** 高さ 32px・角丸 8px・薄いボーダー。number はスピンボタンで潰れない幅を取る
 - **ボタン:** primary = 濃いスレート塗り / accent = 一段薄い塗り / ghost = 白＋ボーダー。ホバーで影を大きく変えない
 - **Example 番号:** 小さな chip（正方形に近い）
+- **Status 色:** AC=緑 / RE・CE=紫 / TLE・WA=黄 / その他=灰（`data-color` + `utils/stdout/statusColor.ts`）
 - **テスト IO:** 2×2 グリッド。monospace。readonly 面は背景を少し落とす。textarea 高さは ~10rem・`resize: none`
 - **エディタ枠:** 残り高さを `flex: 1` で取る。仮 textarea → 後で Monaco
 - **テストパネル展開時:** パネル本体は mode-view 高さの約 45%（`max-height: 45cqh`）+ 内側 `overflow: auto`（全体スクロールはしない）
@@ -374,8 +375,8 @@ await pyodide.runPythonAsync(code);
 
 - サンプル・制限時間・ページ文脈の DOM パースは必要。英語ページ等は必要になったら
 - 提出の Ace ↔ textarea トグル書き込みは、動いていれば維持（旧 AtCoder Easy Test v2 由来）
-- stdout 比較（空白分割＋数値は許容誤差）は必須。空白正規化の詳細仕様は不明なため現状のごまかしを文書化して継続可
-- **UI の Status 表示:** `CodeTestResult.status` の `completed` をそのまま出さない。Content 側で expected 等と比較して **AC / WA**（および TLE/RE/CE）に落とす。いま Solve は仮に `completed` を表示している（要実装）
+- stdout 比較（空白分割＋数値は許容誤差）は必須。空白正規化の詳細仕様は不明なため現状のごまかしを文書化して継続可（実装: `utils/stdout/isOutputCorrect.ts`）
+- **UI の Status 表示:** `CodeTestResult.status` の `completed` をそのまま出さない。Content 側で expected 等と比較して **AC / WA**（および TLE/RE/CE）に落とす（Solve: `utils/stdout/judgeSolveVerdict.ts`）
 - Prepare Submission 時の TS 型エラーブロック等の既存ガードは引き継いでよい
 
 ---
