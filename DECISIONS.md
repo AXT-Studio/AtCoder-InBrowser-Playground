@@ -267,6 +267,43 @@ await pyodide.runPythonAsync(code);
 - 生成器テンプレは別物として用意
 - Python テンプレは未決（わからん）
 
+### 7.4 デザイン言語（UI 見た目の正本）
+
+刷新 UI のビジュアル方針。実装は `entrypoints/main.content/UI/`（`App.css` = パネル枠・mode タブ、`controls.css` = mode 共通コントロール）に寄せる。
+
+#### 全体
+
+- **Soft elevated card:** 右固定パネルは不透明白＋細いボーダー＋外側だけの柔らかい多層シャドウ。角丸 ~12px
+- **グラスモーフィズムは使わない**（AtCoder 背面が単色で効きにくい）
+- **ニューモーフィズムは使わない**（スクロール端・他要素との距離で破綻しやすい）
+- パネル全体は `overflow` でスクロールさせない。スクロールが要るのは子領域だけ
+- Integrated UI（Shadow Root 不可）。Monaco 前提。クラスは `aibp-` プレフィックスで Bootstrap と隔離
+- 色は **slate 系**（`#0f172a` / `#334155` / `#64748b` / `#e2e8f0` / `#f1f5f9` / `#f8fafc`）。紫グラデ・強いグロー・AtCoder 緑の全面塗りは避ける
+
+#### コンポーネント感
+
+- **Mode 切替:** segmented control（薄いグレーのトラック＋選択中だけ白ピル＋小さな影）。下線タブにしない
+- **ラベル:** 11px・semibold・uppercase・muted（`#64748b`）
+- **入力:** 高さ 32px・角丸 8px・薄いボーダー。number はスピンボタンで潰れない幅を取る
+- **ボタン:** primary = 濃いスレート塗り / accent = 一段薄い塗り / ghost = 白＋ボーダー。ホバーで影を大きく変えない
+- **Example 番号:** 小さな chip（正方形に近い）
+- **テスト IO:** 2×2 グリッド。monospace。readonly 面は背景を少し落とす。textarea 高さは ~10rem・`resize: none`
+- **エディタ枠:** 残り高さを `flex: 1` で取る。仮 textarea → 後で Monaco
+- **テストパネル展開時:** パネル本体は mode-view 高さの約 45%（`max-height: 45cqh`）+ 内側 `overflow: auto`（全体スクロールはしない）
+
+#### テストパネルの折りたたみ
+
+- デフォルトは **閉じる**（コーディング時にエディタを広く）
+- 折りたたみ時も **DOM は残す**（`hidden` / CSS）。条件レンダリングで unmount しない
+- 実行結果・入出力の正本は **Signals（または同等の状態）**。閉じたまま Examples 実行 → 開いたら同じ状態が見える、を保証する
+- Status / Exec. Time / TL / eps / Examples は折りたたみ時もバーに残す
+
+#### やってほしくない見た目
+
+- Bootstrap `nav-tabs` の流用
+- パネル全体の半透明・大きな単一ドロップシャドウ
+- ホバー演出の過多、丸 pill の群れ、絵文字依存の UI
+
 ---
 
 ## 8. AtCoder 統合・判定
