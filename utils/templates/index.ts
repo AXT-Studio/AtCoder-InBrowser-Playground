@@ -30,7 +30,6 @@ export type InsertTemplateResult =
 
 /** 全テンプレ定義（UI の select と insert の正本） */
 export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
-    { id: "ts_bun", label: "TypeScript (Bun)", language: "typescript", kind: "solver", generate: generateTsBun },
     {
         id: "ts_bun_scanner",
         label: "TypeScript (Bun) + Scanner",
@@ -38,6 +37,7 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
         kind: "solver",
         generate: generateTsBunScanner,
     },
+    { id: "ts_bun", label: "TypeScript (Bun)", language: "typescript", kind: "solver", generate: generateTsBun },
     {
         id: "ts_bun_interactive",
         label: "TypeScript (Bun) Interactive",

@@ -40,6 +40,7 @@ describe("formatTemplateHeader", () => {
 describe("listTemplates", () => {
     it("returns solver templates for submission/naive and generator ones for generator", () => {
         const solve = listTemplates("typescript", "submission");
+        expect(solve[0]?.id).toBe("ts_bun_scanner");
         expect(solve.some((t) => t.id === "ts_bun")).toBe(true);
         expect(solve.every((t) => t.kind === "solver")).toBe(true);
 
