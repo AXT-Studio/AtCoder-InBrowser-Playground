@@ -1,5 +1,6 @@
 import { useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import type { editor } from "monaco-editor";
 import { parseSampleCases } from "@/utils/atcoder/parseSampleCases";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { listTemplates } from "@/utils/templates";
@@ -37,6 +38,7 @@ export function Compare() {
     const running = useSignal(false);
     const selectedTemplate = useSignal(defaultTemplateId(naiveLanguage.value, "naive"));
     const templateOptions = listTemplates(naiveLanguage.value, "naive");
+    const monacoEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
     const execOnce = async (language: string, code: string, stdinValue: string) => {
         const req = {
@@ -106,8 +108,9 @@ export function Compare() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    value={naiveCode.value}
+                    initialValue={naiveCode.value}
                     language={naiveLanguage.value}
+                    editorRef={monacoEditorRef}
                     onChange={(value) => {
                         setBufferCode("naive", value);
                     }}
@@ -168,7 +171,7 @@ export function Compare() {
                                 applyTemplateInsert({
                                     buffer: "naive",
                                     templateKey: selectedTemplate.value,
-                                    currentCode: naiveCode.value,
+                                    editor: monacoEditorRef.current,
                                 });
                             }}
                         >

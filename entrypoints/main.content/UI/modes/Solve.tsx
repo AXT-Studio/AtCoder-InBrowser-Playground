@@ -94,7 +94,7 @@ export function Solve() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    value={submissionCode.value}
+                    initialValue={submissionCode.value}
                     language={submissionLanguage.value}
                     editorRef={monacoEditorRef}
                     onChange={(value) => {
@@ -157,7 +157,7 @@ export function Solve() {
                                 applyTemplateInsert({
                                     buffer: "submission",
                                     templateKey: selectedTemplate.value,
-                                    currentCode: submissionCode.value,
+                                    editor: monacoEditorRef.current,
                                 });
                             }}
                         >
