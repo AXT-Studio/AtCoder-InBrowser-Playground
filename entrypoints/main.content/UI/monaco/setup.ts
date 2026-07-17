@@ -185,7 +185,7 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
     return instance;
 };
 
-/** 外部からのコード同期（Insert / hydrate）。onChange を発火させない */
+/** 外部からのコード投入（Template Insert 等）。onChange を発火させないので、呼び出し側で Signals も更新すること */
 export const setEditorValueExternal = (instance: editor.IStandaloneCodeEditor, value: string): void => {
     const withHook = instance as editor.IStandaloneCodeEditor & {
         __aibpSetValue?: (value: string) => void;

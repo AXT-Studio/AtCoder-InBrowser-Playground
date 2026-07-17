@@ -172,7 +172,7 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 ### 7.1 技術
 
 - Preact + Preact Signals
-- Monaco は imperative（ref + mount/dispose）
+- Monaco は imperative（ref + mount/dispose）。**テキストの正本は Monaco**（Signals は onChange で片方向追従。props から setValue しない）
 
 ### 7.2 Mode = やりたいこと（＝編集バッファ）
 

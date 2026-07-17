@@ -1,4 +1,6 @@
+import { useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import type { editor } from "monaco-editor";
 import type { ExecRequestMessage, ExecResponseMessage } from "@/utils/execution/types";
 import { listTemplates } from "@/utils/templates";
 import { judgeStressIteration } from "@/utils/stdout/judgeStressIteration";
@@ -31,6 +33,7 @@ export function Stress() {
     const running = useSignal(false);
     const selectedTemplate = useSignal(defaultTemplateId(generatorLanguage.value, "generator"));
     const templateOptions = listTemplates(generatorLanguage.value, "generator");
+    const monacoEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
     const execOnce = async (language: string, code: string, stdinValue: string) => {
         const req = {
@@ -123,8 +126,9 @@ export function Stress() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    value={generatorCode.value}
+                    initialValue={generatorCode.value}
                     language={generatorLanguage.value}
+                    editorRef={monacoEditorRef}
                     onChange={(value) => {
                         setBufferCode("generator", value);
                     }}
@@ -185,7 +189,7 @@ export function Stress() {
                                 applyTemplateInsert({
                                     buffer: "generator",
                                     templateKey: selectedTemplate.value,
-                                    currentCode: generatorCode.value,
+                                    editor: monacoEditorRef.current,
                                 });
                             }}
                         >
