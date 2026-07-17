@@ -13,7 +13,7 @@
 }
 
 .aibp-panel__chrome :is(code, pre, textarea) {
-    font-family: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: monospace;
 }
 
 /* Prepare Submission 拒否時の行ハイライト（一時フラッシュ） */

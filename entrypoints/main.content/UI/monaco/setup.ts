@@ -136,25 +136,6 @@ export type CreateMonacoEditorOptions = {
     onChange: (value: string) => void;
 };
 
-const MONACO_FONT_FAMILY = "'M PLUS 1 Code', ui-monospace, monospace";
-const MONACO_FONT_SIZE = 13;
-
-/**
- * Google Fonts（display=swap）完了前に測ると spaceWidth がフォールバック幅でキャッシュされ、
- * indent guide が本文からずれる（#82）。ロード後に再計測する。
- */
-const remeasureMonacoFontsWhenReady = (): void => {
-    void (async () => {
-        try {
-            await document.fonts.load(`${MONACO_FONT_SIZE}px "M PLUS 1 Code"`);
-        } catch {
-            // フォント取得失敗時も ready 後の再計測でフォールバック幅を確定させる
-        }
-        await document.fonts.ready;
-        monacoEditor.remeasureFonts();
-    })();
-};
-
 export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.IStandaloneCodeEditor => {
     ensureMonacoEnvironment();
     ensureMonacoCompilerOptions();
@@ -165,8 +146,8 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
         automaticLayout: true,
         theme: "vs-dark",
         minimap: { enabled: false }, // <- これをfalseにしないとFirefoxで動作しないっぽい
-        fontFamily: MONACO_FONT_FAMILY,
-        fontSize: MONACO_FONT_SIZE,
+        fontFamily: "monospace",
+        fontSize: 13,
         lineHeight: 20,
         scrollBeyondLastLine: false,
         glyphMargin: true,
@@ -200,8 +181,6 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
             suppressChangeEvent = false;
         }
     };
-
-    remeasureMonacoFontsWhenReady();
 
     return instance;
 };
