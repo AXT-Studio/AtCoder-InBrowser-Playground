@@ -22,7 +22,7 @@ export default defineConfig({
             permissions.push("offscreen");
         }
         return {
-            version: "2.0.2",
+            version: "2.0.3",
             name: "AtCoder In-Browser Playground",
             description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
