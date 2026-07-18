@@ -1,15 +1,17 @@
 import { editor as monacoEditor, typescript as monacoTS, type editor } from "monaco-editor";
-import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution";
-import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution";
-import "monaco-editor/esm/vs/basic-languages/python/python.contribution";
-import "monaco-editor/esm/vs/language/typescript/monaco.contribution";
+import type { PublicPath } from "wxt/browser";
+import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
+import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.js";
+import "monaco-editor/esm/vs/basic-languages/python/python.contribution.js";
+import "monaco-editor/esm/vs/language/typescript/monaco.contribution.js";
 import "monaco-editor/min/vs/editor/editor.main.css";
 import runtimeExtraLib from "./extraLibs/runtime.ts?raw";
 
 type MonacoWorkerAssetPath = "unlisted_monaco-ts-lib.js" | "unlisted_monaco-ts.js" | "unlisted_monaco-editor.js";
 
 const fetchWorkerScript = async (workerPath: MonacoWorkerAssetPath): Promise<string> => {
-    const url = browser.runtime.getURL(`/${workerPath}`);
+    // unlisted_monaco-ts-lib.js は Vite プラグインが emit するだけで WXT の PublicPath 生成対象外
+    const url = browser.runtime.getURL(`/${workerPath}` as PublicPath);
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to load worker script: ${workerPath} (${response.status})`);
@@ -146,6 +148,8 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
         automaticLayout: true,
         theme: "vs-dark",
         minimap: { enabled: false }, // <- これをfalseにしないとFirefoxで動作しないっぽい
+        // 親の overflow:hidden で suggest / hover がクリップされないようにする
+        fixedOverflowWidgets: true,
         fontFamily: "monospace",
         fontSize: 13,
         lineHeight: 20,

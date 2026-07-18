@@ -16,8 +16,11 @@ function Main() {
     // Example:
     // const n = 1 + Math.floor(Math.random() * 10);
     // console.log(n);
-    console.log(1);
+    console.log(randIntBetween(1, 100));
 }
+
+/** a以上b以下のランダムな整数を返します */
+const randIntBetween = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 
 Main();
 `;

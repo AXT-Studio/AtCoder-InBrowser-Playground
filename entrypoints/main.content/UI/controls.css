@@ -318,6 +318,8 @@
     max-height: 45cqh;
     overflow: auto;
     min-height: 0;
+    /* focus outline (2px + offset 1px) が overflow でクリップされない余白 */
+    padding: 3px;
 }
 
 /* display:flex が UA の [hidden]{display:none} を上書きするので明示する */
