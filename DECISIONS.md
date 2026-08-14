@@ -128,11 +128,15 @@ type CodeTestResult = {
 ## 5. TypeScript / JavaScript
 
 - QuickJS（WASM）+ esbuild-wasm（TS→ES2023 相当）+ 最小 polyfill + console shim（object-inspect）
+- 前処理順: **esbuild（sourcemap 付き）→ export 除去 → stdin 置換**
+- IIFE では包まない（実行ごとに Worker を破棄するため）
 - stdin 置換:
     - `require("fs").readFileSync("/dev/stdin", "utf8")`
     - `await Deno.readTextFile("/dev/stdin")`
     - `await Bun.file("/dev/stdin").text()`
 - `console.log` / `console.error` → stdout / stderr。shim 必須（JSON 経由だと `NaN` 等が壊れる）
+- RE/CE の stderr は人が読める文字列。行・列は sourcemap でユーザーソース座標へ戻す
+- エラー文言は QuickJS / esbuild 準拠（Node 互換は追わない）
 
 **ES2024+ で残す:** `Object/Map.groupBy`、Set 集合演算、Iterator helpers。それ以外は切る。
 

@@ -213,6 +213,9 @@ importers:
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: ^0.32.0
         version: 0.32.0
+      '@jridgewell/trace-mapping':
+        specifier: ^0.3.31
+        version: 0.3.31
       '@preact/signals':
         specifier: ^2.9.3
         version: 2.9.3(preact@10.29.7)

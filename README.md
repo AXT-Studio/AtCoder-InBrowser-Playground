@@ -81,6 +81,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - `Object.groupBy()`やSetの集合演算メソッドなど、一部機能はpolyfillで対応しています。
         - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
         - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性があります
+        - 実行時・変換時エラーの行・列はエディタ上のソース位置です。エラー文言はブラウザ内実行環境（QuickJS）準拠で、Node.js / Deno / Bun と一致しません
 - TypeScript
     - 対象ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
     - 制約: 概ねJavaScriptと同様の制約があります

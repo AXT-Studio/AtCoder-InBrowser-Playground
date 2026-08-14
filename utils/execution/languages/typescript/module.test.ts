@@ -63,6 +63,53 @@ console.log(input.trim());
         expect(outcome.status).toBe("RE");
         expect(outcome.stdout).toBe("");
         expect(outcome.stderr).toContain("nope");
+        expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
+        expect(() => JSON.parse(outcome.stderr)).toThrow();
+    });
+
+    it("Issue #94 の TypeError はユーザーソースの行・列を出す", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `function Main(): void {
+    const arr = Array.from({length: 10}, (_, i) => Array.from({length: 10}, (_, j) => i * j));
+    console.log(arr[10][1]);
+}
+Main();
+`,
+            "",
+        );
+        expect(outcome.status).toBe("RE");
+        expect(outcome.stderr.startsWith("TypeError:")).toBe(true);
+        expect(outcome.stderr).toContain("cannot read property of undefined");
+        // esbuild の map 粒度により Node の :3:24（`[`）ではなく :3:23（直前の `]`）になる
+        expect(outcome.stderr).toContain("Main.js:3:23");
+        expect(outcome.stderr).toContain("Main.js:5:1");
+        expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
+        expect(() => JSON.parse(outcome.stderr)).toThrow();
+    });
+
+    it("interface 行があっても console.log の行番号がユーザーソースと合う", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `interface Foo { x: number }
+function Main(): void {
+    const arr = Array.from({length: 10}, (_, i) => Array.from({length: 10}, (_, j) => i * j));
+    console.log(arr[10][1]);
+}
+Main();
+`,
+            "",
+        );
+        expect(outcome.status).toBe("RE");
+        expect(outcome.stderr).toContain("Main.js:4:");
+    });
+
+    it("構文エラーは CE になりファイル位置を出す", async () => {
+        const outcome = await typescript.run(ctx, `function Main( {`, "");
+        expect(outcome.status).toBe("CE");
+        expect(outcome.stderr).toContain("Main.js:1:");
+        expect(outcome.stderr).not.toContain("Transform failed");
+        expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
     });
 
     it("Object.groupBy polyfill が使える", async () => {
