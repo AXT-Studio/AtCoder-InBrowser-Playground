@@ -10,17 +10,28 @@ import type { QuickJSContext } from "quickjs-emscripten-core";
 import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
 import inspectRuntime from "virtual:inspect-runtime";
 import coreJsPolyfill from "virtual:corejs-polyfill";
+import { formatRuntimeError, formatTransformError } from "./formatError";
+
+const STDIN_PATTERNS = [
+    `require("fs").readFileSync("/dev/stdin", "utf8")`,
+    `await Deno.readTextFile("/dev/stdin")`,
+    `await Bun.file("/dev/stdin").text()`,
+];
 
 // ----------------------------------------------------------------
 // Helper Functions
 // ----------------------------------------------------------------
 
+type PreprocessResult = {
+    code: string;
+    map: string | undefined;
+};
+
 /**
  * TS/JSコードを受け取り、そのコードをES2023相当までダウンコンパイルします (esbuild-wasmを使用)
- * @param code コード
- * @returns ダウンコンパイル後のコード
+ * @param code ユーザーが書いたコード（stdin 置換前）
  */
-const downCompileCode = async (code: string): Promise<string> => {
+const downCompileCode = async (code: string): Promise<PreprocessResult> => {
     // esbuild-wasmの初期化 (初回のみ)
     // 2回目以降はエラーが出るので、try-catchで捻り潰す
     try {
@@ -31,49 +42,36 @@ const downCompileCode = async (code: string): Promise<string> => {
     } catch {
         // 初期化に失敗してもエラーを無視する (すでに初期化されている場合はエラーが出るが、別にそれでいい)
     }
-    // コードの変換
     const result = await esbuildTransform(code, {
         loader: "ts",
         target: "es2023",
+        sourcemap: true,
+        sourcefile: "Main.js",
     });
     if (result === null || typeof result.code !== "string") {
         throw new Error("esbuild transformation failed");
     }
-    return result.code;
+    return {
+        code: result.code,
+        map: typeof result.map === "string" && result.map.length > 0 ? result.map : undefined,
+    };
 };
 
 /**
  * コードをQuickJSで実行するときに満たしてほしい形に変換します。
- * @param code コード
- * @returns QuickJSで実行するときに満たしてほしい形のコード
+ * esbuild（sourcemap 付き）→ export 除去 → stdin 置換。IIFE では包みません（実行ごとに Worker を捨てるため）。
  */
-const preProcessCodeForQuickJS = async (code: string): Promise<string> => {
-    // 以下の3パターンのいずれかにマッチするコードは、標準入力をすべて受け取るコードとみなす。
-    // 1. Node.js向け: `require("fs").readFileSync("/dev/stdin", "utf8")`
-    // 2. Deno向け: `await Deno.readTextFile("/dev/stdin")`
-    // 3. Bun向け: `await Bun.file("/dev/stdin").text()`
-    // テスト実行環境ではグローバル変数`__stdin__`に標準入力を入れておくので、これらの文字列を全て`(__stdin__)`に置き換える。
-    const patterns = [
-        // Node.js向け
-        `require("fs").readFileSync("/dev/stdin", "utf8")`,
-        // Deno向け
-        `await Deno.readTextFile("/dev/stdin")`,
-        // Bun向け
-        `await Bun.file("/dev/stdin").text()`,
-    ];
-    let result = code;
-    for (const pattern of patterns) {
-        result = result.replaceAll(pattern, "(__stdin__)");
-    }
-    // ダウンコンパイルに通す
-    result = await downCompileCode(result);
-    // QuickJSはTop-Level exportをサポートしてないかも 念の為削除
+const preProcessCodeForQuickJS = async (code: string): Promise<PreprocessResult> => {
+    const compiled = await downCompileCode(code);
+    // QuickJSはTop-Level exportをサポートしてないかも 念の為削除（改行は残して行番号をずらさない）
+    let result = compiled.code;
     result = result.replace(/^export\s*\{\s*\}\s*;?/m, "");
     result = result.replace(/^export\s+/gm, "");
-    // 全体をIIFEで包む (一応グローバル汚染防止として)
-    result = `(function() {\n${result}\n})();`;
-    // 変換後のコードを返す
-    return result;
+    // テスト実行環境ではグローバル変数`__stdin__`に標準入力を入れておくので、これらの文字列を全て`(__stdin__)`に置き換える。
+    for (const pattern of STDIN_PATTERNS) {
+        result = result.replaceAll(pattern, "(__stdin__)");
+    }
+    return { code: result, map: compiled.map };
 };
 
 /**
@@ -138,19 +136,18 @@ export const typescript: LanguageModule<LanguageContext> = {
             // グローバル変数 __stdin__ に、こっちが持っている stdin を入れる
             quickJsVm.setProp(quickJsVm.global, "__stdin__", quickJsVm.newString(stdin));
             // コードをQuickJSで実行するときに満たしてほしい形に変換
-            const preProcessedCode = await preProcessCodeForQuickJS(code);
+            const preprocessed = await preProcessCodeForQuickJS(code);
             // 変換後のコードを実行
-            const result = quickJsVm.evalCode(preProcessedCode, "Main.js");
+            const result = quickJsVm.evalCode(preprocessed.code, "Main.js");
             // 実行結果に応じて、適切な結果を返す
             if (result.error) {
                 // エラー発生時はRE扱い
                 const dumped = quickJsVm.dump(result.error);
                 result.error.dispose();
-                const errorMessage = typeof dumped === "string" ? dumped : JSON.stringify(dumped);
                 return {
                     status: "RE",
                     stdout: "",
-                    stderr: errorMessage,
+                    stderr: formatRuntimeError(dumped, preprocessed.map, code),
                 };
             } else {
                 // 正常終了時はcompleted扱い
@@ -165,7 +162,7 @@ export const typescript: LanguageModule<LanguageContext> = {
             return {
                 status: "CE",
                 stdout: "",
-                stderr: error instanceof Error ? error.message : String(error),
+                stderr: formatTransformError(error, code),
             };
         }
     },
