@@ -147,7 +147,7 @@ export const typescript: LanguageModule<LanguageContext> = {
                 return {
                     status: "RE",
                     stdout: "",
-                    stderr: formatRuntimeError(dumped, preprocessed.map),
+                    stderr: formatRuntimeError(dumped, preprocessed.map, code),
                 };
             } else {
                 // 正常終了時はcompleted扱い
@@ -162,7 +162,7 @@ export const typescript: LanguageModule<LanguageContext> = {
             return {
                 status: "CE",
                 stdout: "",
-                stderr: formatTransformError(error),
+                stderr: formatTransformError(error, code),
             };
         }
     },

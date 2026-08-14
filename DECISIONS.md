@@ -136,6 +136,7 @@ type CodeTestResult = {
     - `await Bun.file("/dev/stdin").text()`
 - `console.log` / `console.error` → stdout / stderr。shim 必須（JSON 経由だと `NaN` 等が壊れる）
 - RE/CE の stderr は人が読める文字列。行・列は sourcemap でユーザーソース座標へ戻す
+- 列は **1-based**。stderr は snippet（`{line} | {source}`）+ caret（半角幅仮定）+ メッセージ
 - エラー文言は QuickJS / esbuild 準拠（Node 互換は追わない）
 
 **ES2024+ で残す:** `Object/Map.groupBy`、Set 集合演算、Iterator helpers。それ以外は切る。

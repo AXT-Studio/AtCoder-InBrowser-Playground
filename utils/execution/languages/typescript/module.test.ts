@@ -79,7 +79,9 @@ Main();
             "",
         );
         expect(outcome.status).toBe("RE");
-        expect(outcome.stderr.startsWith("TypeError:")).toBe(true);
+        expect(outcome.stderr).toContain("3 |");
+        expect(outcome.stderr.startsWith("3 |")).toBe(true);
+        expect(outcome.stderr).toContain("TypeError:");
         expect(outcome.stderr).toContain("cannot read property of undefined");
         // esbuild の map 粒度により Node の :3:24（`[`）ではなく :3:23（直前の `]`）になる
         expect(outcome.stderr).toContain("Main.js:3:23");
@@ -107,7 +109,8 @@ Main();
     it("構文エラーは CE になりファイル位置を出す", async () => {
         const outcome = await typescript.run(ctx, `function Main( {`, "");
         expect(outcome.status).toBe("CE");
-        expect(outcome.stderr).toContain("Main.js:1:");
+        expect(outcome.stderr).toContain("1 |");
+        expect(outcome.stderr).toContain("Main.js:1:17");
         expect(outcome.stderr).not.toContain("Transform failed");
         expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
     });
