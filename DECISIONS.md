@@ -92,6 +92,7 @@ Runner Worker
 - `run(ctx, code, stdin)` → `completed` / `CE` / `RE`（TLE は Host）
 - `javascript` は typescript module にマップ
 - `plaintext` は「code をそのまま stdout」
+- `brainfuck` は Tritium `-b -e`（8bit wrap、EOF は -1→255）。テンプレなし。Monaco は自前 Monarch（`plaintext` に落とさない）
 
 ### 4.4 `CodeTestResult`
 
