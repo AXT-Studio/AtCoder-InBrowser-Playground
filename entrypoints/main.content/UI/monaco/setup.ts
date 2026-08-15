@@ -133,8 +133,8 @@ export const toMonacoLanguage = (language: string): string => {
 
 export type CreateMonacoEditorOptions = {
     container: HTMLElement;
-    value: string;
-    language: string;
+    /** 呼び出し側が寿命を持つ。create({ model }) なら editor.dispose してもモデルは残る */
+    model: editor.ITextModel;
     onChange: (value: string) => void;
 };
 
@@ -143,8 +143,7 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
     ensureMonacoCompilerOptions();
 
     const instance = monacoEditor.create(options.container, {
-        value: options.value,
-        language: toMonacoLanguage(options.language),
+        model: options.model,
         automaticLayout: true,
         theme: "vs-dark",
         minimap: { enabled: false }, // <- これをfalseにしないとFirefoxで動作しないっぽい

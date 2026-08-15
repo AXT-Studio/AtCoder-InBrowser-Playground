@@ -126,7 +126,7 @@ export function Stress() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    initialValue={generatorCode.value}
+                    buffer="generator"
                     language={generatorLanguage.value}
                     editorRef={monacoEditorRef}
                     onChange={(value) => {

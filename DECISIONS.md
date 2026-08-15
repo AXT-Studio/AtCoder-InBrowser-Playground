@@ -31,18 +31,18 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 
 ## 2. 早見表
 
-| 領域       | 決定                                                                              |
-| ---------- | --------------------------------------------------------------------------------- |
-| ビルド     | WXT                                                                               |
-| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）              |
-| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                          |
-| UI         | Preact + Signals。mode = Solve / Compare / Stress                                 |
-| JS/TS      | QuickJS + esbuild-wasm。stdin 置換・console shim。完全 Node 互換は追わない        |
-| ES2024+    | `Object/Map.groupBy`・Set 集合演算・Iterator helpers **のみ**                     |
-| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱    |
-| 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討      |
-| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                 |
-| テスト     | Vitest                                                                            |
+| 領域       | 決定                                                                           |
+| ---------- | ------------------------------------------------------------------------------ |
+| ビルド     | WXT                                                                            |
+| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）           |
+| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                       |
+| UI         | Preact + Signals。mode = Solve / Compare / Stress                              |
+| JS/TS      | QuickJS + esbuild-wasm。stdin 置換・console shim。完全 Node 互換は追わない     |
+| ES2024+    | `Object/Map.groupBy`・Set 集合演算・Iterator helpers **のみ**                  |
+| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱 |
+| 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討   |
+| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                              |
+| テスト     | Vitest                                                                         |
 
 ---
 
@@ -178,17 +178,18 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 
 - Preact + Preact Signals
 - Monaco は imperative（ref + mount/dispose）。**テキストの正本は Monaco**（Signals は onChange で片方向追従。props から setValue しない）
+- モデルは pathname 滞在中 `BufferKind` 単位でセッション保持（editor dispose では捨てない）。Undo はモデル、折り/カーソル/選択/スクロールは viewState。ページリロードでは捨てる
 
 ### 7.2 Mode = やりたいこと（＝編集バッファ）
 
 裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。永続化は `pathname × バッファ`。  
 TL / eps は問題由来の共有値。
 
-| Mode     | 編集バッファ | 折りたたみ時に見えるもの（要旨）                          |
-| -------- | ------------ | --------------------------------------------------------- |
-| Solve    | 提出用       | Examples、Status / Exec.Time、TL / eps（Run は隠す）      |
-| Compare  | 愚直         | Examples、Status（Run は隠す。Exec.Time 不要）            |
-| Stress   | 生成器       | Status、**Run Test**、TL / eps / Loop（詳細 IO は隠す）   |
+| Mode    | 編集バッファ | 折りたたみ時に見えるもの（要旨）                        |
+| ------- | ------------ | ------------------------------------------------------- |
+| Solve   | 提出用       | Examples、Status / Exec.Time、TL / eps（Run は隠す）    |
+| Compare | 愚直         | Examples、Status（Run は隠す。Exec.Time 不要）          |
+| Stress  | 生成器       | Status、**Run Test**、TL / eps / Loop（詳細 IO は隠す） |
 
 - Settings mode は作らない
 - mode 切替ショートカットは **当面なし**（必要性低）
