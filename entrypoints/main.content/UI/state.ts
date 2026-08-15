@@ -47,6 +47,9 @@ const codeSignalFor = (kind: BufferKind) => {
     }
 };
 
+/** バッファの現在テキスト（モデル初回生成の seed。以降の正本は Monaco） */
+export const bufferCodeValue = (kind: BufferKind): string => codeSignalFor(kind).value;
+
 const languageSignalFor = (kind: BufferKind) => {
     switch (kind) {
         case "submission":

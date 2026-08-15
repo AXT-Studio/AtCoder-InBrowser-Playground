@@ -108,7 +108,7 @@ export function Compare() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    initialValue={naiveCode.value}
+                    buffer="naive"
                     language={naiveLanguage.value}
                     editorRef={monacoEditorRef}
                     onChange={(value) => {

@@ -94,7 +94,7 @@ export function Solve() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    initialValue={submissionCode.value}
+                    buffer="submission"
                     language={submissionLanguage.value}
                     editorRef={monacoEditorRef}
                     onChange={(value) => {

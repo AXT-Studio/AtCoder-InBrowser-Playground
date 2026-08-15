@@ -1,11 +1,19 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { editor } from "monaco-editor";
+import type { BufferKind } from "@/utils/persistence/editorBuffers";
+import { bufferCodeValue } from "../state";
+import { shouldAutoFoldClasses } from "./bufferModelIds";
+import {
+    getOrCreateBufferModel,
+    hasBufferViewState,
+    restoreBufferViewState,
+    saveBufferViewState,
+} from "./bufferModels";
 import { foldClassDeclarations } from "./foldLines";
 import { createMonacoEditor, setMonacoLanguage } from "./setup";
 
 export type MonacoEditorProps = {
-    /** mount 時の初期値のみ。以降の正本は Monaco（Signals へは onChange で片方向） */
-    initialValue: string;
+    buffer: BufferKind;
     language: string;
     onChange: (value: string) => void;
     class?: string;
@@ -16,6 +24,7 @@ export type MonacoEditorProps = {
 /**
  * Preact 向け Monaco ラッパ（imperative create / dispose）。
  * テキストの正本は Monaco。props から setValue で書き戻さない（#84: controlled 同期のレース回避）。
+ * モデルはバッファ単位でセッション常駐（Undo 維持）。viewState は unmount 時に保存する。
  * 外部更新（Template Insert 等）は editorRef 経由で setEditorValueExternal する。
  */
 export function MonacoEditor(props: MonacoEditorProps) {
@@ -28,10 +37,13 @@ export function MonacoEditor(props: MonacoEditorProps) {
         const container = containerRef.current;
         if (!container) return;
 
+        const model = getOrCreateBufferModel(props.buffer, {
+            value: bufferCodeValue(props.buffer),
+            language: props.language,
+        });
         const instance = createMonacoEditor({
             container,
-            value: props.initialValue,
-            language: props.language,
+            model,
             onChange: (value) => {
                 onChangeRef.current(value);
             },
@@ -40,9 +52,13 @@ export function MonacoEditor(props: MonacoEditorProps) {
         if (props.editorRef) {
             props.editorRef.current = instance;
         }
-        foldClassDeclarations(instance, { delayMs: 100 });
+        restoreBufferViewState(props.buffer, instance);
+        if (shouldAutoFoldClasses(hasBufferViewState(props.buffer))) {
+            foldClassDeclarations(instance, { delayMs: 100 });
+        }
 
         return () => {
+            saveBufferViewState(props.buffer, instance);
             if (props.editorRef) {
                 props.editorRef.current = null;
             }
