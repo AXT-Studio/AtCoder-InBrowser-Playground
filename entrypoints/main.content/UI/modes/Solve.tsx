@@ -122,6 +122,7 @@ export function Solve() {
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
                         <option value="plaintext">Text (cat)</option>
+                        <option value="brainfuck">Brainfuck</option>
                     </select>
                 </div>
 

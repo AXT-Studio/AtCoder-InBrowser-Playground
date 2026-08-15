@@ -92,6 +92,12 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - `numpy`, `bitarray`, `sympy`, `mpmath`, `sortedcontainers`, `more_itertools`, `networkx`, `atcoder`(ac_library_python)
 - Text
     - 対象ジャッジ: Text (cat 9.4)
+- Brainfuck
+    - 対象ジャッジ: Brainfuck (Tritium 1.2.73)
+    - 制約
+        - 1セル8bitモードです。つまり、255+1→0, 0-1→255になります
+        - `,`命令処理時、すでに入力を末尾まで読んでいたら-1(255)が代入されます
+        - テープ量の上限や実行速度、細かいエラー、ASCII文字以外を入力した場合など、細かい挙動については保証されません
 
 ## Privacy Policy
 

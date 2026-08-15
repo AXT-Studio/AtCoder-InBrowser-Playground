@@ -126,6 +126,8 @@ export const toMonacoLanguage = (language: string): string => {
         case "python":
         case "plaintext":
             return language;
+        case "brainfuck":
+            return "plaintext";
         default:
             return "plaintext";
     }
