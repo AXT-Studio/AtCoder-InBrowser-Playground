@@ -4,7 +4,7 @@ AtCoderの問題ページに、ブラウザ上で動作が完結するコード�
 
 ## License
 
-- copyright (c) 2026- Ayasaka-Koto.
+- copyright (c) 2026- Ayasaka-Koto (AyaExpTech).
 - This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 ## Installation

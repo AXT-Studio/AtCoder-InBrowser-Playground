@@ -5,6 +5,7 @@ import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.
 import "monaco-editor/esm/vs/basic-languages/python/python.contribution.js";
 import "monaco-editor/esm/vs/language/typescript/monaco.contribution.js";
 import "monaco-editor/min/vs/editor/editor.main.css";
+import { ensureBrainfuckLanguage } from "./brainfuckLanguage";
 import runtimeExtraLib from "./extraLibs/runtime.ts?raw";
 
 type MonacoWorkerAssetPath = "unlisted_monaco-ts-lib.js" | "unlisted_monaco-ts.js" | "unlisted_monaco-editor.js";
@@ -127,7 +128,8 @@ export const toMonacoLanguage = (language: string): string => {
         case "plaintext":
             return language;
         case "brainfuck":
-            return "plaintext";
+            ensureBrainfuckLanguage();
+            return "brainfuck";
         default:
             return "plaintext";
     }
@@ -143,6 +145,7 @@ export type CreateMonacoEditorOptions = {
 export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.IStandaloneCodeEditor => {
     ensureMonacoEnvironment();
     ensureMonacoCompilerOptions();
+    ensureBrainfuckLanguage();
 
     const instance = monacoEditor.create(options.container, {
         model: options.model,
