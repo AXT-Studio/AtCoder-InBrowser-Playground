@@ -68,6 +68,14 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 - 保証: Mozilla Firefox、Google Chrome
 - 期待: Firefoxベースのブラウザ([Floorp](https://ja.floorp.app/ja-JP)など)、Chromiumベースの各ブラウザ([Edge](https://www.microsoft.com/ja-jp/edge)など)
 
+### Screen Width
+
+[`window.innerWidth`](https://developer.mozilla.org/ja/docs/Web/API/Window/innerWidth)が`1200`(px)以上である必要があります。
+1200px未満の場合、AIBPのパネルは表示されません。
+
+> [!NOTE]
+> v2.3.1で、表示条件の下限を1400pxから1200pxに緩和しました。
+
 ### Languages
 
 - JavaScript
