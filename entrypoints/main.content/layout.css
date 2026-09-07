@@ -1,9 +1,13 @@
 /* ==== AtCoder問題ページに直接適用するCSS ==== */
 
-/* 幅が1400px以上のときだけAIBPの画面が見えるようにする */
-@media (min-width: 1400px) {
+.aibp-panel {
+    display: none;
+}
+
+/* 幅が1200px以上のときだけAIBPの画面が見えるようにする */
+@media (min-width: 1200px) {
     :root {
-        --container-width: clamp(750px, 50vw, 1200px);
+        --container-width: clamp(600px, 50vw, 1200px);
     }
     /*
       Chrome では拡張の content CSS がページ CSS より先に入り、
@@ -22,6 +26,7 @@
     }
     /* AIBPのパネルを見せる */
     .aibp-panel {
+        display: block;
         position: fixed;
         /* 上に#navbar-collapse(50px)があるので、上部は50px+2rem空ける */
         top: calc(50px + 2rem);
@@ -34,12 +39,5 @@
         /* あまり大きすぎるとAtCoder本体のpopupに勝ってしまうのでz-indexは程々に。1000くらいなら大丈夫そうということがわかっている */
         z-index: 1000;
         box-sizing: border-box;
-    }
-}
-
-/* 逆に、幅が1400px未満のときはAIBPのパネルを見せない */
-@media (max-width: 1399px) {
-    .aibp-panel {
-        display: none;
     }
 }
