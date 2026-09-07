@@ -1,5 +1,6 @@
 # AtCoder In-Browser Playground (AIBP)
 
+Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.
 AtCoderの問題ページに、ブラウザ上で動作が完結するコードエディター・テスターを追加するWeb拡張機能です。
 
 ## License
@@ -9,8 +10,8 @@ AtCoderの問題ページに、ブラウザ上で動作が完結するコード�
 
 ## Installation
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok)
-- [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
+- **Chrome**: [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok)
+- **Firefox**: [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
 
 ## Features
 
@@ -66,6 +67,14 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 
 - 保証: Mozilla Firefox、Google Chrome
 - 期待: Firefoxベースのブラウザ([Floorp](https://ja.floorp.app/ja-JP)など)、Chromiumベースの各ブラウザ([Edge](https://www.microsoft.com/ja-jp/edge)など)
+
+### Screen Width
+
+[`window.innerWidth`](https://developer.mozilla.org/ja/docs/Web/API/Window/innerWidth)が`1200`(px)以上である必要があります。
+1200px未満の場合、AIBPのパネルは表示されません。
+
+> [!NOTE]
+> v2.3.1で、表示条件の下限を1400pxから1200pxに緩和しました。
 
 ### Languages
 
