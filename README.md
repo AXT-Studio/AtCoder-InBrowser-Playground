@@ -1,5 +1,6 @@
 # AtCoder In-Browser Playground (AIBP)
 
+Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.
 AtCoderの問題ページに、ブラウザ上で動作が完結するコードエディター・テスターを追加するWeb拡張機能です。
 
 ## License
@@ -9,8 +10,8 @@ AtCoderの問題ページに、ブラウザ上で動作が完結するコード�
 
 ## Installation
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok)
-- [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
+- **Chrome**: [Chrome Web Store](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok)
+- **Firefox**: [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
 
 ## Features
 
