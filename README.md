@@ -89,9 +89,10 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - ES2024以降の一部の機能は使えません
             - `Object.groupBy()`やSetの集合演算メソッドなど、一部機能はpolyfillで対応しています。
         - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
-        - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性があります
-        - 実行時・変換時エラーの行・列はエディタ上のソース位置です。エラー文言はブラウザ内実行環境（QuickJS-NG）準拠で、Node.js / Deno / Bun と一致しません
-        - `WebAssembly` はサンドボックス内のインタプリタ（WAMR）です。ホストの `WebAssembly` ではなく、WASI もありません。今あるのは `Module` / `Instance` と数値の export です
+        - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性が高いです
+        - 実行時・変換時エラーの行・列はエディタ上のソース位置です
+        - エラーの文言はブラウザ内実行環境(QuickJS-NG)がベースとなっており、必ずしもNode.js・Deno・Bunと一致するものではありません
+        - WebAssembly JavaScript APIの基本的な機能も利用できますが、WebAssembly System Interfaceなどは使用できません
 - TypeScript
     - 対象ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
     - 制約: 概ねJavaScriptと同様の制約があります
