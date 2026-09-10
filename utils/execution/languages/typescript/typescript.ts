@@ -28,7 +28,7 @@ type PreprocessResult = {
 };
 
 /**
- * TS/JSコードを受け取り、そのコードをES2023相当までダウンコンパイルします (esbuild-wasmを使用)
+ * TS/JSコードを受け取り、そのコードをES2025相当までダウンコンパイルします (esbuild-wasmを使用)
  * @param code ユーザーが書いたコード（stdin 置換前）
  */
 const downCompileCode = async (code: string): Promise<PreprocessResult> => {
@@ -44,7 +44,7 @@ const downCompileCode = async (code: string): Promise<PreprocessResult> => {
     }
     const result = await esbuildTransform(code, {
         loader: "ts",
-        target: "es2023",
+        target: "es2025",
         sourcemap: true,
         sourcefile: "Main.js",
     });

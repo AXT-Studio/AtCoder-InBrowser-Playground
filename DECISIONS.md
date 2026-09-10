@@ -128,7 +128,7 @@ type CodeTestResult = {
 
 ## 5. TypeScript / JavaScript
 
-- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ esbuild-wasm（TS→ES2023 相当）+ 最小 polyfill 機構 + console shim（object-inspect）
+- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ esbuild-wasm（TS→ES2025 相当）+ 最小 polyfill 機構 + console shim（object-inspect）
 - ピン: QuickJS-NG `v0.16.2`、WAMR `WAMR-2.4.1`。FFI は `quickjs-emscripten-core` 0.32（`QTS_*` cwrap は `engine/quickjs-wamr/ffi.ts`）
 - 成果物は `pnpm run build:wasm` で生成し、リポジトリには置かない。`dev:` のたびに自動ビルドはしない
 - ゲスト `WebAssembly` は Module / Instance と数値 export まで。WASI・JIT/AOT・ホスト橋渡しはしない
