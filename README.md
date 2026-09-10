@@ -138,8 +138,6 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 
 ## Developing
 
-JS/TS ランタイム（QuickJS-NG + WAMR）は生成物で、リポジトリには入っていません。初回とエンジン変更時は `pnpm run build:wasm` が必要です。Emscripten（`emcc` / `emcmake`）と cmake、git を PATH に置いてください。macOS なら `brew install emscripten`。
-
 ```bash
 pnpm install
 pnpm run build:wasm    # QuickJS-NG + WAMR を Emscripten でビルド（vendor は自動 clone）
@@ -157,9 +155,12 @@ pnpm run fmt           # Oxfmt
 pnpm run compile       # Cheking (tsc --noEmit)
 ```
 
-`dev:` のたびに wasm は作り直さない。エンジン（`engine/quickjs-wamr/`）を触ったら `build:wasm` を再実行する。
-
 - `wxt.config.ts`の`version`フィールドにある拡張機能のバージョンをちゃんと編集すること！
+- 初回・エンジン更新時は`pnpm run build:wasm`を実行する必要があります
+    - Emscripten(`emcc`, `emcmake`), cmake, gitのPATHを通しておく必要があります
+    - MacOSなら`brew install emscripten`を先にしておけばよいです
+- `dev`や`build`のたびにwasmビルドをする必要はありません
+    - エンジン部分(`engine/quickjs-wamr/`)を変更したときのみ`pnpm run build:wasm`を再実行する必要があります
 - Firefox 一時的なアドオンの読み込み: `about:debugging#/runtime/this-firefox`
 - Firefox申請時 ビルド手順の伝達:
     ```
