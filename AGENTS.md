@@ -19,7 +19,7 @@
 4. **画面:** mode は **Solve / Compare / Stress** のみ。Settings mode を作らない。mode が編集対象バッファ（提出用 / 愚直 / 生成器）の切替を兼ねる
 5. **言語設定**は提出用・愚直・生成器で独立。コード・言語は pathname×バッファで永続化
 6. **JS/TS:** QuickJS 系。stdin の `__stdin__` 置換と console shim を維持。完全 Node 互換は追わない
-7. **ES2024+ polyfill は** `Object/Map.groupBy`・Set 集合演算・Iterator helpers **のみ**
+7. **ES2024+ polyfill 機構は残す。** 現行リストは空（NG が groupBy / Set 集合 / Iterator helpers を持つ）。勝手に増やさない
 8. **Python:** Pyodide。**scipy は入れない。** init は `loadPyodide` のみ。run 前に import 抽出 → allowlist のみ **micropip**。wheel は拡張内同梱（`extension://` URL 直インストール不可 → fetch + `emfs:`）
 9. **matplotlib** を公式サポート対象にしない
 10. **TLE** は init 除外後（`ready` 以降）のユーザーコード実行時間で判定する

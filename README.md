@@ -87,7 +87,8 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - `await Bun.file("/dev/stdin").text()`
         - `console.log()`・`console.error()`以外の`console`オブジェクトのメソッドは、AIBP上では利用できません
         - ES2024以降の一部の機能は使えません
-            - `Object.groupBy()`やSetの集合演算メソッドなど、一部機能はpolyfillで対応しています。
+            - `Object.groupBy()`、Setの集合演算、Iterator helpers は実行エンジン（QuickJS-NG）が持っています
+            - それ以外の新しい API は polyfill しません
         - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
         - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性が高いです
         - 実行時・変換時エラーの行・列はエディタ上のソース位置です

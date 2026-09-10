@@ -25,7 +25,6 @@
     },
     "dependencies": {
         "@jitl/quickjs-ffi-types": "0.32.0",
-        "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
         "@jridgewell/trace-mapping": "^0.3.31",
         "@preact/signals": "^2.9.3",
         "esbuild-wasm": "^0.28.1",

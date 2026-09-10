@@ -114,7 +114,7 @@ Main();
         expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
     });
 
-    it("Object.groupBy polyfill が使える", async () => {
+    it("Object.groupBy が使える", async () => {
         const outcome = await typescript.run(
             ctx,
             `
@@ -127,6 +127,38 @@ console.log(grouped.even.join(","));
         expect(outcome).toEqual({
             status: "completed",
             stdout: "1,3\n2",
+            stderr: "",
+        });
+    });
+
+    it("Set 集合演算が使える", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `
+const a = new Set([1, 2]);
+const b = new Set([2, 3]);
+console.log([...a.union(b)].sort().join(","));
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1,2,3",
+            stderr: "",
+        });
+    });
+
+    it("Iterator helpers が使える", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `
+console.log(Iterator.from([1, 2, 3]).map((n) => n * 2).toArray().join(","));
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "2,4,6",
             stderr: "",
         });
     });

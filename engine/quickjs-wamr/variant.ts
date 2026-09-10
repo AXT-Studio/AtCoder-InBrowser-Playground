@@ -23,7 +23,7 @@ const loadWasmBinary = async (): Promise<ArrayBuffer> => {
 
 const variant: QuickJSSyncVariant = {
     type: "sync",
-    importFFI: () => import("@jitl/quickjs-singlefile-browser-release-sync/ffi").then((mod) => mod.QuickJSFFI),
+    importFFI: (() => import("./ffi").then((mod) => mod.QuickJSFFI)) as QuickJSSyncVariant["importFFI"],
     importModuleLoader: async () => {
         const wasmBinary = await loadWasmBinary();
         const loader: EmscriptenModuleLoader<QuickJSEmscriptenModule> = (options = {}) =>
