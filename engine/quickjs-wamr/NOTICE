@@ -1,0 +1,8 @@
+This directory builds a QuickJS-NG + WAMR interpreter variant used by AIBP.
+
+- QuickJS-NG v0.16.2 — MIT
+  https://github.com/quickjs-ng/quickjs
+- WebAssembly Micro Runtime (WAMR) WAMR-2.4.1 — Apache License 2.0
+  https://github.com/bytecodealliance/wasm-micro-runtime
+- C FFI wrapper and QTS_* cwraps based on justjake/quickjs-emscripten 0.32 — MIT
+  https://github.com/justjake/quickjs-emscripten

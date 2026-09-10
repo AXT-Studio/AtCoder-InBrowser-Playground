@@ -22,7 +22,7 @@ export default defineConfig({
             permissions.push("offscreen");
         }
         return {
-            version: "2.3.1",
+            version: "2.4.0",
             name: "AtCoder In-Browser Playground",
             description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
@@ -50,6 +50,7 @@ export default defineConfig({
         optimizeDeps: {
             exclude: ["pyodide"],
         },
+        assetsInclude: ["**/*.wasm"],
         // Runner Worker からも virtual modules を import するため
         worker: {
             format: "es",

@@ -210,8 +210,8 @@ importers:
 
   .:
     dependencies:
-      '@jitl/quickjs-singlefile-browser-release-sync':
-        specifier: ^0.32.0
+      '@jitl/quickjs-ffi-types':
+        specifier: 0.32.0
         version: 0.32.0
       '@jridgewell/trace-mapping':
         specifier: ^0.3.31
@@ -867,9 +867,6 @@ packages:
 
   '@jitl/quickjs-ffi-types@0.32.0':
     resolution: {integrity: sha512-v9T+GQpmk43VDJ7d72sf0Nexhk+ArvtUihW27dy7lqAl0zBObFKtSBBIm5RBjwIhE8VwsPPm9PNuvPvNqLWUEg==}
-
-  '@jitl/quickjs-singlefile-browser-release-sync@0.32.0':
-    resolution: {integrity: sha512-Hfdl7rh8dzxNWFRiYAYNbhn0RMF1/tO6SMH2mUW0aTibqwaAtqPRbi4WkwaIDlhNz8Z4dksJi1Zjl1R54Jsc/Q==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -4543,10 +4540,6 @@ snapshots:
     optional: true
 
   '@jitl/quickjs-ffi-types@0.32.0': {}
-
-  '@jitl/quickjs-singlefile-browser-release-sync@0.32.0':
-    dependencies:
-      '@jitl/quickjs-ffi-types': 0.32.0
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

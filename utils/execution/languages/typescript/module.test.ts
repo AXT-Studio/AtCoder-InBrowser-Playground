@@ -82,9 +82,8 @@ Main();
         expect(outcome.stderr).toContain("3 |");
         expect(outcome.stderr.startsWith("3 |")).toBe(true);
         expect(outcome.stderr).toContain("TypeError:");
-        expect(outcome.stderr).toContain("cannot read property of undefined");
-        // esbuild の map 粒度により Node の :3:24（`[`）ではなく :3:23（直前の `]`）になる
-        expect(outcome.stderr).toContain("Main.js:3:23");
+        expect(outcome.stderr).toContain("cannot read property '1' of undefined");
+        expect(outcome.stderr).toContain("Main.js:3:17");
         expect(outcome.stderr).toContain("Main.js:5:1");
         expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
         expect(() => JSON.parse(outcome.stderr)).toThrow();
@@ -115,7 +114,7 @@ Main();
         expect(outcome.stderr.trimStart().startsWith("{")).toBe(false);
     });
 
-    it("Object.groupBy polyfill が使える", async () => {
+    it("Object.groupBy が使える", async () => {
         const outcome = await typescript.run(
             ctx,
             `
@@ -128,6 +127,38 @@ console.log(grouped.even.join(","));
         expect(outcome).toEqual({
             status: "completed",
             stdout: "1,3\n2",
+            stderr: "",
+        });
+    });
+
+    it("Set 集合演算が使える", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `
+const a = new Set([1, 2]);
+const b = new Set([2, 3]);
+console.log([...a.union(b)].sort().join(","));
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1,2,3",
+            stderr: "",
+        });
+    });
+
+    it("Iterator helpers が使える", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `
+console.log(Iterator.from([1, 2, 3]).map((n) => n * 2).toArray().join(","));
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "2,4,6",
             stderr: "",
         });
     });
@@ -180,5 +211,43 @@ Main(await Bun.file("/dev/stdin").text());
         expect(outcome.status).toBe("completed");
         expect(outcome.stdout).toBe("5");
         expect(outcome.stderr).toBe("");
+    });
+
+    it("atob / Uint8Array.fromBase64 / WebAssembly が生えている", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `
+console.log(typeof atob);
+console.log(typeof Uint8Array.fromBase64);
+console.log(typeof WebAssembly);
+console.log(typeof WebAssembly.Module);
+console.log(typeof WebAssembly.Instance);
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "function\nfunction\nobject\nfunction\nfunction",
+            stderr: "",
+        });
+    });
+
+    it("Issue #106 の WASM 埋め込みが動く", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `\
+const wasmBase64 = "AGFzbQEAAAABCQFgBH9/f38BfwMCAQAHDQEJbXVsQWRkTW9kAAAKGwEZACAArSABrX4gAq0gA61+fEKBgIDcA4KnCw==";
+const instance = new WebAssembly.Instance(
+    new WebAssembly.Module(Uint8Array.from(atob(wasmBase64), (c) => c.charCodeAt(0))),
+);
+console.log(instance.exports.mulAddMod(2, 3, 4, 5));
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "26",
+            stderr: "",
+        });
     });
 });

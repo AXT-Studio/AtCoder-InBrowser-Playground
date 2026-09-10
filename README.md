@@ -87,10 +87,13 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - `await Bun.file("/dev/stdin").text()`
         - `console.log()`・`console.error()`以外の`console`オブジェクトのメソッドは、AIBP上では利用できません
         - ES2024以降の一部の機能は使えません
-            - `Object.groupBy()`やSetの集合演算メソッドなど、一部機能はpolyfillで対応しています。
+            - `Object.groupBy()`、Setの集合演算、Iterator helpers は実行エンジン（QuickJS-NG）が持っています
+            - それ以外の新しい API は polyfill しません
         - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
-        - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性があります
-        - 実行時・変換時エラーの行・列はエディタ上のソース位置です。エラー文言はブラウザ内実行環境（QuickJS）準拠で、Node.js / Deno / Bun と一致しません
+        - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性が高いです
+        - 実行時・変換時エラーの行・列はエディタ上のソース位置です
+        - エラーの文言はブラウザ内実行環境(QuickJS-NG)がベースとなっており、必ずしもNode.js・Deno・Bunと一致するものではありません
+        - WebAssembly JavaScript APIの基本的な機能も利用できますが、WebAssembly System Interfaceなどは使用できません
 - TypeScript
     - 対象ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
     - 制約: 概ねJavaScriptと同様の制約があります
@@ -138,6 +141,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 
 ```bash
 pnpm install
+pnpm run build:wasm    # QuickJS-NG + WAMR を Emscripten でビルド（vendor は自動 clone）
 pnpm run dev:chrome    # Chrome Dev Build (※コードテスト実行機能が動作しない Chrome検証時は要build)
 pnpm run dev:firefox   # Firefox Dev Build
 pnpm run build:chrome  # Chrome Production Build
@@ -145,7 +149,7 @@ pnpm run build:firefox # Firefox Production Build
 pnpm run build         # Production Build (Firefox + Chrome)
 pnpm run zip:chrome    # Chrome Production Build -> Zip
 pnpm run zip:firefox   # Firefox Production Build -> Zip
-pnpm run zip           # Production Build -> Zip (Firefox + Chrome)
+pnpm run zip           # Production Build -> Zip (Firefox + Chrome, wasmビルドも一緒にやってくれる)
 pnpm test              # Unit Test (Vitest)
 pnpm run lint          # Oxlint
 pnpm run fmt           # Oxfmt
@@ -153,8 +157,15 @@ pnpm run compile       # Cheking (tsc --noEmit)
 ```
 
 - `wxt.config.ts`の`version`フィールドにある拡張機能のバージョンをちゃんと編集すること！
+- 初回・エンジン更新時は`pnpm run build:wasm`を実行する必要があります
+    - Emscripten(`emcc`, `emcmake`), cmake, gitのPATHを通しておく必要があります
+    - MacOSなら`brew install emscripten`を先にしておけばよいです
+- `dev`や`build`のたびにwasmビルドをする必要はありません
+    - エンジン部分(`engine/quickjs-wamr/`)を変更したときのみ`pnpm run build:wasm`を再実行する必要があります
+    - それはそれとして`zip`でまとめてビルド→Zip化をするときは一応wasmビルドもやるようになっています
 - Firefox 一時的なアドオンの読み込み: `about:debugging#/runtime/this-firefox`
 - Firefox申請時 ビルド手順の伝達:
     ```
-    Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:firefox`(or `pnpm run zip:firefox`)
+    Requires: Node.js, pnpm, git, cmake, Emscripten (emcc/emcmake on PATH)
+    Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:wasm` -> `pnpm run build:firefox`(or `pnpm run zip:firefox`)
     ```

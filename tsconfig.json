@@ -4,5 +4,11 @@
         "jsx": "react-jsx",
         "jsxImportSource": "preact"
     },
-    "exclude": [".output", "entrypoints/main.content/UI/monaco/extraLibs"]
+    "exclude": [
+        ".output",
+        "entrypoints/main.content/UI/monaco/extraLibs",
+        "engine/quickjs-wamr/vendor",
+        "engine/quickjs-wamr/build",
+        "temp"
+    ]
 }

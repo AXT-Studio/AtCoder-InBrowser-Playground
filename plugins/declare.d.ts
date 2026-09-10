@@ -12,3 +12,9 @@ declare module "*.ts?raw" {
     const source: string;
     export default source;
 }
+
+declare module "*emscripten-module.mjs" {
+    import type { EmscriptenModuleLoaderOptions } from "@jitl/quickjs-ffi-types";
+    const createEmscriptenModule: (options?: EmscriptenModuleLoaderOptions) => Promise<unknown>;
+    export default createEmscriptenModule;
+}

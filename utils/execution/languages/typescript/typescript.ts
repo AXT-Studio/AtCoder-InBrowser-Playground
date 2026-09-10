@@ -7,7 +7,7 @@ import { initialize as esbuildInitialize, transform as esbuildTransform } from "
 import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
 import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
 import type { QuickJSContext } from "quickjs-emscripten-core";
-import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
+import quickJSVariant from "../../../../engine/quickjs-wamr/variant";
 import inspectRuntime from "virtual:inspect-runtime";
 import coreJsPolyfill from "virtual:corejs-polyfill";
 import { formatRuntimeError, formatTransformError } from "./formatError";
@@ -28,7 +28,7 @@ type PreprocessResult = {
 };
 
 /**
- * TS/JSコードを受け取り、そのコードをES2023相当までダウンコンパイルします (esbuild-wasmを使用)
+ * TS/JSコードを受け取り、そのコードをES2025相当までダウンコンパイルします (esbuild-wasmを使用)
  * @param code ユーザーが書いたコード（stdin 置換前）
  */
 const downCompileCode = async (code: string): Promise<PreprocessResult> => {
@@ -44,7 +44,7 @@ const downCompileCode = async (code: string): Promise<PreprocessResult> => {
     }
     const result = await esbuildTransform(code, {
         loader: "ts",
-        target: "es2023",
+        target: "es2025",
         sourcemap: true,
         sourcefile: "Main.js",
     });
@@ -108,10 +108,12 @@ export const typescript: LanguageModule<LanguageContext> = {
         quickJsRuntime.setMemoryLimit(1024 * 1024 * 1024); // メモリ制限 1024MiB (一般的なAtCoderの問題と同じ)
         quickJsRuntime.setMaxStackSize(0); // スタックサイズ制限解除
         const quickJsVm = quickJsRuntime.newContext();
-        // core-jsのPolyfillコードをQuickJSのグローバルに評価して、Polyfillを適用する
-        const coreJsPolyfillResult = quickJsVm.evalCode(coreJsPolyfill, "core-js-polyfill.js");
-        if (coreJsPolyfillResult.error) {
-            throw new Error("Failed to apply core-js polyfill");
+        // core-js の Polyfill（空なら何もしない。virtual:corejs-polyfill の呼び出しルート自体は残す）
+        if (coreJsPolyfill.length > 0) {
+            const coreJsPolyfillResult = quickJsVm.evalCode(coreJsPolyfill, "core-js-polyfill.js");
+            if (coreJsPolyfillResult.error) {
+                throw new Error("Failed to apply core-js polyfill");
+            }
         }
         // object-inspect + consoleShim を QuickJS に注入
         const inspectRuntimeResult = quickJsVm.evalCode(inspectRuntime, "inspect-runtime.js");

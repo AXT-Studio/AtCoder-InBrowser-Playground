@@ -7,12 +7,13 @@
     "scripts": {
         "dev:chrome": "wxt",
         "dev:firefox": "wxt -b firefox",
+        "build:wasm": "bash engine/quickjs-wamr/scripts/build.sh",
         "build:chrome": "wxt build",
         "build:firefox": "wxt build -b firefox",
-        "build": "pnpm build:chrome && pnpm build:firefox",
+        "build": "pnpm run build:chrome && pnpm run build:firefox",
         "zip:chrome": "wxt zip",
         "zip:firefox": "wxt zip -b firefox",
-        "zip": "pnpm zip:chrome && pnpm zip:firefox",
+        "zip": "pnpm run build:wasm && pnpm run zip:chrome && pnpm run zip:firefox",
         "compile": "tsc --noEmit",
         "postinstall": "wxt prepare",
         "fmt": "oxfmt",
@@ -23,7 +24,7 @@
         "test:watch": "vitest"
     },
     "dependencies": {
-        "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
+        "@jitl/quickjs-ffi-types": "0.32.0",
         "@jridgewell/trace-mapping": "^0.3.31",
         "@preact/signals": "^2.9.3",
         "esbuild-wasm": "^0.28.1",

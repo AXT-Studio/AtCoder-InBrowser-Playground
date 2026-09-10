@@ -1,5 +1,10 @@
 {
     "$schema": "./node_modules/oxfmt/configuration_schema.json",
     "singleQuote": false,
-    "ignorePatterns": []
+    "ignorePatterns": [
+        "engine/quickjs-wamr/vendor/**",
+        "engine/quickjs-wamr/build/**",
+        "engine/quickjs-wamr/dist/**",
+        "temp/**"
+    ]
 }
