@@ -149,7 +149,7 @@ pnpm run build:firefox # Firefox Production Build
 pnpm run build         # Production Build (Firefox + Chrome)
 pnpm run zip:chrome    # Chrome Production Build -> Zip
 pnpm run zip:firefox   # Firefox Production Build -> Zip
-pnpm run zip           # Production Build -> Zip (Firefox + Chrome)
+pnpm run zip           # Production Build -> Zip (Firefox + Chrome, wasmビルドも一緒にやってくれる)
 pnpm test              # Unit Test (Vitest)
 pnpm run lint          # Oxlint
 pnpm run fmt           # Oxfmt
@@ -162,6 +162,7 @@ pnpm run compile       # Cheking (tsc --noEmit)
     - MacOSなら`brew install emscripten`を先にしておけばよいです
 - `dev`や`build`のたびにwasmビルドをする必要はありません
     - エンジン部分(`engine/quickjs-wamr/`)を変更したときのみ`pnpm run build:wasm`を再実行する必要があります
+    - それはそれとして`zip`でまとめてビルド→Zip化をするときは一応wasmビルドもやるようになっています
 - Firefox 一時的なアドオンの読み込み: `about:debugging#/runtime/this-firefox`
 - Firefox申請時 ビルド手順の伝達:
     ```
