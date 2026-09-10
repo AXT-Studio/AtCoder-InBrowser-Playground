@@ -50,6 +50,7 @@ export default defineConfig({
         optimizeDeps: {
             exclude: ["pyodide"],
         },
+        assetsInclude: ["**/*.wasm"],
         // Runner Worker からも virtual modules を import するため
         worker: {
             format: "es",

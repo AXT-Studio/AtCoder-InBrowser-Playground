@@ -7,6 +7,7 @@
     "scripts": {
         "dev:chrome": "wxt",
         "dev:firefox": "wxt -b firefox",
+        "build:wasm": "bash engine/quickjs-wamr/scripts/build.sh",
         "build:chrome": "wxt build",
         "build:firefox": "wxt build -b firefox",
         "build": "pnpm build:chrome && pnpm build:firefox",
@@ -23,6 +24,7 @@
         "test:watch": "vitest"
     },
     "dependencies": {
+        "@jitl/quickjs-ffi-types": "0.32.0",
         "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
         "@jridgewell/trace-mapping": "^0.3.31",
         "@preact/signals": "^2.9.3",

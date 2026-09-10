@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { WxtVitest } from "wxt/testing/vitest-plugin";
 import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
@@ -11,5 +11,6 @@ export default defineConfig({
         // QuickJS / esbuild-wasm / Pyodide の init があるので余裕を見る
         testTimeout: 30_000,
         hookTimeout: 60_000,
+        exclude: [...configDefaults.exclude, "engine/quickjs-wamr/**", "temp/**"],
     },
 });

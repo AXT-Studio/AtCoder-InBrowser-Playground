@@ -7,7 +7,7 @@ import { initialize as esbuildInitialize, transform as esbuildTransform } from "
 import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
 import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
 import type { QuickJSContext } from "quickjs-emscripten-core";
-import quickJSVariant from "@jitl/quickjs-singlefile-browser-release-sync";
+import quickJSVariant from "../../../../engine/quickjs-wamr/variant";
 import inspectRuntime from "virtual:inspect-runtime";
 import coreJsPolyfill from "virtual:corejs-polyfill";
 import { formatRuntimeError, formatTransformError } from "./formatError";

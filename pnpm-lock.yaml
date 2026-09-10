@@ -210,6 +210,9 @@ importers:
 
   .:
     dependencies:
+      '@jitl/quickjs-ffi-types':
+        specifier: 0.32.0
+        version: 0.32.0
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: ^0.32.0
         version: 0.32.0

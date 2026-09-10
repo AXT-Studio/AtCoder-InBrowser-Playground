@@ -90,7 +90,8 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - `Object.groupBy()`やSetの集合演算メソッドなど、一部機能はpolyfillで対応しています。
         - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
         - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性があります
-        - 実行時・変換時エラーの行・列はエディタ上のソース位置です。エラー文言はブラウザ内実行環境（QuickJS）準拠で、Node.js / Deno / Bun と一致しません
+        - 実行時・変換時エラーの行・列はエディタ上のソース位置です。エラー文言はブラウザ内実行環境（QuickJS-NG）準拠で、Node.js / Deno / Bun と一致しません
+        - `WebAssembly` はサンドボックス内のインタプリタ（WAMR）です。ホストの `WebAssembly` ではなく、WASI もありません。今あるのは `Module` / `Instance` と数値の export です
 - TypeScript
     - 対象ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
     - 制約: 概ねJavaScriptと同様の制約があります
@@ -136,8 +137,11 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 
 ## Developing
 
+JS/TS ランタイム（QuickJS-NG + WAMR）は生成物で、リポジトリには入っていません。初回とエンジン変更時は `pnpm run build:wasm` が必要です。Emscripten（`emcc` / `emcmake`）と cmake、git を PATH に置いてください。macOS なら `brew install emscripten`。
+
 ```bash
 pnpm install
+pnpm run build:wasm    # QuickJS-NG + WAMR を Emscripten でビルド（vendor は自動 clone）
 pnpm run dev:chrome    # Chrome Dev Build (※コードテスト実行機能が動作しない Chrome検証時は要build)
 pnpm run dev:firefox   # Firefox Dev Build
 pnpm run build:chrome  # Chrome Production Build
@@ -152,9 +156,12 @@ pnpm run fmt           # Oxfmt
 pnpm run compile       # Cheking (tsc --noEmit)
 ```
 
+`dev:` のたびに wasm は作り直さない。エンジン（`engine/quickjs-wamr/`）を触ったら `build:wasm` を再実行する。
+
 - `wxt.config.ts`の`version`フィールドにある拡張機能のバージョンをちゃんと編集すること！
 - Firefox 一時的なアドオンの読み込み: `about:debugging#/runtime/this-firefox`
 - Firefox申請時 ビルド手順の伝達:
     ```
-    Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:firefox`(or `pnpm run zip:firefox`)
+    Requires: Node.js, pnpm, git, cmake, Emscripten (emcc/emcmake on PATH)
+    Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:wasm` -> `pnpm run build:firefox`(or `pnpm run zip:firefox`)
     ```
