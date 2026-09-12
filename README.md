@@ -42,7 +42,7 @@ AtCoderのコンテストの参加者がコードを書く方法は、主に以�
 AIBPは、これら2つの方法の「間」を埋めることを目的として誕生しました。
 AIBPをあなたが使っているブラウザにインストールするだけで、AtCoderの問題ページを問題確認から提出までをより快適に行う環境に変えることができます。
 
-### Quick Start Guide
+## Quick Start Guide
 
 > ![](./assets/UI-screenshot.jpg)
 > (左: Solveタブ / 中: Compareタブ / 右: Stressタブ)
