@@ -12,7 +12,7 @@ export type TemplateGenerator = (params: GenerateTemplateParams) => string;
 
 export type TemplateKind = "solver" | "generator";
 
-export type TemplateLanguage = "typescript" | "javascript";
+export type TemplateLanguage = "typescript" | "javascript" | "lua";
 
 export type TemplateDefinition = {
     id: string;

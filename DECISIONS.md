@@ -94,7 +94,7 @@ Runner Worker
 - `javascript` は typescript module にマップ
 - `plaintext` は「code をそのまま stdout」
 - `brainfuck` は Tritium `-b -e`（8bit wrap、EOF は -1→255）。テンプレなし。Monaco は自前 Monarch（`plaintext` に落とさない）
-- `lua` は wasmoon（Lua 5.4.5 wasm）。対象はジャッジの Lua 5.4.7。LuaJIT は対象外。テンプレは未導入
+- `lua` は wasmoon（Lua 5.4.5 wasm）。対象はジャッジの Lua 5.4.7。LuaJIT は対象外。テンプレは solver（Input scanner）と generator
 
 ### 4.4 `CodeTestResult`
 
@@ -186,7 +186,7 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 - `print` / `io.write` / `io.stdout` / `io.stderr` を差し替えて stdout/stderr を取る
 - stdin は MEMFS の `/aibp-stdin` に書いて `io.input`。`io.read` は Lua 本体の実装
 - 構文エラー（`luaL_load*`）→ **CE**、実行時エラー（`pcall`）→ **RE**
-- Monaco は組み込み `lua`（basic-language）。テンプレは未導入
+- Monaco は組み込み `lua`（basic-language）。テンプレは solver（Input scanner）と generator
 
 ---
 
@@ -217,9 +217,9 @@ TL / eps は問題由来の共有値。
 
 - TS solver: **Scanner / Interactive のみ**（素の Bun/Deno/Node テンプレは削除済み）
 - JS solver・Generator 系は維持
-- 先頭コメントは role（submission / naive / generator）対応済み
+- Lua solver: **Input scanner のみ**。Generator は `math.random` の最小テンプレ
+- 先頭コメントは role（submission / naive / generator）対応済み。Lua は `--`
 - Python テンプレは未導入（必要になったら）
-- Lua テンプレは未導入
 
 ### 8.4 デザイン言語
 
@@ -257,6 +257,5 @@ TL / eps は問題由来の共有値。
 ## 11. 未決・後回し
 
 - Python 提出用テンプレ
-- Lua 提出用テンプレ
 - Chrome #72（dev 時実行）の扱い
 - Worker/VM キャッシュの再導入判断（現状の init 速度で足りているか）

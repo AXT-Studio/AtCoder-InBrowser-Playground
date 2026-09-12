@@ -4,9 +4,11 @@ import { generateTemplate as generateJsNode } from "./js/node";
 import { generateTemplate as generateGenJsBun } from "./generator/js/bun";
 import { generateTemplate as generateGenJsDeno } from "./generator/js/deno";
 import { generateTemplate as generateGenJsNode } from "./generator/js/node";
+import { generateTemplate as generateGenLua } from "./generator/lua";
 import { generateTemplate as generateGenTsBun } from "./generator/ts/bun";
 import { generateTemplate as generateGenTsDeno } from "./generator/ts/deno";
 import { generateTemplate as generateGenTsNode } from "./generator/ts/node";
+import { generateTemplate as generateLuaScanner } from "./lua/scanner";
 import { generateTemplate as generateTsBunInteractive } from "./ts/bun_interactive";
 import { generateTemplate as generateTsBunScanner } from "./ts/bun_scanner";
 import { generateTemplate as generateTsDenoInteractive } from "./ts/deno_interactive";
@@ -113,6 +115,20 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
         kind: "generator",
         generate: generateGenJsNode,
     },
+    {
+        id: "lua_scanner",
+        label: "Lua (w/ Input scanner)",
+        language: "lua",
+        kind: "solver",
+        generate: generateLuaScanner,
+    },
+    {
+        id: "gen_lua",
+        label: "Generator — Lua",
+        language: "lua",
+        kind: "generator",
+        generate: generateGenLua,
+    },
 ] as const;
 
 const byId = new Map(TEMPLATE_DEFINITIONS.map((t) => [t.id, t]));
@@ -122,7 +138,6 @@ export const templateKindForRole = (role: TemplateRole): TemplateKind =>
 
 /** 言語・バッファ種別に合うテンプレ一覧 */
 export const listTemplates = (language: string, role: TemplateRole): TemplateDefinition[] => {
-    if (language !== "typescript" && language !== "javascript") return [];
     const kind = templateKindForRole(role);
     return TEMPLATE_DEFINITIONS.filter((t) => t.language === language && t.kind === kind);
 };

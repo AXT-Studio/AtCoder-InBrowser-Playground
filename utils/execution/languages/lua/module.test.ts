@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { insertTemplate } from "../../../templates";
 import { lua, type LanguageContext } from "./module";
 
 describe("lua language module", () => {
@@ -74,5 +75,25 @@ print(math.type(1000000000000000000))
         const outcome = await lua.run(ctx, `error("boom")`, "");
         expect(outcome.status).toBe("RE");
         expect(outcome.stderr).toMatch(/boom/);
+    });
+
+    it("scanner テンプレの int/str はトークンを1つずつ消費する", async () => {
+        const inserted = insertTemplate({
+            templateKey: "lua_scanner",
+            contestTitle: "C",
+            taskTitle: "T",
+            taskURL: "U",
+            role: "submission",
+            currentCode: "",
+            confirm: () => false,
+        });
+        expect(inserted.action).toBe("insert");
+        if (inserted.action !== "insert") return;
+        const outcome = await lua.run(ctx, `${inserted.template}\nprint(int())\nprint(str())\n`, "2 hello\n");
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "2\nhello\n",
+            stderr: "",
+        });
     });
 });
