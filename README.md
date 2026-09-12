@@ -160,7 +160,8 @@ pnpm run zip           # Production Build -> Zip (Firefox + Chrome, wasmビル�
 pnpm test              # Unit Test (Vitest)
 pnpm run lint          # Oxlint
 pnpm run fmt           # Oxfmt
-pnpm run compile       # Cheking (tsc --noEmit)
+pnpm run compile       # Type Cheking (tsc --noEmit)
+pnpm run check         # Type Checking -> Format -> Lint -> Unit Test
 ```
 
 - `wxt.config.ts`の`version`フィールドにある拡張機能のバージョンをちゃんと編集すること！

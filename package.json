@@ -21,7 +21,8 @@
         "lint": "oxlint .",
         "lint:fix": "oxlint --fix .",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "check": "pnpm run compile && pnpm run fmt && pnpm run lint:fix && pnpm run test"
     },
     "dependencies": {
         "@jitl/quickjs-ffi-types": "0.32.0",
