@@ -54,6 +54,13 @@ describe("listTemplates", () => {
         expect(listTemplates("python", "submission")).toEqual([]);
         expect(listTemplates("plaintext", "generator")).toEqual([]);
     });
+
+    it("returns lua scanner for submission/naive and lua generator for generator", () => {
+        const solve = listTemplates("lua", "submission");
+        expect(solve.map((t) => t.id)).toEqual(["lua_scanner"]);
+        expect(listTemplates("lua", "naive").map((t) => t.id)).toEqual(["lua_scanner"]);
+        expect(listTemplates("lua", "generator").map((t) => t.id)).toEqual(["gen_lua"]);
+    });
 });
 
 describe("insertTemplate", () => {
@@ -114,6 +121,42 @@ describe("insertTemplate", () => {
         expect(interactive.action).toBe("insert");
         if (interactive.action === "insert") {
             expect(interactive.template).toContain("// TypeScript (Bun, INTERACTIVE) [Main] Submission");
+        }
+    });
+
+    it("inserts lua templates with -- header and page context", () => {
+        const scanner = insertTemplate({
+            templateKey: "lua_scanner",
+            contestTitle: "ABC 1",
+            taskTitle: "A - Task",
+            taskURL: "https://atcoder.jp/contests/abc1/tasks/abc1_a",
+            role: "submission",
+            currentCode: "",
+            confirm: () => false,
+        });
+        expect(scanner.action).toBe("insert");
+        if (scanner.action === "insert") {
+            expect(scanner.template).toContain("-- ABC 1");
+            expect(scanner.template).toContain("-- A - Task");
+            expect(scanner.template).toContain("-- (URL: https://atcoder.jp/contests/abc1/tasks/abc1_a)");
+            expect(scanner.template).toContain("-- Lua (w/ Input scanner) [Main] Submission");
+            expect(scanner.template).toContain('io.read("a")');
+            expect(scanner.template).toContain("local function int()");
+        }
+
+        const gen = insertTemplate({
+            templateKey: "gen_lua",
+            contestTitle: "ABC 1",
+            taskTitle: "A - Task",
+            taskURL: "https://atcoder.jp/contests/abc1/tasks/abc1_a",
+            role: "generator",
+            currentCode: "",
+            confirm: () => false,
+        });
+        expect(gen.action).toBe("insert");
+        if (gen.action === "insert") {
+            expect(gen.template).toContain("-- Lua [Gen] Testcase Input Generator");
+            expect(gen.template).toContain("math.random(1, 100)");
         }
     });
 });

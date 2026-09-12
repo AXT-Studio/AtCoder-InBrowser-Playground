@@ -82,7 +82,12 @@ const installBundledWheel = async (pyodide: PyodideInterface, micropip: Micropip
         throw new Error(`Failed to fetch bundled wheel ${fileName} (${response.status})`);
     }
     const bytes = new Uint8Array(await response.arrayBuffer());
-    pyodide.FS.mkdirTree(WHEEL_FS_DIR);
+    // mkdirTree は Pyodide 実行時にはあるが、wasmoon の @types/emscripten@1.39 に無く tsc が落ちる
+    try {
+        pyodide.FS.mkdir(WHEEL_FS_DIR);
+    } catch {
+        // already exists
+    }
     const fsPath = `${WHEEL_FS_DIR}/${fileName}`;
     pyodide.FS.writeFile(fsPath, bytes);
     await micropip.install(`emfs:${fsPath}`);
