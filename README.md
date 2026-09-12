@@ -1,12 +1,14 @@
 # AtCoder In-Browser Playground (AIBP)
 
+[![Chrome Web Store: Click to Install](https://img.shields.io/badge/Click_to_Install-brightgreen?style=plastic&logo=chromewebstore&logoColor=white&label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/atcoder-in-browser-playgr/peebgngcbbimicflmefcmbobenpfbnok) [![Firefox Add-ons: Click to Install](https://img.shields.io/badge/Click_to_Install-orange?style=plastic&logo=firefoxbrowser&logoColor=white&label=Firefox%20Add-ons)](https://addons.mozilla.org/ja/firefox/addon/atcoder-in-browser-playground/)
+
 Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.
 AtCoderの問題ページに、ブラウザ上で動作が完結するコードエディター・テスターを追加するWeb拡張機能です。
 
 ## License
 
-- copyright (c) 2026- Ayasaka-Koto (AyaExpTech).
-- This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+- copyright (c) 2026- **Ayasaka-Koto (AyaExpTech)**.
+- This project is licensed under **the MIT License**. See the [LICENSE](./LICENSE) file for details.
 
 ## Installation
 
@@ -15,29 +17,29 @@ AtCoderの問題ページに、ブラウザ上で動作が完結するコード�
 
 ## Features
 
-1. 外部環境に依存しない、ブラウザ完結のコードテスト
-    - コードの実行はブラウザ内(Web Worker)で行われます。
-    - AtCoderのコードテストなどの外部環境に依存しません。
-2. Monaco Editorによる高度なコード編集機能
-    - Visual Studio Codeで使用されているMonaco Editorを組み込んでいます。
-    - 一部言語では、Syntax HighlightやIntelliSenseなどの高度なコード編集機能を利用できます。
-3. クリップボードへのコードコピーと提出準備
-    - 編集したコードを問題ページ下部のソースコード入力欄に自動入力することができます。
-4. 複数言語への対応
-    - 複数のプログラミング言語に対応しています。
+1. **ブラウザ完結のコードテスト**
+    - コードテストの実行はブラウザ内(Web Worker)で行われます
+    - 外部の実行環境に依存しないため、安定したコードテストを行うことができます
+2. **Monaco Editorによる高度なコード編集**
+    - Visual Studio Codeで使用されているMonaco Editorを組み込んでいます
+    - 一部言語では、Syntax HighlightやIntelliSenseなどの高度なコード編集機能を利用できます
+3. **迅速な提出準備**
+    - 編集したコードを問題ページ下部のソースコード入力欄に自動入力することができます
+4. **複数言語への対応**
+    - 複数のプログラミング言語に対応しています (後述)
 
 ### Why AIBP?
 
-AIBPが公開されるまで、AtCoderのコンテストに参加するためにコードを書く方法は、主に以下の2つが主流でした。
+AtCoderのコンテストの参加者がコードを書く方法は、主に以下の2つが主流です。
 
-- AtCoderの「コードテスト」ページを利用する
-    - ページを開けば利用できるため、手軽に使うことができます
-    - しかし、VSCodeのようなIDEと比較すると機能が限定されており、コード編集環境として快適であると感じない人も少なくありません
-- [oj](https://github.com/online-judge-tools/oj)等の環境構築を行い、ローカルのコードエディターを使用する
-    - 使用するエディタを自由に制限できる、慣れれば提出までをスムーズに行えるなどの利点があります
-    - しかし、環境構築には手間がかかり、特に初心者にとってはハードルが高いことが多いです
+1. AtCoderの「コードテスト」ページなどを利用する
+    - 当該ページを開けば利用できるため、非常に手軽です
+    - しかし、IDE(VSCodeなど)と比較すると機能が少なく、快適なコード編集環境ではないと感じる人も少なくはありません
+2. [oj](https://github.com/online-judge-tools/oj)等の環境構築を行い、ローカルの開発環境を使用する
+    - 使用するエディタが自由に選択でき、慣れれば提出までをスムーズに行えるでしょう
+    - しかし、環境構築には手間がかかり、またCLIを扱いなど初心者にとってハードルの高い部分があります
 
-これら2つの方法の「間」を埋めることを目的として作られたのが、AtCoder In-Browser Playgroundです。
+AIBPは、これら2つの方法の「間」を埋めることを目的として誕生しました。
 AIBPをあなたが使っているブラウザにインストールするだけで、AtCoderの問題ページを問題確認から提出までをより快適に行う環境に変えることができます。
 
 ### Quick Start Guide
@@ -54,11 +56,11 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
     - 「EXAMPLE」欄のボタンでテストが実行できます
     - 「Show Cases」ボタンを押すとテストケースや実行結果の詳細が見れたり、手動でテストケースを入力して実行することができます
     - 「Prepare Submission」ボタンを押すと提出欄に自動入力してくれます
-- Compareタブ (愚直解との比較)
-    - このタブのエディタには愚直解法(など)のコードを書きます
+- Compareタブ (参照実装との比較)
+    - このタブのエディタには比較対象となる実装(愚直解法など)のコードを書きます
     - 下部のテスト実行では、CompareタブとSolveタブのコードで出力結果を比較してその結果を表示します
 - Stressタブ (ランダムテスト)
-    - このタブのエディタには、Solve/Compareタブのプログラムにわたす入力をstdoutに出力するコードを書きます
+    - このタブのエディタには、Solve/Compareタブのプログラムに与える入力をstdoutに出力するコードを書きます
     - (最大)回数を指定して実行すると、Stressタブのプログラムで生成したテストケースをSolve/Compareタブのプログラムに渡した結果を比較して結果を表示します
 
 ## Supported Environment
@@ -109,14 +111,14 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - コードテストの実行環境はLua 5.4.**5** (wasmoon)なので、若干挙動に差異があるかもしれません
         - LuaJIT向けのコードはサポート対象外です
         - stdinは`io.read`、stdoutは`print`・`io.write`、stderrは`io.stderr:write`を使用してください
-- Text
-    - 対象ジャッジ: Text (cat 9.4)
 - Brainfuck
     - 対象ジャッジ: Brainfuck (Tritium 1.2.73)
     - 制約
         - 1セル8bitモードです。つまり、255+1→0, 0-1→255になります
         - `,`命令処理時、すでに入力を末尾まで読んでいたら-1(255)が代入されます
         - テープ量の上限や実行速度、細かいエラー、ASCII文字以外を入力した場合など、細かい挙動については保証されません
+- Text
+    - 対象ジャッジ: Text (cat 9.4)
 
 ## Privacy Policy
 
