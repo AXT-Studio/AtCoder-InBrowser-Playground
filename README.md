@@ -102,6 +102,14 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
     - 制約
         - 使用可能なパッケージは以下に示すもののみです
             - `numpy`, `bitarray`, `sympy`, `mpmath`, `sortedcontainers`, `more_itertools`, `networkx`, `atcoder`(ac_library_python)
+- Lua
+    - 対象ジャッジ: Lua (Lua 5.4.7)
+    - 制約
+        - 実行エンジンは Lua 5.4.5（wasmoon）です。5.4.7 との差はパッチ修正のみで、言語仕様は同じ 5.4 です
+        - LuaJIT 向けのコード（`require("bit")`、FFI、`//` やビット演算子が無い書き方など）は対象外です
+        - AtCoder の Lua ジャッジと同様、追加ライブラリはありません
+        - 入力は `io.read`（標準入力）で受け付けます
+        - `print` と `io.write` が stdout、`io.stderr:write` が stderr です
 - Text
     - 対象ジャッジ: Text (cat 9.4)
 - Brainfuck

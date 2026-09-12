@@ -40,6 +40,7 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 | JS/TS      | QuickJS-NG + WAMR interp + esbuild-wasm。stdin 置換・console shim。完全 Node 互換は追わない |
 | Polyfill   | ES polyfill機構は残す。現行リストは空（QuickJS-NGに差し替えたことでだいたい揃ったので）     |
 | Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱              |
+| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし             |
 | 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                |
 | TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                           |
 | テスト     | Vitest                                                                                      |
@@ -93,6 +94,7 @@ Runner Worker
 - `javascript` は typescript module にマップ
 - `plaintext` は「code をそのまま stdout」
 - `brainfuck` は Tritium `-b -e`（8bit wrap、EOF は -1→255）。テンプレなし。Monaco は自前 Monarch（`plaintext` に落とさない）
+- `lua` は wasmoon（Lua 5.4.5 wasm）。対象はジャッジの Lua 5.4.7。LuaJIT は対象外。テンプレは未導入
 
 ### 4.4 `CodeTestResult`
 
@@ -176,15 +178,27 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 
 ---
 
-## 7. UI / 画面 IA
+## 7. Lua（wasmoon）
 
-### 7.1 技術
+- 対象ジャッジは **Lua 5.4.7 のみ**。LuaJIT は言語差が大きいので対象外
+- 実行は wasmoon 1.16.0（公式 Lua 5.4.5 の Emscripten ビルド）。5.4.5 と 5.4.7 の差はパッチ修正。完全同一は追わない
+- 追加ライブラリは入れない（ジャッジも stdlib のみ）
+- `print` / `io.write` / `io.stdout` / `io.stderr` を差し替えて stdout/stderr を取る
+- stdin は MEMFS の `/aibp-stdin` に書いて `io.input`。`io.read` は Lua 本体の実装
+- 構文エラー（`luaL_load*`）→ **CE**、実行時エラー（`pcall`）→ **RE**
+- Monaco は組み込み `lua`（basic-language）。テンプレは未導入
+
+---
+
+## 8. UI / 画面 IA
+
+### 8.1 技術
 
 - Preact + Preact Signals
 - Monaco は imperative（ref + mount/dispose）。**テキストの正本は Monaco**（Signals は onChange で片方向追従。props から setValue しない）
 - モデルは pathname 滞在中 `BufferKind` 単位でセッション保持（editor dispose では捨てない）。Undo はモデル、折り/カーソル/選択/スクロールは viewState。ページリロードでは捨てる
 
-### 7.2 Mode = やりたいこと（＝編集バッファ）
+### 8.2 Mode = やりたいこと（＝編集バッファ）
 
 裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。永続化は `pathname × バッファ`。  
 TL / eps は問題由来の共有値。
@@ -199,14 +213,15 @@ TL / eps は問題由来の共有値。
 - mode 切替ショートカットは **当面なし**（必要性低）
 - Compare 中に提出用を直すには Solve に戻る（許容）
 
-### 7.3 テンプレ
+### 8.3 テンプレ
 
 - TS solver: **Scanner / Interactive のみ**（素の Bun/Deno/Node テンプレは削除済み）
 - JS solver・Generator 系は維持
 - 先頭コメントは role（submission / naive / generator）対応済み
 - Python テンプレは未導入（必要になったら）
+- Lua テンプレは未導入
 
-### 7.4 デザイン言語
+### 8.4 デザイン言語
 
 実装は `entrypoints/main.content/UI/`（`App.css` / `controls.css`）。
 
@@ -221,7 +236,7 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 8. AtCoder 統合・判定
+## 9. AtCoder 統合・判定
 
 - サンプル・制限時間等の DOM パース
 - stdout 比較（空白分割＋数値は許容誤差）: `utils/stdout/isOutputCorrect.ts`
@@ -230,7 +245,7 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 9. リポジトリ・品質
+## 10. リポジトリ・品質
 
 - Vitest（純関数＋ Python allowlist smoke 等）
 - 説明は README。`DECISIONS.md` / `AGENTS.md` は設計用
@@ -239,8 +254,9 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 10. 未決・後回し
+## 11. 未決・後回し
 
 - Python 提出用テンプレ
+- Lua 提出用テンプレ
 - Chrome #72（dev 時実行）の扱い
 - Worker/VM キャッシュの再導入判断（現状の init 速度で足りているか）

@@ -50,9 +50,10 @@ describe("listTemplates", () => {
         expect(gen.every((t) => t.kind === "generator")).toBe(true);
     });
 
-    it("returns empty for python/plaintext", () => {
+    it("returns empty for python/plaintext/lua", () => {
         expect(listTemplates("python", "submission")).toEqual([]);
         expect(listTemplates("plaintext", "generator")).toEqual([]);
+        expect(listTemplates("lua", "submission")).toEqual([]);
     });
 });
 
