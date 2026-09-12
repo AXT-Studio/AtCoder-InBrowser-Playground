@@ -27,7 +27,7 @@ export const interpretBrainfuck = (code: string, stdin: string): LanguageRunOutc
                 return {
                     status: "CE",
                     stdout: "",
-                    stderr: `Unbalanced bracket at Line ${currentLine}, Col ${i - lastLineLastLetterIndex}.`
+                    stderr: `Unbalanced bracket at Line ${currentLine}, Col ${i - lastLineLastLetterIndex}.`,
                 };
             }
         } else if (letter === "\n") {
@@ -39,7 +39,7 @@ export const interpretBrainfuck = (code: string, stdin: string): LanguageRunOutc
         return {
             status: "CE",
             stdout: "",
-            stderr: `Unbalanced bracket at EOF.`
+            stderr: `Unbalanced bracket at EOF.`,
         };
     }
     // 他にあり得るエラーはテープ左にはみ出すパターン(RE)かTLEにしていいパターンのどちらかだと思われるので、実行に進んで良い
@@ -129,6 +129,6 @@ export const interpretBrainfuck = (code: string, stdin: string): LanguageRunOutc
     return {
         status: "completed",
         stdout,
-        stderr: ""
+        stderr: "",
     };
 };
