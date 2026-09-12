@@ -109,7 +109,8 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
     - 対象ジャッジ: Lua (Lua 5.4.7)
     - 制約
         - コードテストの実行環境はLua 5.4.**5** (wasmoon)なので、若干挙動に差異があるかもしれません
-        - LuaJIT向けのコードはサポート対象外です
+        - LuaJIT 2.1.1703358377はサポート対象外です
+        - AtCoderジャッジ環境と同様に、ライブラリは導入されていません
         - stdinは`io.read`、stdoutは`print`・`io.write`、stderrは`io.stderr:write`を使用してください
 - Brainfuck
     - 対象ジャッジ: Brainfuck (Tritium 1.2.73)
