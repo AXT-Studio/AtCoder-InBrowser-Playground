@@ -91,12 +91,13 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - それ以外の新しい API は polyfill しません
         - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
         - 深い再帰を必要とするコードは、AIBP上では正しく動作しない可能性が高いです
-        - 実行時・変換時エラーの行・列はエディタ上のソース位置です
         - エラーの文言はブラウザ内実行環境(QuickJS-NG)がベースとなっており、必ずしもNode.js・Deno・Bunと一致するものではありません
-        - WebAssembly JavaScript APIの基本的な機能も利用できますが、WebAssembly System Interfaceなどは使用できません
+        - WebAssembly JavaScript APIの基本的な機能も利用できます(が、WebAssembly System Interfaceなどは使用できません)
 - TypeScript
     - 対象ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
-    - 制約: 概ねJavaScriptと同様の制約があります
+    - 制約
+        - 概ねJavaScriptと同様です。JavaScriptの記述も参照してください
+        - コードテスト実行時に型検査は行われません
 - Python
     - 対象ジャッジ: Python (CPython 3.13.7), Python (PyPy 3.11-v7.3.20)
     - 制約
@@ -105,11 +106,9 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 - Lua
     - 対象ジャッジ: Lua (Lua 5.4.7)
     - 制約
-        - 実行エンジンは Lua 5.4.5（wasmoon）です。5.4.7 との差はパッチ修正のみで、言語仕様は同じ 5.4 です
-        - LuaJIT 向けのコード（`require("bit")`、FFI、`//` やビット演算子が無い書き方など）は対象外です
-        - AtCoder の Lua ジャッジと同様、追加ライブラリはありません
-        - 入力は `io.read`（標準入力）で受け付けます
-        - `print` と `io.write` が stdout、`io.stderr:write` が stderr です
+        - コードテストの実行環境はLua 5.4.**5** (wasmoon)なので、若干挙動に差異があるかもしれません
+        - LuaJIT向けのコードはサポート対象外です
+        - stdinは`io.read`、stdoutは`print`・`io.write`、stderrは`io.stderr:write`を使用してください
 - Text
     - 対象ジャッジ: Text (cat 9.4)
 - Brainfuck
