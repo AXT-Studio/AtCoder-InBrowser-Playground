@@ -1,5 +1,5 @@
 // ================================================================================================
-// TS/JS 実行エラーの整形（QuickJS dump / esbuild 失敗 → 人が読める stderr）
+// TS/JS 実行エラーの整形（QuickJS dump / Sucrase 失敗 → 人が読める stderr）
 // ================================================================================================
 
 import { originalPositionFor, TraceMap } from "@jridgewell/trace-mapping";
@@ -11,16 +11,12 @@ export type RuntimeErrorDump = {
     stack?: unknown;
 };
 
-type EsbuildLocation = {
-    file?: unknown;
+type SourceLocation = {
     line?: unknown;
     column?: unknown;
 };
 
-type EsbuildMessage = {
-    text?: unknown;
-    location?: EsbuildLocation | null;
-};
+type LocatedError = Error & { loc: SourceLocation };
 
 const STACK_POS_RE = /([^:\s()]+):(\d+):(\d+)/;
 
@@ -36,7 +32,7 @@ const tryCreateMapper = (mapJson: string | undefined): TraceMap | undefined => {
 };
 
 /**
- * QuickJS の stack にある file:line:col を、esbuild sourcemap でユーザーソース座標へ戻します。
+ * QuickJS の stack にある file:line:col を、Sucrase sourcemap でユーザーソース座標へ戻します。
  * QuickJS の列は 1-based、source map の列は 0-based。マップできないフレームはそのまま残します。
  */
 export const remapStack = (stack: string, mapJson: string | undefined): string => {
@@ -142,36 +138,31 @@ export const formatRuntimeError = (dumped: unknown, mapJson: string | undefined,
     return prependSnippet(body, snippet);
 };
 
-const formatEsbuildMessage = (msg: EsbuildMessage, sourceCode: string | undefined): string => {
-    const text = typeof msg.text === "string" && msg.text.length > 0 ? msg.text : "Transform failed";
-    const loc = msg.location;
-    if (loc == null || typeof loc !== "object") {
-        return text;
-    }
-    const line = loc.line;
-    const column = loc.column;
-    if (typeof line !== "number" || typeof column !== "number") {
-        return text;
-    }
-    const column1based = column + 1;
-    const file = typeof loc.file === "string" && loc.file.length > 0 ? loc.file : "Main.js";
-    const body = `${text}\n    at ${file}:${line}:${column1based}`;
-    if (!sourceCode) {
-        return body;
-    }
-    return prependSnippet(body, formatSnippet(sourceCode, line, column1based));
-};
+const TRANSFORM_PREFIX_RE = /^Error transforming [^:]+: /;
+const TRAILING_LOC_RE = / \(\d+:\d+\)$/;
 
-const isEsbuildFailure = (error: unknown): error is { errors: unknown } =>
-    error !== null && typeof error === "object" && "errors" in error;
+const cleanTransformMessage = (message: string): string =>
+    message.replace(TRANSFORM_PREFIX_RE, "").replace(TRAILING_LOC_RE, "");
+
+const isLocatedError = (error: unknown): error is LocatedError =>
+    error instanceof Error && "loc" in error && error.loc !== null && typeof error.loc === "object";
 
 /**
- * esbuild の変換失敗を、RE と同じく snippet + メッセージ + at file:line:col へ揃えます。
- * location が無い普通の Error は message のままです。列は 1-based（esbuild の 0-based + 1）。
+ * Sucrase の変換失敗を、RE と同じく snippet + メッセージ + at file:line:col へ揃えます。
+ * loc が無い普通の Error は message のままです。Sucrase の loc は line / column とも 1-based。
  */
 export const formatTransformError = (error: unknown, sourceCode?: string): string => {
-    if (isEsbuildFailure(error) && Array.isArray(error.errors) && error.errors.length > 0) {
-        return error.errors.map((item) => formatEsbuildMessage(item as EsbuildMessage, sourceCode)).join("\n");
+    if (isLocatedError(error)) {
+        const line = error.loc.line;
+        const column = error.loc.column;
+        if (typeof line === "number" && typeof column === "number") {
+            const text = cleanTransformMessage(error.message);
+            const body = `${text}\n    at Main.js:${line}:${column}`;
+            if (!sourceCode) {
+                return body;
+            }
+            return prependSnippet(body, formatSnippet(sourceCode, line, column));
+        }
     }
     if (error instanceof Error) {
         return error.message;

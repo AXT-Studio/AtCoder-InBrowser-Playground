@@ -31,20 +31,20 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 
 ## 2. 早見表
 
-| 領域       | 決定                                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------- |
-| ビルド     | WXT                                                                                         |
-| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                        |
-| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                    |
-| UI         | Preact + Signals。mode = Solve / Compare / Stress                                           |
-| JS/TS      | QuickJS-NG + WAMR interp + esbuild-wasm。stdin 置換・console shim。完全 Node 互換は追わない |
-| Polyfill   | ES polyfill機構は残す。現行リストは空（QuickJS-NGに差し替えたことでだいたい揃ったので）     |
-| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱              |
-| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし    |
-| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし             |
-| 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                |
-| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                           |
-| テスト     | Vitest                                                                                      |
+| 領域       | 決定                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------- |
+| ビルド     | WXT                                                                                                |
+| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                               |
+| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                           |
+| UI         | Preact + Signals。mode = Solve / Compare / Stress                                                  |
+| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない |
+| Polyfill   | ES polyfill機構は残す。現行リストは空（QuickJS-NGに差し替えたことでだいたい揃ったので）            |
+| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱                     |
+| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし           |
+| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                    |
+| 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                       |
+| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                  |
+| テスト     | Vitest                                                                                             |
 
 ---
 
@@ -132,11 +132,11 @@ type CodeTestResult = {
 
 ## 5. TypeScript / JavaScript
 
-- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ esbuild-wasm（TS→ES2025 相当）+ 最小 polyfill 機構 + console shim（object-inspect）
+- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ Sucrase（型落とし・sourcemap。ES はダウンコンパイルしない）+ 最小 polyfill 機構 + console shim（object-inspect）
 - ピン: QuickJS-NG `v0.16.2`、WAMR `WAMR-2.4.1`。FFI は `quickjs-emscripten-core` 0.32（`QTS_*` cwrap は `engine/quickjs-wamr/ffi.ts`）
 - 成果物は `pnpm run build:wasm` で生成し、リポジトリには置かない。`dev:` のたびに自動ビルドはしない
 - ゲスト `WebAssembly` は Module / Instance と数値 export まで。WASI・JIT/AOT・ホスト橋渡しはしない
-- 前処理順: **esbuild（sourcemap 付き）→ export 除去 → stdin 置換**
+- 前処理順: **Sucrase（`transforms: ["typescript"]`、`disableESTransforms`、sourcemap 付き）→ export 除去 → stdin 置換**
 - IIFE では包まない（実行ごとに Worker を破棄するため）
 - stdin 置換:
     - `require("fs").readFileSync("/dev/stdin", "utf8")`
@@ -145,7 +145,8 @@ type CodeTestResult = {
 - `console.log` / `console.error` → stdout / stderr。shim 必須（JSON 経由だと `NaN` 等が壊れる）
 - RE/CE の stderr は人が読める文字列。行・列は sourcemap でユーザーソース座標へ戻す
 - 列は **1-based**。stderr は snippet（`{line} | {source}`）+ caret（半角幅仮定）+ メッセージ
-- エラー文言は QuickJS-NG / esbuild 準拠（Node 互換は追わない）
+- エラー文言は QuickJS-NG / Sucrase 準拠（Node 互換は追わない）
+- TypeScript `namespace` は Sucrase が本体を落とすので非対応（README 制約）
 
 **ES2024+ polyfill:** `virtual:corejs-polyfill` と init 時 eval の配線は残す。現行の module リストは空。QuickJS-NG 0.16.2 が `Object/Map.groupBy`、Set 集合演算、Iterator helpers を持つため。足すときは `plugins/buildPolyfillByCoreJsBuilder.ts` の `POLYFILL_MODULES` に `es.*` を足す。NG が既に持つものは入れない。
 
@@ -242,7 +243,7 @@ TL / eps は問題由来の共有値。
 | Stress  | 生成器       | Status、**Run Test**、TL / eps / Loop（詳細 IO は隠す） |
 
 - Settings mode は作らない
-- mode 切替ショートカットは **当面なし**（必要性低）
+- mode 切替ショートカットは **当面なし**（必要性低）。エディタフォーカス中の Ctrl/Cmd+S の吸収だけ例外（ブラウザのページ保存を止める。明示保存はしない）
 - Compare 中に提出用を直すには Solve に戻る（許容）
 
 ### 9.3 テンプレ

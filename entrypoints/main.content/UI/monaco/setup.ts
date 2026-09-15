@@ -1,4 +1,4 @@
-import { editor as monacoEditor, typescript as monacoTS, type editor } from "monaco-editor";
+import { editor as monacoEditor, KeyCode, KeyMod, typescript as monacoTS, type editor } from "monaco-editor";
 import type { PublicPath } from "wxt/browser";
 import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
 import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.js";
@@ -172,6 +172,14 @@ export const createMonacoEditor = (options: CreateMonacoEditorOptions): editor.I
             strings: false,
         },
         suggestSelection: "first",
+    });
+
+    // エディタフォーカス中の Ctrl/Cmd+S でブラウザがページ保存しないようにする（明示保存はしない）
+    instance.addCommand(KeyMod.CtrlCmd | KeyCode.KeyS, () => {});
+    instance.onKeyDown((e) => {
+        if ((e.ctrlKey || e.metaKey) && e.keyCode === KeyCode.KeyS) {
+            e.preventDefault();
+        }
     });
 
     // setValue 起因の onDidChange で Signals 往復しないようにする

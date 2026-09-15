@@ -114,7 +114,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 ### JavaScript
 
 - 想定ジャッジ: JavaScript (Bun 1.2.21), JavaScript (Deno 2.4.5), JavaScript (Node.js 22.19.0)
-- AIBP側使用ランタイム: [QuickJS-NG](https://github.com/quickjs-ng/quickjs) + [esbuild](https://github.com/evanw/esbuild)
+- AIBP側使用ランタイム: [QuickJS-NG](https://github.com/quickjs-ng/quickjs) + [Sucrase](https://github.com/alangpierce/sucrase)
 - 制約
     - stdinは以下のいずれかの方法で受け付ける必要があります
         - `require("fs").readFileSync("/dev/stdin", "utf8")`
@@ -131,10 +131,11 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 ### TypeScript
 
 - 想定ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
-- AIBP側使用ランタイム: [QuickJS-NG](https://github.com/quickjs-ng/quickjs) + [esbuild](https://github.com/evanw/esbuild)
+- AIBP側使用ランタイム: [QuickJS-NG](https://github.com/quickjs-ng/quickjs) + [Sucrase](https://github.com/alangpierce/sucrase)
 - 制約
     - JavaScriptとほぼ同様です。JavaScriptの記述を参照してください
     - コードテスト実行時に型検査は行われません
+    - TypeScript の `namespace` は正しく変換されないため使えません
 
 ### Python
 
