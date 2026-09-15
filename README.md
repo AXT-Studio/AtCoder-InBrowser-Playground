@@ -100,6 +100,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
     - 制約
         - 概ねJavaScriptと同様です。JavaScriptの記述も参照してください
         - コードテスト実行時に型検査は行われません
+        - TypeScript の `namespace` は正しく変換されないため使えません
 - Python
     - 対象ジャッジ: Python (CPython 3.13.7), Python (PyPy 3.11-v7.3.20)
     - 制約

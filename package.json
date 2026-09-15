@@ -28,12 +28,12 @@
         "@jitl/quickjs-ffi-types": "0.32.0",
         "@jridgewell/trace-mapping": "^0.3.31",
         "@preact/signals": "^2.9.3",
-        "esbuild-wasm": "^0.28.1",
         "monaco-editor": "0.55.1",
         "object-inspect": "^1.13.4",
         "preact": "^10.29.7",
         "pyodide": "^314.0.2",
         "quickjs-emscripten-core": "^0.32.0",
+        "sucrase": "^3.35.1",
         "wasmoon": "1.16.0"
     },
     "devDependencies": {

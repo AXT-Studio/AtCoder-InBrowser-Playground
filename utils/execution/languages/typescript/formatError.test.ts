@@ -123,60 +123,31 @@ describe("formatRuntimeError", () => {
     });
 });
 
+const sucraseError = (message: string, line: number, column: number): Error => {
+    const error = new SyntaxError(message);
+    (error as SyntaxError & { loc: { line: number; column: number } }).loc = { line, column };
+    return error;
+};
+
 describe("formatTransformError", () => {
     const ceSource = "function Main( {";
 
-    it("esbuild の location を 1-based の at file:line:col にする", () => {
+    it("Sucrase の loc を 1-based の at file:line:col にする", () => {
         const formatted = formatTransformError(
-            {
-                errors: [
-                    {
-                        text: "Expected identifier but found end of file",
-                        location: { file: "Main.js", line: 1, column: 16, lineText: "function Main( {" },
-                    },
-                ],
-                warnings: [],
-            },
+            sucraseError(`Error transforming Main.js: Unexpected token, expected "," (1:17)`, 1, 17),
             ceSource,
         );
         expect(formatted).toContain("1 | function Main( {");
         expect(formatted).not.toContain("^");
-        expect(formatted).toContain("Expected identifier but found end of file");
+        expect(formatted).toContain(`Unexpected token, expected ","`);
+        expect(formatted).not.toContain("Error transforming");
         expect(formatted).toContain("at Main.js:1:17");
         expect(formatted).not.toContain("Transform failed");
     });
 
     it("有効な列なら CE にも caret を付ける", () => {
-        const formatted = formatTransformError(
-            {
-                errors: [
-                    {
-                        text: "Unexpected identifier",
-                        location: { file: "Main.js", line: 1, column: 0 },
-                    },
-                ],
-            },
-            "hello",
-        );
+        const formatted = formatTransformError(sucraseError("Unexpected identifier", 1, 1), "hello");
         expect(formatted).toBe("1 | hello\n    ^\nUnexpected identifier\n    at Main.js:1:1");
-    });
-
-    it("errors が複数なら各ブロックに snippet を付ける", () => {
-        const formatted = formatTransformError(
-            {
-                errors: [
-                    { text: "first", location: { file: "Main.js", line: 1, column: 0 } },
-                    { text: "second", location: { file: "Main.js", line: 2, column: 3 } },
-                ],
-            },
-            "abcd\nefghij",
-        );
-        expect(formatted).toContain("1 | abcd");
-        expect(formatted).toContain("2 | efghij");
-        expect(formatted).toContain("first");
-        expect(formatted).toContain("at Main.js:1:1");
-        expect(formatted).toContain("second");
-        expect(formatted).toContain("at Main.js:2:4");
     });
 
     it("構造が無い Error は message のまま", () => {
