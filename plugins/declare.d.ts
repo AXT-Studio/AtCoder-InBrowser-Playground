@@ -18,3 +18,18 @@ declare module "*emscripten-module.mjs" {
     const createEmscriptenModule: (options?: EmscriptenModuleLoaderOptions) => Promise<unknown>;
     export default createEmscriptenModule;
 }
+
+/** package の types が browser.d.ts（DefaultRubyVM のみ）を指すため、RubyVM を補う */
+declare module "@ruby/wasm-wasi" {
+    export class RubyVM {
+        static instantiateModule(options: {
+            module: WebAssembly.Module;
+            wasip1: {
+                wasiImport: WebAssembly.ModuleImports;
+                initialize(instance: WebAssembly.Instance): void;
+            };
+            args?: string[];
+        }): Promise<{ vm: RubyVM; instance: WebAssembly.Instance }>;
+        eval(code: string): unknown;
+    }
+}

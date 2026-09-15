@@ -4,6 +4,7 @@ import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
 import { registerPyodidePublicAssets } from "./plugins/pyodidePublicAssetsHook";
+import { registerRubyPublicAssets } from "./plugins/rubyPublicAssetsHook";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -14,6 +15,7 @@ export default defineConfig({
     hooks: {
         "build:publicAssets": async (wxt, files) => {
             await registerPyodidePublicAssets(wxt, files);
+            await registerRubyPublicAssets(wxt, files);
         },
     },
     manifest: ({ browser, manifestVersion }) => {

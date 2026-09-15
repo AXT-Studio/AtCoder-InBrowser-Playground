@@ -25,6 +25,7 @@
 10. **TLE** は init 除外後（`ready` 以降）のユーザーコード実行時間で判定する
 11. **テスト:** Vitest。純関数を優先。言語ランナーの smoke も可
 12. **ツール:** WXT。ドキュメント用 monorepo / VitePress サイトは復活させない
+13. **Ruby:** ruby.wasm（`ruby+stdlib`）。C 拡張 gem は載せない。同梱は純 Ruby 5 gem + rgl の runtime 依存のみ
 
 ## やってはいけないこと
 
@@ -32,5 +33,6 @@
 - Monaco の型情報を捨ててバンドルを痩せる「解決」
 - 3 エディタを同時表示するレイアウトを前提にする
 - Pyodide で scipy や Heuristic/ML 系を allowlist に戻す（明示的な決定変更なしに）
+- Ruby に C 拡張 gem や Heuristic/ML 系を同梱する（明示的な決定変更なしに）
 - グローバルな `Result<T,E>` 型を再導入する
 - 設計の詳細を本ファイルに複製して肥大化させる（詳細は `DECISIONS.md`）
