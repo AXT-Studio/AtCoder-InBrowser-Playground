@@ -8,7 +8,7 @@ export default defineConfig({
     plugins: [WxtVitest(), buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
     test: {
         // 純関数テストからで十分。UI/E2E は後段
-        // QuickJS / esbuild-wasm / Pyodide の init があるので余裕を見る
+        // QuickJS / Pyodide の init があるので余裕を見る
         testTimeout: 30_000,
         hookTimeout: 60_000,
         exclude: [...configDefaults.exclude, "engine/quickjs-wamr/**", "temp/**"],

@@ -3,8 +3,7 @@
 // ================================================================================================
 
 import type { LanguageModule } from "../../types";
-import { initialize as esbuildInitialize, transform as esbuildTransform } from "esbuild-wasm";
-import esbuildWasmURL from "esbuild-wasm/esbuild.wasm?url&no-inline";
+import { transform as sucraseTransform } from "sucrase";
 import { newQuickJSWASMModuleFromVariant } from "quickjs-emscripten-core";
 import type { QuickJSContext } from "quickjs-emscripten-core";
 import quickJSVariant from "../../../../engine/quickjs-wamr/variant";
@@ -28,41 +27,30 @@ type PreprocessResult = {
 };
 
 /**
- * TS/JSコードを受け取り、そのコードをES2025相当までダウンコンパイルします (esbuild-wasmを使用)
+ * TS/JS の型注釈などを落として QuickJS が読める JS にします（Sucrase）。
+ * ES のダウンコンパイルはしません（QuickJS-NG が現代構文を持つため）。
  * @param code ユーザーが書いたコード（stdin 置換前）
  */
-const downCompileCode = async (code: string): Promise<PreprocessResult> => {
-    // esbuild-wasmの初期化 (初回のみ)
-    // 2回目以降はエラーが出るので、try-catchで捻り潰す
-    try {
-        await esbuildInitialize({
-            wasmURL: esbuildWasmURL,
-            worker: false, // このコード自体がメインから分離されているのでworkerは使用しない というかworker使えない
-        });
-    } catch {
-        // 初期化に失敗してもエラーを無視する (すでに初期化されている場合はエラーが出るが、別にそれでいい)
-    }
-    const result = await esbuildTransform(code, {
-        loader: "ts",
-        target: "es2025",
-        sourcemap: true,
-        sourcefile: "Main.js",
+const downCompileCode = (code: string): PreprocessResult => {
+    const result = sucraseTransform(code, {
+        transforms: ["typescript"],
+        disableESTransforms: true,
+        keepUnusedImports: true,
+        filePath: "Main.js",
+        sourceMapOptions: { compiledFilename: "Main.js" },
     });
-    if (result === null || typeof result.code !== "string") {
-        throw new Error("esbuild transformation failed");
-    }
     return {
         code: result.code,
-        map: typeof result.map === "string" && result.map.length > 0 ? result.map : undefined,
+        map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
     };
 };
 
 /**
  * コードをQuickJSで実行するときに満たしてほしい形に変換します。
- * esbuild（sourcemap 付き）→ export 除去 → stdin 置換。IIFE では包みません（実行ごとに Worker を捨てるため）。
+ * Sucrase（sourcemap 付き）→ export 除去 → stdin 置換。IIFE では包みません（実行ごとに Worker を捨てるため）。
  */
-const preProcessCodeForQuickJS = async (code: string): Promise<PreprocessResult> => {
-    const compiled = await downCompileCode(code);
+const preProcessCodeForQuickJS = (code: string): PreprocessResult => {
+    const compiled = downCompileCode(code);
     // QuickJSはTop-Level exportをサポートしてないかも 念の為削除（改行は残して行番号をずらさない）
     let result = compiled.code;
     result = result.replace(/^export\s*\{\s*\}\s*;?/m, "");
@@ -138,7 +126,7 @@ export const typescript: LanguageModule<LanguageContext> = {
             // グローバル変数 __stdin__ に、こっちが持っている stdin を入れる
             quickJsVm.setProp(quickJsVm.global, "__stdin__", quickJsVm.newString(stdin));
             // コードをQuickJSで実行するときに満たしてほしい形に変換
-            const preprocessed = await preProcessCodeForQuickJS(code);
+            const preprocessed = preProcessCodeForQuickJS(code);
             // 変換後のコードを実行
             const result = quickJsVm.evalCode(preprocessed.code, "Main.js");
             // 実行結果に応じて、適切な結果を返す
