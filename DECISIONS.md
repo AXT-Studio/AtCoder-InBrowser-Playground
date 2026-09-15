@@ -40,6 +40,7 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 | JS/TS      | QuickJS-NG + WAMR interp + esbuild-wasm。stdin 置換・console shim。完全 Node 互換は追わない |
 | Polyfill   | ES polyfill機構は残す。現行リストは空（QuickJS-NGに差し替えたことでだいたい揃ったので）     |
 | Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱              |
+| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし    |
 | Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし             |
 | 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                |
 | TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                           |
@@ -64,7 +65,7 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 ### 3.3 CSP
 
 - `wasm-unsafe-eval` 必須
-- Pyodide / wheel は拡張内同梱。`connect-src 'self'`（CDN への実行時依存はしない）
+- Pyodide / wheel / ruby.wasm は拡張内同梱。`connect-src 'self'`（CDN への実行時依存はしない）
 
 ---
 
@@ -95,6 +96,7 @@ Runner Worker
 - `plaintext` は「code をそのまま stdout」
 - `brainfuck` は Tritium `-b -e`（8bit wrap、EOF は -1→255）。テンプレなし。Monaco は自前 Monarch（`plaintext` に落とさない）
 - `lua` は wasmoon（Lua 5.4.5 wasm）。対象はジャッジの Lua 5.4.7。LuaJIT は対象外。テンプレは solver（Input scanner）と generator
+- `ruby` は ruby.wasm（CRuby 3.4 + stdlib）。純 Ruby gem のみ同梱。テンプレなし
 
 ### 4.4 `CodeTestResult`
 
@@ -190,15 +192,45 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 
 ---
 
-## 8. UI / 画面 IA
+## 8. Ruby（ruby.wasm）
 
-### 8.1 技術
+- 対象ジャッジは **Ruby 3.4.5**。実行は `@ruby/3.4-wasm-wasi` の `ruby+stdlib.wasm`（CRuby 3.4）
+- JS glue は `@ruby/wasm-wasi`。フル npm パッケージ `@ruby/3.4-wasm-wasi` は入れない（debug wasm まで膨らむ）
+- stdin は WASI FS の `/aibp-stdin` を `$stdin` / `STDIN` に繋ぐ。stdout/stderr は character device でキャプチャ（ファイルだと Ruby がバッファして出ない）
+- `SyntaxError` → **CE**。`exit` / `exit 0`（`SystemExit#success?`）は正常終了。その他の例外 → **RE**。stderr の有無だけでは RE にしない
+- テンプレなし（Python と同様。`gets` / `readlines` / `puts` で足りる）
+- C 拡張（`.so`）は載らない。`rbwasm` 静的リンクは公式 29MiB バイナリの置換になるので対象外
+
+### 8.1 同梱 gem
+
+init 時に `lib/**/*.rb` を `/gems` に展開し `$LOAD_PATH.unshift("/gems")`。Python のような import 抽出はしない（全体で数十 KiB）。
+
+| gem                 | 扱い                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| `ac-library-rb`     | サポート（ジャッジ 1.2.0。`require "ac-library-rb/dsu"` → `AcLibraryRb::DSU`）               |
+| `bitarray`          | サポート（ジャッジ 1.3.1）                                                                   |
+| `sorted_containers` | サポート（Python `sortedcontainers` 相当。`sorted_set` ではない）                            |
+| `rgl`               | サポート（Python `networkx` 相当）。依存 `pairing_heap` / `stream` も同梱。`rexml` は stdlib |
+| `faster_prime`      | サポート                                                                                     |
+| **`bit_utils`**     | **後回し**（C 拡張）                                                                         |
+| **`rbtree`**        | **後回し**（C 拡張）                                                                         |
+| **`sorted_set`**    | **後回し**（C 拡張。`sorted_containers` とは別）                                             |
+| Heuristic / ML 系   | 対象外（`lightgbm` / `rumale` / `polars-df` / `torch-rb` 等）                                |
+| 稀・ネイティブ系    | 対象外（`numo-narray` / `or-tools` / `z3` 等）                                               |
+
+ビルド時に `plugins/rubyPublicAssetsHook.ts` が wasm + `gems.json` を `assets/ruby/` へ同梱。
+
+---
+
+## 9. UI / 画面 IA
+
+### 9.1 技術
 
 - Preact + Preact Signals
 - Monaco は imperative（ref + mount/dispose）。**テキストの正本は Monaco**（Signals は onChange で片方向追従。props から setValue しない）
 - モデルは pathname 滞在中 `BufferKind` 単位でセッション保持（editor dispose では捨てない）。Undo はモデル、折り/カーソル/選択/スクロールは viewState。ページリロードでは捨てる
 
-### 8.2 Mode = やりたいこと（＝編集バッファ）
+### 9.2 Mode = やりたいこと（＝編集バッファ）
 
 裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。永続化は `pathname × バッファ`。  
 TL / eps は問題由来の共有値。
@@ -213,15 +245,15 @@ TL / eps は問題由来の共有値。
 - mode 切替ショートカットは **当面なし**（必要性低）
 - Compare 中に提出用を直すには Solve に戻る（許容）
 
-### 8.3 テンプレ
+### 9.3 テンプレ
 
 - TS solver: **Scanner / Interactive のみ**（素の Bun/Deno/Node テンプレは削除済み）
 - JS solver・Generator 系は維持
 - Lua solver: **Input scanner のみ**。Generator は `math.random` の最小テンプレ
 - 先頭コメントは role（submission / naive / generator）対応済み。Lua は `--`
-- Python テンプレは未導入（必要になったら）
+- Python / Ruby テンプレは未導入（必要になったら）
 
-### 8.4 デザイン言語
+### 9.4 デザイン言語
 
 実装は `entrypoints/main.content/UI/`（`App.css` / `controls.css`）。
 
@@ -236,7 +268,7 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 9. AtCoder 統合・判定
+## 10. AtCoder 統合・判定
 
 - サンプル・制限時間等の DOM パース
 - stdout 比較（空白分割＋数値は許容誤差）: `utils/stdout/isOutputCorrect.ts`
@@ -245,7 +277,7 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 10. リポジトリ・品質
+## 11. リポジトリ・品質
 
 - Vitest（純関数＋ Python allowlist smoke 等）
 - 説明は README。`DECISIONS.md` / `AGENTS.md` は設計用
@@ -254,8 +286,9 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 11. 未決・後回し
+## 12. 未決・後回し
 
 - Python 提出用テンプレ
 - Chrome #72（dev 時実行）の扱い
 - Worker/VM キャッシュの再導入判断（現状の init 速度で足りているか）
+- Ruby C 拡張 gem（`bit_utils` / `rbtree` / `sorted_set`）。要望があれば検討

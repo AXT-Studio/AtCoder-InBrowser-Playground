@@ -4,6 +4,7 @@ import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.
 import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.js";
 import "monaco-editor/esm/vs/basic-languages/python/python.contribution.js";
 import "monaco-editor/esm/vs/basic-languages/lua/lua.contribution.js";
+import "monaco-editor/esm/vs/basic-languages/ruby/ruby.contribution.js";
 import "monaco-editor/esm/vs/language/typescript/monaco.contribution.js";
 import "monaco-editor/min/vs/editor/editor.main.css";
 import { ensureBrainfuckLanguage } from "./brainfuckLanguage";
@@ -127,6 +128,7 @@ export const toMonacoLanguage = (language: string): string => {
         case "typescript":
         case "python":
         case "lua":
+        case "ruby":
         case "plaintext":
             return language;
         case "brainfuck":
