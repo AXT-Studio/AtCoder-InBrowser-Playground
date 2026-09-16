@@ -9,11 +9,11 @@ import { applyPrepareSubmission } from "../applyPrepareSubmission";
 import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
+    compareCode,
+    compareLanguage,
     epsExponent,
     generatorCode,
     generatorLanguage,
-    naiveCode,
-    naiveLanguage,
     setBufferCode,
     setBufferLanguage,
     submissionCode,
@@ -27,8 +27,8 @@ export function Stress() {
     const generated = useSignal("");
     const solveStdout = useSignal("");
     const solveStderr = useSignal("");
-    const naiveStdout = useSignal("");
-    const naiveStderr = useSignal("");
+    const compareStdout = useSignal("");
+    const compareStderr = useSignal("");
     const statusText = useSignal("--");
     const running = useSignal(false);
     const selectedTemplate = useSignal(defaultTemplateId(generatorLanguage.value, "generator"));
@@ -57,8 +57,8 @@ export function Stress() {
         generated.value = "";
         solveStdout.value = "";
         solveStderr.value = "";
-        naiveStdout.value = "";
-        naiveStderr.value = "";
+        compareStdout.value = "";
+        compareStderr.value = "";
 
         try {
             const allowableError = 10 ** -epsExponent.value;
@@ -76,24 +76,24 @@ export function Stress() {
                 generated.value = genResult.stdout;
                 if (genResult.status !== "completed") {
                     // Gen の stderr を見える場所へ
-                    naiveStderr.value = genResult.stderr;
+                    compareStderr.value = genResult.stderr;
                     solveStderr.value = "";
                     solveStdout.value = "";
-                    naiveStdout.value = "";
+                    compareStdout.value = "";
                     statusText.value = judgeStressIteration(genResult, null, null, allowableError) ?? "CE";
                     return;
                 }
 
                 const generatedInput = genResult.stdout;
 
-                // 2) Naive
-                const naiveResult = await execOnce(naiveLanguage.value, naiveCode.value, generatedInput);
-                naiveStdout.value = naiveResult.stdout;
-                naiveStderr.value = naiveResult.stderr;
-                if (naiveResult.status !== "completed") {
+                // 2) Compare
+                const compareResult = await execOnce(compareLanguage.value, compareCode.value, generatedInput);
+                compareStdout.value = compareResult.stdout;
+                compareStderr.value = compareResult.stderr;
+                if (compareResult.status !== "completed") {
                     solveStdout.value = "";
                     solveStderr.value = "";
-                    statusText.value = judgeStressIteration(genResult, naiveResult, null, allowableError) ?? "CE";
+                    statusText.value = judgeStressIteration(genResult, compareResult, null, allowableError) ?? "CE";
                     return;
                 }
 
@@ -102,7 +102,7 @@ export function Stress() {
                 solveStdout.value = solveResult.stdout;
                 solveStderr.value = solveResult.stderr;
 
-                const round = judgeStressIteration(genResult, naiveResult, solveResult, allowableError);
+                const round = judgeStressIteration(genResult, compareResult, solveResult, allowableError);
                 if (round !== null) {
                     statusText.value = round;
                     return;
@@ -112,11 +112,11 @@ export function Stress() {
             statusText.value = "AC";
         } catch (error) {
             statusText.value = "Error";
-            naiveStderr.value = String(error);
+            compareStderr.value = String(error);
             generated.value = "";
             solveStdout.value = "";
             solveStderr.value = "";
-            naiveStdout.value = "";
+            compareStdout.value = "";
         } finally {
             running.value = false;
         }
@@ -335,15 +335,15 @@ export function Stress() {
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-stress-naive-stdout">
-                                Naive Stdout
+                            <label class="aibp-label" for="aibp-stress-compare-stdout">
+                                Compare Stdout
                             </label>
                             <textarea
-                                id="aibp-stress-naive-stdout"
+                                id="aibp-stress-compare-stdout"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
-                                value={naiveStdout.value}
+                                value={compareStdout.value}
                             />
                         </div>
                         <div class="aibp-io">
@@ -359,15 +359,15 @@ export function Stress() {
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-stress-naive-stderr">
-                                Naive Stderr
+                            <label class="aibp-label" for="aibp-stress-compare-stderr">
+                                Compare Stderr
                             </label>
                             <textarea
-                                id="aibp-stress-naive-stderr"
+                                id="aibp-stress-compare-stderr"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
-                                value={naiveStderr.value}
+                                value={compareStderr.value}
                             />
                         </div>
                     </div>

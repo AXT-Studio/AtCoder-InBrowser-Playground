@@ -3,7 +3,7 @@ import { formatTemplateHeader } from "./formatHeader";
 import { insertTemplate, listTemplates } from "./index";
 
 describe("formatTemplateHeader", () => {
-    it("formats role comments for submission / naive / generator", () => {
+    it("formats role comments for submission / compare / generator", () => {
         const base = {
             contestTitle: "ABC 1",
             taskTitle: "A - Task",
@@ -14,8 +14,8 @@ describe("formatTemplateHeader", () => {
         expect(formatTemplateHeader({ ...base, role: "submission" })).toContain(
             "// TypeScript (Bun) [Main] Submission",
         );
-        expect(formatTemplateHeader({ ...base, role: "naive" })).toContain(
-            "// TypeScript (Bun) [Naive] Comparative Implementation",
+        expect(formatTemplateHeader({ ...base, role: "compare" })).toContain(
+            "// TypeScript (Bun) [Compare] Comparative Implementation",
         );
         expect(formatTemplateHeader({ ...base, role: "generator" })).toContain(
             "// TypeScript (Bun) [Gen] Testcase Input Generator",
@@ -38,7 +38,7 @@ describe("formatTemplateHeader", () => {
 });
 
 describe("listTemplates", () => {
-    it("returns solver templates for submission/naive and generator ones for generator", () => {
+    it("returns solver templates for submission/compare and generator ones for generator", () => {
         const solve = listTemplates("typescript", "submission");
         expect(solve[0]?.id).toBe("ts_bun_scanner");
         expect(solve.some((t) => t.id === "ts_bun_scanner")).toBe(true);
@@ -58,10 +58,10 @@ describe("listTemplates", () => {
         expect(listTemplates("cpp", "generator")).toEqual([]);
     });
 
-    it("returns lua scanner for submission/naive and lua generator for generator", () => {
+    it("returns lua scanner for submission/compare and lua generator for generator", () => {
         const solve = listTemplates("lua", "submission");
         expect(solve.map((t) => t.id)).toEqual(["lua_scanner"]);
-        expect(listTemplates("lua", "naive").map((t) => t.id)).toEqual(["lua_scanner"]);
+        expect(listTemplates("lua", "compare").map((t) => t.id)).toEqual(["lua_scanner"]);
         expect(listTemplates("lua", "generator").map((t) => t.id)).toEqual(["gen_lua"]);
     });
 });
@@ -73,14 +73,14 @@ describe("insertTemplate", () => {
             contestTitle: "C",
             taskTitle: "T",
             taskURL: "U",
-            role: "naive",
+            role: "compare",
             currentCode: "",
             confirm: () => false,
         });
         expect(result.action).toBe("insert");
         if (result.action === "insert") {
             expect(result.template).toContain(
-                "// TypeScript (Bun, using InputScanner) [Naive] Comparative Implementation",
+                "// TypeScript (Bun, using InputScanner) [Compare] Comparative Implementation",
             );
         }
 

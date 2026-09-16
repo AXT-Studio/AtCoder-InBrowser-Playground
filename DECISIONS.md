@@ -39,11 +39,11 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 | エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                                               |
 | UI         | Preact + Signals。mode = Solve / Compare / Stress                                                                      |
 | JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない                     |
-| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy / matplotlib なし。wheel 拡張内同梱                             |
+| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy / matplotlib なし。wheel 拡張内同梱                            |
 | Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし                               |
 | C++        | WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。Boost / OpenMP / `import std` なし |
 | Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                                        |
-| エンジン   | `engine/*/dist` 等は git に置かない。`pnpm run build:engine:*` で生成。dev のたびに自動ビルドはしない                   |
+| エンジン   | `engine/*/dist` 等は git に置かない。`pnpm run build:engine:*` で生成。dev のたびに自動ビルドはしない                  |
 | 実行寿命   | 実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                                                 |
 | TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                                      |
 | テスト     | `pnpm test` = type-check / fmt / lint / unit（Vitest）                                                                 |
@@ -250,14 +250,14 @@ init 時に gem の `lib/**/*.rb` を `/gems` に展開し、`gems.json` の `lo
 
 ### 10.2 Mode = やりたいこと（＝編集バッファ）
 
-裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。  
+裏データ: **提出用 / 比較 / 生成器**＋各バッファ独立の言語。  
 コードの永続化は `pathname × バッファ`。言語はバッファ単位で拡張全体共通（ページ非依存）。  
 TL / eps は問題由来の共有値。
 
 | Mode    | 編集バッファ | 折りたたみ時に見えるもの                                      |
 | ------- | ------------ | ------------------------------------------------------------- |
 | Solve   | 提出用       | Examples、Status / Time、TL / eps（Run は折りたたみ内）       |
-| Compare | 愚直         | Examples、Status、TL / eps（Run は折りたたみ内。Time なし）   |
+| Compare | 比較         | Examples、Status、TL / eps（Run は折りたたみ内。Time なし）   |
 | Stress  | 生成器       | Status、**Run Test**、TL / eps / Loop（詳細 IO は折りたたみ） |
 
 - Settings mode は作らない
@@ -273,7 +273,7 @@ TL / eps は問題由来の共有値。
 - Lua solver: Input scanner。Generator は `math.random` の最小
 - C++ solver: `bits/stdc++.h` + `iostream` + `main` の最小。generator / rep マクロは後回し
 - Python / Ruby / Brainfuck / Text は未導入
-- 先頭コメントは role（submission / naive / generator）。Lua は `--`
+- 先頭コメントは role（submission / compare / generator）。Lua は `--`
 
 ### 10.4 デザイン言語
 

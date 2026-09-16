@@ -2,7 +2,7 @@ import type { TemplateRole } from "./types";
 
 const ROLE_LABEL: Record<TemplateRole, string> = {
     submission: "[Main] Submission",
-    naive: "[Naive] Comparative Implementation",
+    compare: "[Compare] Comparative Implementation",
     generator: "[Gen] Testcase Input Generator",
 };
 
@@ -11,7 +11,7 @@ const ROLE_LABEL: Record<TemplateRole, string> = {
  * role 行の例:
  * - `// TypeScript (Bun) [Main] Submission`
  * - `// TypeScript (Bun, using InputScanner) [Main] Submission`
- * - `// TypeScript (Bun, INTERACTIVE) [Naive] Comparative Implementation`
+ * - `// TypeScript (Bun, INTERACTIVE) [Compare] Comparative Implementation`
  */
 export const formatTemplateHeader = (params: {
     contestTitle: string;

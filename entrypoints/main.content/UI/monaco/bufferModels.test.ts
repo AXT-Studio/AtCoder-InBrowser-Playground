@@ -4,7 +4,7 @@ import { bufferModelUri, shouldAutoFoldClasses } from "./bufferModelIds";
 describe("bufferModelUri", () => {
     it("BufferKind ごとに安定した file URI を返す", () => {
         expect(bufferModelUri("submission")).toBe("file:///aibp/buffer/submission");
-        expect(bufferModelUri("naive")).toBe("file:///aibp/buffer/naive");
+        expect(bufferModelUri("compare")).toBe("file:///aibp/buffer/compare");
         expect(bufferModelUri("generator")).toBe("file:///aibp/buffer/generator");
     });
 });
