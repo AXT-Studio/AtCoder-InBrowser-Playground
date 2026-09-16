@@ -178,7 +178,7 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 2. **run 前:** `extractImports` → allowlist のみ `micropip.install`
 3. lock 上のパッケージ名はそのまま。同梱専用 wheel（networkx / atcoder）は JS `fetch` → FS 書き込み → `emfs:`（`moz-extension:` / `chrome-extension:` URL を micropip に渡すと失敗する）
 4. ビルド時に `plugins/pyodidePublicAssetsHook.ts` が runtime + allowlist wheel を `assets/pyodide/` へ同梱
-5. Syntax / Indentation / TabError → **CE**、その他の実行時エラー → **RE**
+5. Syntax / Indentation / TabError → **CE**。`sys.exit()` / `exit()` / `quit()` / `sys.exit(0)`（`SystemExit.code in (None, 0)`）は正常終了。非 0 の `SystemExit` は **RE**（CPython と同様 traceback は出さない。非 int の code は stderr へ書いて終了コード 1）。その他の例外 → **RE**。stderr の有無だけでは RE にしない
 6. パッケージロード中の進捗ログはユーザー stdout に混ぜない
 
 ---
