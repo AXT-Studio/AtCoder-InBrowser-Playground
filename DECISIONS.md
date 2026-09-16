@@ -26,25 +26,27 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 ### UX の核
 
 - **1ページ完結:** 問題文とエディタを同一ページで並べる（`#main-container` 半幅化＋右固定パネル）
+- パネル表示は `window.innerWidth` **1200px 以上**（未満では出さない）
 
 ---
 
 ## 2. 早見表
 
-| 領域       | 決定                                                                                               |
-| ---------- | -------------------------------------------------------------------------------------------------- |
-| ビルド     | WXT                                                                                                |
-| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                               |
-| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                           |
-| UI         | Preact + Signals。mode = Solve / Compare / Stress                                                  |
-| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない |
-| Polyfill   | ES polyfill機構は残す。現行リストは空（QuickJS-NGに差し替えたことでだいたい揃ったので）            |
-| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱                     |
-| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし           |
-| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                    |
-| 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                       |
-| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                  |
-| テスト     | Vitest                                                                                             |
+| 領域       | 決定                                                                                                                   |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
+| ビルド     | WXT                                                                                                                    |
+| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                                                   |
+| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                                               |
+| UI         | Preact + Signals。mode = Solve / Compare / Stress                                                                      |
+| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない                     |
+| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy / matplotlib なし。wheel 拡張内同梱                             |
+| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし                               |
+| C++        | WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。Boost / OpenMP / `import std` なし |
+| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                                        |
+| エンジン   | `engine/*/dist` 等は git に置かない。`pnpm run build:engine:*` で生成。dev のたびに自動ビルドはしない                   |
+| 実行寿命   | 実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                                                 |
+| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                                      |
+| テスト     | `pnpm test` = type-check / fmt / lint / unit（Vitest）                                                                 |
 
 ---
 
@@ -64,8 +66,9 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 
 ### 3.3 CSP
 
-- `wasm-unsafe-eval` 必須
-- Pyodide / wheel / ruby.wasm は拡張内同梱。`connect-src 'self'`（CDN への実行時依存はしない）
+- `script-src 'self' 'wasm-unsafe-eval'`。`'unsafe-eval'` / `Function()` は使わない
+- `connect-src 'self' ws:`（`ws:` は dev 用。実行時に CDN へ取りに行かない）
+- Pyodide / wheel / ruby.wasm / WASI Clang は拡張内同梱
 
 ---
 
@@ -79,24 +82,24 @@ Content Script（UI・判定表示）
 Background（メッセージハブ）
   → Chrome: Offscreen へ転送 / Firefox: 自前で Worker 実行
 Runner Worker
-  → 言語 Module（init / run）
+  → 言語 Module（init / prepare? / run）
 ```
 
 ### 4.2 ready 後 TLE
 
 - Host が `ready` を受けてから `timeLimitMs` タイマー開始
 - Worker は制限時間を知らない。TLE 時は Host が `terminate` し結果を合成
-- Verdict の TLE は **ready 以降**のみ（init を含めない）
+- Verdict の TLE は **ready 以降**のみ（init / prepare を含めない）
 
 ### 4.3 言語 Module
 
 - `init()` → コンテキスト
+- 任意の `prepare?(ctx, code)` → ready より前。失敗なら `CE` を返し `ready` は出さない
 - `run(ctx, code, stdin)` → `completed` / `CE` / `RE`（TLE は Host）
 - `javascript` は typescript module にマップ
 - `plaintext` は「code をそのまま stdout」
 - `brainfuck` は Tritium `-b -e`（8bit wrap、EOF は -1→255）。テンプレなし。Monaco は自前 Monarch（`plaintext` に落とさない）
-- `lua` は wasmoon（Lua 5.4.5 wasm）。対象はジャッジの Lua 5.4.7。LuaJIT は対象外。テンプレは solver（Input scanner）と generator
-- `ruby` は ruby.wasm（CRuby 3.4 + stdlib）。純 Ruby gem のみ同梱。テンプレなし
+- その他の言語は §5–9
 
 ### 4.4 `CodeTestResult`
 
@@ -123,18 +126,18 @@ type CodeTestResult = {
 - フィールド名は `language`（`lang` は使わない）
 - Content → `execRequest` → Background → Exec Host
 - Host → Worker: `start`（`timeLimitMs` は載せない）
-- Worker → Host: `ready` のあと `result`
+- Worker → Host: `ready` のあと `result`。prepare 失敗時は `ready` なしで `result`（CE）
 - Host → Content: `execResponse { codeTestResult }`
-- Host は起動直後から `ready` / `result` 両方を受け付ける。遅延 `result` は無視
-- `execTime`（completed / RE）は ready〜result。並列は `id` で識別してよい
+- Host は起動直後から `ready` / `result` 両方を受け付ける。TLE 後は Worker を切るので遅延 `result` は届かない
+- `execTime`（completed / RE）は ready〜result。並列リクエストは `id` で対応付ける
 
 ---
 
 ## 5. TypeScript / JavaScript
 
-- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ Sucrase（型落とし・sourcemap。ES はダウンコンパイルしない）+ 最小 polyfill 機構 + console shim（object-inspect）
+- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ Sucrase（型落とし・sourcemap。ES はダウンコンパイルしない）+ console shim（object-inspect）
 - ピン: QuickJS-NG `v0.16.2`、WAMR `WAMR-2.4.1`。FFI は `quickjs-emscripten-core` 0.32（`QTS_*` cwrap は `engine/quickjs-wamr/ffi.ts`）
-- 成果物は `pnpm run build:wasm` で生成し、リポジトリには置かない。`dev:` のたびに自動ビルドはしない
+- 成果物は `pnpm run build:engine:qjs-wamr` で生成し、リポジトリには置かない
 - ゲスト `WebAssembly` は Module / Instance と数値 export まで。WASI・JIT/AOT・ホスト橋渡しはしない
 - 前処理順: **Sucrase（`transforms: ["typescript"]`、`disableESTransforms`、sourcemap 付き）→ export 除去 → stdin 置換**
 - IIFE では包まない（実行ごとに Worker を破棄するため）
@@ -147,8 +150,7 @@ type CodeTestResult = {
 - 列は **1-based**。stderr は snippet（`{line} | {source}`）+ caret（半角幅仮定）+ メッセージ
 - エラー文言は QuickJS-NG / Sucrase 準拠（Node 互換は追わない）
 - TypeScript `namespace` は Sucrase が本体を落とすので非対応（README 制約）
-
-**ES2024+ polyfill:** `virtual:corejs-polyfill` と init 時 eval の配線は残す。現行の module リストは空。QuickJS-NG 0.16.2 が `Object/Map.groupBy`、Set 集合演算、Iterator helpers を持つため。足すときは `plugins/buildPolyfillByCoreJsBuilder.ts` の `POLYFILL_MODULES` に `es.*` を足す。NG が既に持つものは入れない。
+- ES2024+ は QuickJS-NG 側で足りている。core-js polyfill リストは足さない
 
 ---
 
@@ -166,7 +168,7 @@ type CodeTestResult = {
 | `networkx`         | サポート（同梱 pure wheel → `emfs:`）     |
 | `atcoder`          | サポート（ac-library-python 同梱 wheel）  |
 | **scipy**          | **切断**                                  |
-| matplotlib         | 明示サポートしない                        |
+| matplotlib         | 入れない                                  |
 
 Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 
@@ -188,8 +190,8 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 - 追加ライブラリは入れない（ジャッジも stdlib のみ）
 - `print` / `io.write` / `io.stdout` / `io.stderr` を差し替えて stdout/stderr を取る
 - stdin は MEMFS の `/aibp-stdin` に書いて `io.input`。`io.read` は Lua 本体の実装
-- 構文エラー（`luaL_load*`）→ **CE**、実行時エラー（`pcall`）→ **RE**
-- Monaco は組み込み `lua`（basic-language）。テンプレは solver（Input scanner）と generator
+- 構文エラー（load）→ **CE**、実行時エラー → **RE**
+- Monaco は組み込み `lua`
 
 ---
 
@@ -199,12 +201,11 @@ Heuristic / ML 系（pandas, sklearn, torch 等）は対象外。
 - JS glue は `@ruby/wasm-wasi`。フル npm パッケージ `@ruby/3.4-wasm-wasi` は入れない（debug wasm まで膨らむ）
 - stdin は WASI FS の `/aibp-stdin` を `$stdin` / `STDIN` に繋ぐ。stdout/stderr は character device でキャプチャ（ファイルだと Ruby がバッファして出ない）
 - `SyntaxError` → **CE**。`exit` / `exit 0`（`SystemExit#success?`）は正常終了。その他の例外 → **RE**。stderr の有無だけでは RE にしない
-- テンプレなし（Python と同様。`gets` / `readlines` / `puts` で足りる）
 - C 拡張（`.so`）は載らない。`rbwasm` 静的リンクは公式 29MiB バイナリの置換になるので対象外
 
 ### 8.1 同梱 gem
 
-init 時に `lib/**/*.rb` を `/gems` に展開し `$LOAD_PATH.unshift("/gems")`。Python のような import 抽出はしない（全体で数十 KiB）。
+init 時に gem の `lib/**/*.rb` を `/gems` に展開し、`gems.json` の `loadPaths` を `/gems/...` として `$LOAD_PATH.unshift`。Python のような import 抽出はしない（全体で数十 KiB）。
 
 | gem                 | 扱い                                                                                         |
 | ------------------- | -------------------------------------------------------------------------------------------- |
@@ -223,38 +224,58 @@ init 時に `lib/**/*.rb` を `/gems` に展開し `$LOAD_PATH.unshift("/gems")`
 
 ---
 
-## 9. UI / 画面 IA
+## 9. C++（WASI Clang）
 
-### 9.1 技術
+- 対象ジャッジは **C++23 (Clang 21.1.0)**。実行も **同じ 21.1.0** の自前 wasm（libc++、wasi-sdk 28、target `wasm32-wasip1`）
+- UI の言語名は **C++(Clang)**。内部 id は `cpp`。GCC ジャッジ（libstdc++ / `ext/pb_ds`）は対象外
+- コンパイル（clang → wasm-ld）は **`prepare`＝ready より前**。失敗は **CE**。`ready` 以降はユーザー wasm の WASI 実行だけ（非 0 終了は **RE**）
+- フラグ: `-std=gnu++23 -stdlib=libc++ -O2 -DATCODER -DONLINE_JUDGE -fexperimental-library -fno-exceptions -fno-rtti --target=wasm32-wasip1 --sysroot=/ -resource-dir=/lib/clang/21`
+- Emscripten `EXIT_RUNTIME` のため、**clang / lld は prepare ごとに作り直す**。glue JS の `ENVIRONMENT_IS_NODE` は Worker で false になるようパッチする
+- `bits/stdc++.h` は libc++ 向け shim を同梱（WASI が `#error` する `csetjmp` / `csignal` は入れない）。ac-library 1.6 ヘッダを同梱（`#include <atcoder/dsu>`）
+- **同梱しない:** Boost、OR-Tools / LightGBM / Z3 等、`import std` / `std.pcm`、OpenMP / pthread、`-march=native` / LTO
+- wasm32 の ABI（ポインタ幅、`long double` が 80bit にならない）は README 制約。完全同一は追わない
+- ツールチェインは `pnpm run build:engine:clang`（`engine/clang-wasi/scripts/build.sh`）で wasm 化し、`plugins/cppPublicAssetsHook.ts` が `engine/clang-wasi/dist` + shim + ACL を `assets/cpp/` へ同梱
+- glue JS は Blob URL 経由で `import()` しない（Firefox CSP が `blob:` を弾く）。拡張内 URL を直接 import する
+- Chrome / Firefox とも他言語と同じ実行ホスト（Offscreen / Background → Runner Worker）
+
+---
+
+## 10. UI / 画面 IA
+
+### 10.1 技術
 
 - Preact + Preact Signals
 - Monaco は imperative（ref + mount/dispose）。**テキストの正本は Monaco**（Signals は onChange で片方向追従。props から setValue しない）
 - モデルは pathname 滞在中 `BufferKind` 単位でセッション保持（editor dispose では捨てない）。Undo はモデル、折り/カーソル/選択/スクロールは viewState。ページリロードでは捨てる
 
-### 9.2 Mode = やりたいこと（＝編集バッファ）
+### 10.2 Mode = やりたいこと（＝編集バッファ）
 
-裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。永続化は `pathname × バッファ`。  
+裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。  
+コードの永続化は `pathname × バッファ`。言語はバッファ単位で拡張全体共通（ページ非依存）。  
 TL / eps は問題由来の共有値。
 
-| Mode    | 編集バッファ | 折りたたみ時に見えるもの（要旨）                        |
-| ------- | ------------ | ------------------------------------------------------- |
-| Solve   | 提出用       | Examples、Status / Exec.Time、TL / eps（Run は隠す）    |
-| Compare | 愚直         | Examples、Status（Run は隠す。Exec.Time 不要）          |
-| Stress  | 生成器       | Status、**Run Test**、TL / eps / Loop（詳細 IO は隠す） |
+| Mode    | 編集バッファ | 折りたたみ時に見えるもの                                      |
+| ------- | ------------ | ------------------------------------------------------------- |
+| Solve   | 提出用       | Examples、Status / Time、TL / eps（Run は折りたたみ内）       |
+| Compare | 愚直         | Examples、Status、TL / eps（Run は折りたたみ内。Time なし）   |
+| Stress  | 生成器       | Status、**Run Test**、TL / eps / Loop（詳細 IO は折りたたみ） |
 
 - Settings mode は作らない
-- mode 切替ショートカットは **当面なし**（必要性低）。エディタフォーカス中の Ctrl/Cmd+S の吸収だけ例外（ブラウザのページ保存を止める。明示保存はしない）
+- mode 切替ショートカットは **当面なし**。エディタフォーカス中の Ctrl/Cmd+S の吸収だけ例外（ブラウザのページ保存を止める。明示保存はしない）
 - Compare 中に提出用を直すには Solve に戻る（許容）
 
-### 9.3 テンプレ
+### 10.3 テンプレ
 
-- TS solver: **Scanner / Interactive のみ**（素の Bun/Deno/Node テンプレは削除済み）
-- JS solver・Generator 系は維持
-- Lua solver: **Input scanner のみ**。Generator は `math.random` の最小テンプレ
-- 先頭コメントは role（submission / naive / generator）対応済み。Lua は `--`
-- Python / Ruby テンプレは未導入（必要になったら）
+正本は `utils/templates/index.ts`。
 
-### 9.4 デザイン言語
+- TS solver: Scanner / Interactive のみ（素の Bun/Deno/Node テンプレは置かない）
+- JS solver と Generator（TS/JS）は維持
+- Lua solver: Input scanner。Generator は `math.random` の最小
+- C++ solver: `bits/stdc++.h` + `iostream` + `main` の最小。generator / rep マクロは後回し
+- Python / Ruby / Brainfuck / Text は未導入
+- 先頭コメントは role（submission / naive / generator）。Lua は `--`
+
+### 10.4 デザイン言語
 
 実装は `entrypoints/main.content/UI/`（`App.css` / `controls.css`）。
 
@@ -263,33 +284,35 @@ TL / eps は問題由来の共有値。
 - パネル全体スクロール禁止。子領域だけスクロール
 - Integrated UI（Shadow Root 不可）。クラスは `aibp-` プレフィックス
 - 色は slate 系。紫グラデ・強いグロー・AtCoder 緑の全面塗りは避ける
-- Mode: segmented control。ラベルは 11px semibold uppercase muted
+- Mode: segmented control
+- ラベル（`.aibp-label`）: 11px semibold uppercase muted
 - Status 色: AC=緑 / RE・CE=紫 / TLE・WA=黄 / その他=灰（`data-color`）
 - テストパネルはデフォルト閉じ。折りたたみは unmount せず `hidden`。状態は Signals
 
 ---
 
-## 10. AtCoder 統合・判定
+## 11. AtCoder 統合・判定
 
 - サンプル・制限時間等の DOM パース
 - stdout 比較（空白分割＋数値は許容誤差）: `utils/stdout/isOutputCorrect.ts`
 - UI Status は `completed` を出さず AC/WA 等へ落とす（Solve: `judgeSolveVerdict.ts` 等）
-- Prepare Submission の TS 型エラーブロック等のガードは維持
+- Prepare Submission: 提出用 TS を表示中なら型エラーでブロック。DFS + Bun テンプレの警告確認も維持。Compare / Stress では提出用エディタが unmount されるため型検査はスキップ
 
 ---
 
-## 11. リポジトリ・品質
+## 12. リポジトリ・品質
 
-- Vitest（純関数＋ Python allowlist smoke 等）
+- `pnpm test`（type-check / oxfmt / oxlint / Vitest）。ユニットは純関数＋言語 smoke
 - 説明は README。`DECISIONS.md` / `AGENTS.md` は設計用
 - グローバル `Result<T,E>` は使わない
-- 既知: Chrome `dev:` 時の実行ホスト問題（旧 Issue #72）は未解決のまま残っている可能性あり
+- エンジン wasm は git に置かない。WXT の sources.zip は `.gitignore` を見ないので、`wxt.config.ts` の `zip.excludeSources` で `temp/**` とエンジンの取得ソース・成果物を除外する
 
 ---
 
-## 12. 未決・後回し
+## 13. 未決・後回し
 
-- Python 提出用テンプレ
-- Chrome #72（dev 時実行）の扱い
+- Python / Ruby 提出用テンプレ
+- Chrome `dev:` 時の実行ホスト（README の通り、検証は production build）
 - Worker/VM キャッシュの再導入判断（現状の init 速度で足りているか）
 - Ruby C 拡張 gem（`bit_utils` / `rbtree` / `sorted_set`）。要望があれば検討
+- C++ の rep マクロ付きテンプレ、C++ generator テンプレ

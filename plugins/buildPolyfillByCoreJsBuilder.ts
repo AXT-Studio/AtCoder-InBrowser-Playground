@@ -2,9 +2,8 @@
 // ES2024+ の厳選 Polyfill を core-js からビルドする Vite Virtual Plugin
 // (生成したコードは TypeScript Language Module 内で QuickJS に eval する)
 //
-// 対象は DECISIONS.md §5 / AGENTS.md のとおり。
-// QuickJS-NG 0.16.2 は Object/Map.groupBy・Set 集合演算・Iterator helpers を持つので、
-// 現行の POLYFILL_MODULES は空。足すときは es.* を並べる。
+// QuickJS-NG 0.16.2 は Object/Map.groupBy・Set 集合演算・Iterator helpers を持つ。
+// POLYFILL_MODULES は空のままにする。
 // ================================================================================================
 
 import builder from "core-js-builder";

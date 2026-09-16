@@ -10,7 +10,7 @@ export default defineConfig({
         // 純関数テストからで十分。UI/E2E は後段
         // QuickJS / Pyodide の init があるので余裕を見る
         testTimeout: 30_000,
-        hookTimeout: 60_000,
+        hookTimeout: 180_000,
         exclude: [...configDefaults.exclude, "engine/quickjs-wamr/**", "temp/**"],
     },
 });
