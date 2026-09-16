@@ -2,7 +2,7 @@ import type { GenerateTemplateParams } from "../types";
 
 const ROLE_LINE = {
     submission: "-- Lua (w/ Input scanner) [Main] Submission",
-    naive: "-- Lua (w/ Input scanner) [Naive] Comparative Implementation",
+    compare: "-- Lua (w/ Input scanner) [Compare] Comparative Implementation",
     generator: "-- Lua (w/ Input scanner) [Gen] Testcase Input Generator",
 } as const;
 

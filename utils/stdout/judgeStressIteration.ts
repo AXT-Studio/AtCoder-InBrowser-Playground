@@ -6,21 +6,21 @@ export type StressVerdict =
     | "AC"
     | "WA"
     | "Solve TLE"
-    | "Naive TLE"
+    | "Compare TLE"
     | "Gen TLE"
     | "Solve RE"
-    | "Naive RE"
+    | "Compare RE"
     | "Gen RE"
     | "CE";
 
 /**
- * Stress の1イテレーション（Gen → Naive → Solve → 比較）の結果を判定する。
+ * Stress の1イテレーション（Gen → Compare → Solve → 比較）の結果を判定する。
  * このラウンドが成功（出力一致）なら `null`、打ち切りなら対応する verdict。
  * 前段が completed でないとき、後段の結果は不要（無視する）。
  */
 export function judgeStressIteration(
     gen: CodeTestResult,
-    naive: CodeTestResult | null,
+    compare: CodeTestResult | null,
     solve: CodeTestResult | null,
     allowableError: number,
 ): StressVerdict | null {
@@ -35,23 +35,23 @@ export function judgeStressIteration(
             break;
     }
 
-    if (naive === null) {
-        throw new Error("judgeStressIteration: naive result is required when gen completed");
+    if (compare === null) {
+        throw new Error("judgeStressIteration: compare result is required when gen completed");
     }
 
-    switch (naive.status) {
+    switch (compare.status) {
         case "CE":
             return "CE";
         case "RE":
-            return "Naive RE";
+            return "Compare RE";
         case "TLE":
-            return "Naive TLE";
+            return "Compare TLE";
         case "completed":
             break;
     }
 
     if (solve === null) {
-        throw new Error("judgeStressIteration: solve result is required when naive completed");
+        throw new Error("judgeStressIteration: solve result is required when compare completed");
     }
 
     switch (solve.status) {
@@ -62,6 +62,6 @@ export function judgeStressIteration(
         case "TLE":
             return "Solve TLE";
         case "completed":
-            return isOutputCorrect(naive.stdout, solve.stdout, allowableError) ? null : "WA";
+            return isOutputCorrect(compare.stdout, solve.stdout, allowableError) ? null : "WA";
     }
 }

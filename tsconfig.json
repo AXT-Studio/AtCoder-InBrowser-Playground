@@ -9,6 +9,8 @@
         "entrypoints/main.content/UI/monaco/extraLibs",
         "engine/quickjs-wamr/vendor",
         "engine/quickjs-wamr/build",
+        "engine/clang-wasi/src",
+        "engine/clang-wasi/dist",
         "temp"
     ]
 }

@@ -10,9 +10,9 @@ import { applyPrepareSubmission } from "../applyPrepareSubmission";
 import { applyTemplateInsert, defaultTemplateId } from "../applyTemplateInsert";
 import { MonacoEditor } from "../monaco/MonacoEditor";
 import {
+    compareCode,
+    compareLanguage,
     epsExponent,
-    naiveCode,
-    naiveLanguage,
     setBufferCode,
     setBufferLanguage,
     submissionCode,
@@ -32,12 +32,12 @@ export function Compare() {
     const stdin = useSignal("");
     const solveStdout = useSignal("");
     const solveStderr = useSignal("");
-    const naiveStdout = useSignal("");
-    const naiveStderr = useSignal("");
+    const compareStdout = useSignal("");
+    const compareStderr = useSignal("");
     const statusText = useSignal("--");
     const running = useSignal(false);
-    const selectedTemplate = useSignal(defaultTemplateId(naiveLanguage.value, "naive"));
-    const templateOptions = listTemplates(naiveLanguage.value, "naive");
+    const selectedTemplate = useSignal(defaultTemplateId(compareLanguage.value, "compare"));
+    const templateOptions = listTemplates(compareLanguage.value, "compare");
     const monacoEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
     const execOnce = async (language: string, code: string, stdinValue: string) => {
@@ -65,19 +65,19 @@ export function Compare() {
         statusText.value = "WJ";
         solveStdout.value = "";
         solveStderr.value = "";
-        naiveStdout.value = "";
-        naiveStderr.value = "";
+        compareStdout.value = "";
+        compareStderr.value = "";
 
         try {
             const allowableError = 10 ** -epsExponent.value;
 
-            // 1) Naive 先
-            const naiveResult = await execOnce(naiveLanguage.value, naiveCode.value, stdinToUse);
-            naiveStdout.value = naiveResult.stdout;
-            naiveStderr.value = naiveResult.stderr;
+            // 1) Compare 先
+            const compareResult = await execOnce(compareLanguage.value, compareCode.value, stdinToUse);
+            compareStdout.value = compareResult.stdout;
+            compareStderr.value = compareResult.stderr;
 
-            if (naiveResult.status !== "completed") {
-                statusText.value = judgeCompareVerdict(naiveResult, null, allowableError);
+            if (compareResult.status !== "completed") {
+                statusText.value = judgeCompareVerdict(compareResult, null, allowableError);
                 return;
             }
 
@@ -86,13 +86,13 @@ export function Compare() {
             solveStdout.value = solveResult.stdout;
             solveStderr.value = solveResult.stderr;
 
-            statusText.value = judgeCompareVerdict(naiveResult, solveResult, allowableError);
+            statusText.value = judgeCompareVerdict(compareResult, solveResult, allowableError);
         } catch (error) {
             statusText.value = "Error";
-            naiveStderr.value = String(error);
+            compareStderr.value = String(error);
             solveStdout.value = "";
             solveStderr.value = "";
-            naiveStdout.value = "";
+            compareStdout.value = "";
         } finally {
             running.value = false;
         }
@@ -108,11 +108,11 @@ export function Compare() {
         <>
             <div class="aibp-editor">
                 <MonacoEditor
-                    buffer="naive"
-                    language={naiveLanguage.value}
+                    buffer="compare"
+                    language={compareLanguage.value}
                     editorRef={monacoEditorRef}
                     onChange={(value) => {
-                        setBufferCode("naive", value);
+                        setBufferCode("compare", value);
                     }}
                 />
             </div>
@@ -125,11 +125,11 @@ export function Compare() {
                     <select
                         class="aibp-select"
                         id="aibp-editor-toolbar__language-select"
-                        value={naiveLanguage.value}
+                        value={compareLanguage.value}
                         onChange={(e) => {
                             const language = (e.target as HTMLSelectElement).value;
-                            setBufferLanguage("naive", language);
-                            selectedTemplate.value = defaultTemplateId(language, "naive");
+                            setBufferLanguage("compare", language);
+                            selectedTemplate.value = defaultTemplateId(language, "compare");
                         }}
                     >
                         <option value="javascript">JavaScript</option>
@@ -173,7 +173,7 @@ export function Compare() {
                             disabled={templateOptions.length === 0}
                             onClick={() => {
                                 applyTemplateInsert({
-                                    buffer: "naive",
+                                    buffer: "compare",
                                     templateKey: selectedTemplate.value,
                                     editor: monacoEditorRef.current,
                                 });
@@ -326,27 +326,27 @@ export function Compare() {
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-naive-stdout">
-                                Naive Stdout
+                            <label class="aibp-label" for="aibp-testcase-compare-stdout">
+                                Compare Stdout
                             </label>
                             <textarea
-                                id="aibp-testcase-naive-stdout"
+                                id="aibp-testcase-compare-stdout"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
-                                value={naiveStdout.value}
+                                value={compareStdout.value}
                             />
                         </div>
                         <div class="aibp-io">
-                            <label class="aibp-label" for="aibp-testcase-naive-stderr">
-                                Naive Stderr
+                            <label class="aibp-label" for="aibp-testcase-compare-stderr">
+                                Compare Stderr
                             </label>
                             <textarea
-                                id="aibp-testcase-naive-stderr"
+                                id="aibp-testcase-compare-stderr"
                                 class="aibp-textarea aibp-textarea--readonly"
                                 readOnly
                                 spellcheck={false}
-                                value={naiveStderr.value}
+                                value={compareStderr.value}
                             />
                         </div>
                     </div>

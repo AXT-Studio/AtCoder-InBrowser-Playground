@@ -1,5 +1,5 @@
 /** バッファ種別。先頭コメント行の差し替えに使う */
-export type TemplateRole = "submission" | "naive" | "generator";
+export type TemplateRole = "submission" | "compare" | "generator";
 
 export type GenerateTemplateParams = {
     contestTitle: string;

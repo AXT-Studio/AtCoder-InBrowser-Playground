@@ -17,10 +17,10 @@ describe("judgeStressIteration", () => {
         expect(judgeStressIteration(base({ status: "TLE" }), null, null, 1e-6)).toBe("Gen TLE");
     });
 
-    it("Naive / Solve の失敗", () => {
+    it("Compare / Solve の失敗", () => {
         const gen = base({ stdout: "in" });
-        expect(judgeStressIteration(gen, base({ status: "RE" }), null, 1e-6)).toBe("Naive RE");
-        expect(judgeStressIteration(gen, base({ status: "TLE" }), null, 1e-6)).toBe("Naive TLE");
+        expect(judgeStressIteration(gen, base({ status: "RE" }), null, 1e-6)).toBe("Compare RE");
+        expect(judgeStressIteration(gen, base({ status: "TLE" }), null, 1e-6)).toBe("Compare TLE");
         expect(judgeStressIteration(gen, base({ stdout: "1" }), base({ status: "RE" }), 1e-6)).toBe("Solve RE");
         expect(judgeStressIteration(gen, base({ stdout: "1" }), base({ status: "TLE" }), 1e-6)).toBe("Solve TLE");
         expect(judgeStressIteration(gen, base({ stdout: "1" }), base({ status: "CE", execTime: -1 }), 1e-6)).toBe("CE");

@@ -13,14 +13,14 @@ import {
 export type Mode = "solve" | "compare" | "stress";
 export const mode = signal<Mode>("solve");
 
-/** 提出用 / 愚直 / 生成器。mode 切替でも保持する */
+/** 提出用 / 比較 / 生成器。mode 切替でも保持する */
 export const submissionCode = signal("");
-export const naiveCode = signal("");
+export const compareCode = signal("");
 export const generatorCode = signal("");
 
 /** 言語は拡張全体で共通（ページ非依存）。デフォルトは typescript */
 export const submissionLanguage = signal(DEFAULT_EDITOR_LANGUAGE);
-export const naiveLanguage = signal(DEFAULT_EDITOR_LANGUAGE);
+export const compareLanguage = signal(DEFAULT_EDITOR_LANGUAGE);
 export const generatorLanguage = signal(DEFAULT_EDITOR_LANGUAGE);
 
 /**
@@ -40,8 +40,8 @@ const codeSignalFor = (kind: BufferKind) => {
     switch (kind) {
         case "submission":
             return submissionCode;
-        case "naive":
-            return naiveCode;
+        case "compare":
+            return compareCode;
         case "generator":
             return generatorCode;
     }
@@ -54,8 +54,8 @@ const languageSignalFor = (kind: BufferKind) => {
     switch (kind) {
         case "submission":
             return submissionLanguage;
-        case "naive":
-            return naiveLanguage;
+        case "compare":
+            return compareLanguage;
         case "generator":
             return generatorLanguage;
     }
@@ -65,7 +65,7 @@ const languageSignalFor = (kind: BufferKind) => {
 export const hydrateEditorBuffers = async (): Promise<void> => {
     if (editorBuffersHydrated.value) return;
 
-    const kinds: BufferKind[] = ["submission", "naive", "generator"];
+    const kinds: BufferKind[] = ["submission", "compare", "generator"];
     await Promise.all(
         kinds.map(async (kind) => {
             const [code, language] = await Promise.all([loadBufferCode(kind), loadEditorLanguage(kind)]);

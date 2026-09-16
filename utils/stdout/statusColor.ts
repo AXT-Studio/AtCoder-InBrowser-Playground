@@ -7,13 +7,13 @@ export function statusColor(status: string): StatusColor {
             return "green";
         case "RE":
         case "Solve RE":
-        case "Naive RE":
+        case "Compare RE":
         case "Gen RE":
         case "CE":
             return "purple";
         case "TLE":
         case "Solve TLE":
-        case "Naive TLE":
+        case "Compare TLE":
         case "Gen TLE":
         case "WA":
             return "yellow";
