@@ -1,3 +1,4 @@
+import { generateTemplate as generateCppSolver } from "./cpp/solver";
 import { generateTemplate as generateJsBun } from "./js/bun";
 import { generateTemplate as generateJsDeno } from "./js/deno";
 import { generateTemplate as generateJsNode } from "./js/node";
@@ -128,6 +129,13 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
         language: "lua",
         kind: "generator",
         generate: generateGenLua,
+    },
+    {
+        id: "cpp_solver",
+        label: "C++ (Clang)",
+        language: "cpp",
+        kind: "solver",
+        generate: generateCppSolver,
     },
 ] as const;
 

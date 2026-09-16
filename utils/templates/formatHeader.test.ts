@@ -50,10 +50,12 @@ describe("listTemplates", () => {
         expect(gen.every((t) => t.kind === "generator")).toBe(true);
     });
 
-    it("returns empty for python/ruby/plaintext", () => {
+    it("returns empty for python/ruby/plaintext generator, and cpp solver only", () => {
         expect(listTemplates("python", "submission")).toEqual([]);
         expect(listTemplates("ruby", "submission")).toEqual([]);
         expect(listTemplates("plaintext", "generator")).toEqual([]);
+        expect(listTemplates("cpp", "submission").map((t) => t.id)).toEqual(["cpp_solver"]);
+        expect(listTemplates("cpp", "generator")).toEqual([]);
     });
 
     it("returns lua scanner for submission/naive and lua generator for generator", () => {
@@ -158,6 +160,25 @@ describe("insertTemplate", () => {
         if (gen.action === "insert") {
             expect(gen.template).toContain("-- Lua [Gen] Testcase Input Generator");
             expect(gen.template).toContain("math.random(1, 100)");
+        }
+    });
+
+    it("inserts C++ solver template with bits/stdc++.h", () => {
+        const result = insertTemplate({
+            templateKey: "cpp_solver",
+            contestTitle: "ABC 1",
+            taskTitle: "A - Task",
+            taskURL: "https://atcoder.jp/contests/abc1/tasks/abc1_a",
+            role: "submission",
+            currentCode: "",
+            confirm: () => false,
+        });
+        expect(result.action).toBe("insert");
+        if (result.action === "insert") {
+            expect(result.template).toContain("// C++ (Clang) [Main] Submission");
+            expect(result.template).toContain("#include <bits/stdc++.h>");
+            expect(result.template).toContain("#include <iostream>");
+            expect(result.template).toContain("int main()");
         }
     });
 });

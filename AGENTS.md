@@ -26,6 +26,7 @@
 11. **テスト:** Vitest。純関数を優先。言語ランナーの smoke も可
 12. **ツール:** WXT。ドキュメント用 monorepo / VitePress サイトは復活させない
 13. **Ruby:** ruby.wasm（`ruby+stdlib`）。C 拡張 gem は載せない。同梱は純 Ruby 5 gem + rgl の runtime 依存のみ
+14. **C++:** WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。Boost・OpenMP・`import std` は載せない。言語セレクト名は C++(Clang)
 
 ## やってはいけないこと
 
@@ -34,5 +35,6 @@
 - 3 エディタを同時表示するレイアウトを前提にする
 - Pyodide で scipy や Heuristic/ML 系を allowlist に戻す（明示的な決定変更なしに）
 - Ruby に C 拡張 gem や Heuristic/ML 系を同梱する（明示的な決定変更なしに）
+- C++ に Boost / OR-Tools / OpenMP や GCC の libstdc++ を「揃える」ために載せる（明示的な決定変更なしに）
 - グローバルな `Result<T,E>` 型を再導入する
 - 設計の詳細を本ファイルに複製して肥大化させる（詳細は `DECISIONS.md`）

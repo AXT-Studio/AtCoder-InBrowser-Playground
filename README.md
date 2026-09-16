@@ -5,7 +5,7 @@
 AtCoderの問題ページに、ブラウザ上で動作が完結するコードエディター・テスターを追加するWeb拡張機能です。  
 Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.
 
-- Supported Languages …… TypeScript, JavaScript, Python, Lua, Ruby, Brainfuck, Text
+- Supported Languages …… TypeScript, JavaScript, Python, Lua, Ruby, C++(Clang), Brainfuck, Text
 - Supported Browsers …… Chromium-based or Firefox-based browsers
 
 ## License
@@ -105,6 +105,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 |     Python |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
 |        Lua |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
 |       Ruby |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
+| C++(Clang) |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
 |  Brainfuck |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
 |  Text(cat) |     ✅️     |        ➖️        |      ➖️      |    ➖️    |
 
@@ -166,6 +167,19 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - `rgl` の依存として `pairing_heap` と `stream` も入っています
     - stdinは`gets`・`$stdin`、stdoutは`puts`・`print`、stderrは`$stderr`を使用してください
 
+### C++(Clang)
+
+- 想定ジャッジ: C++23 (Clang 21.1.0)
+    - "C++23 (GCC 15.2.0)"は非対応です (`libstdc++`などは使用できません)
+- AIBP側使用ランタイム: Clang 21.1.0 (Emscripten上の自前wasmビルド)
+- 制約
+    - コンパイルに数秒かかることがあります。実行時間の計測とTLE判定はコンパイルを除いたユーザーコードの実行時間のみを対象にしています
+    - `bits/stdc++.h`およびac-library(`#include <atcoder/dsu>`など)は使用できます
+        - ただし、`bits`の`csetjmp`および`csignal`はWASI側の制約により使用できません
+    - Boost、OR-Tools、OpenMP、`import std`などは使用できません
+    - 例外(`throw`/`catch`)とRTTI(Run-Time Type Information)はOFFになっています
+    - その他、ポインタの幅や`long double`の精度など、ジャッジの`x86_64`とは異なる部分があります
+
 ### Brainfuck
 
 - 想定ジャッジ: Brainfuck (Tritium 1.2.73)
@@ -208,36 +222,60 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 
 ## for Developers
 
-**`wxt.config.ts`の`version`フィールドにある拡張機能のバージョンをちゃんと編集すること！**
-
-```sh
-pnpm install
-pnpm run build:wasm    # QuickJS-NG + WAMR を Emscripten でビルド（vendor は自動 clone）
-pnpm run dev:chrome    # Chrome Dev Build (※コードテスト実行機能が動作しない Chrome検証時は要build)
-pnpm run dev:firefox   # Firefox Dev Build
-pnpm run build:chrome  # Chrome Production Build
-pnpm run build:firefox # Firefox Production Build
-pnpm run build         # Production Build (Firefox + Chrome)
-pnpm run zip:chrome    # Chrome Production Build -> Zip
-pnpm run zip:firefox   # Firefox Production Build -> Zip
-pnpm run zip           # Production Build -> Zip (Firefox + Chrome, wasmビルドも一緒にやってくれる)
-pnpm test              # Unit Test (Vitest)
-pnpm run lint          # Oxlint
-pnpm run fmt           # Oxfmt
-pnpm run compile       # Type Cheking (tsc --noEmit)
-pnpm run check         # Type Checking -> Format -> Lint -> Unit Test
-```
-
-- `pnpm run build:wasm`は初回とエンジン更新時に実行する必要があります
-    - Emscripten(`emcc`, `emcmake`), cmake, gitのPATHを通しておく必要があります
-        - MacOSなら`brew install emscripten`を先にしておけばよいでしょう
-    - `dev`や`build`のたびにwasmビルドまでやる必要はありません
-        - エンジン部分(`engine/`)を変更したときは`pnpm run build:wasm`を再実行する必要があります
-        - それはそれとして`zip`でまとめてビルド→Zip化をするときは一応wasmビルドもやるようになっています
-- Firefox
+- `package.json`登録のscripts一覧
+    - 初回セットアップ
+        ```sh
+        pnpm install                    # Install Dependencies
+        pnpm run postinstall            # (Auto: wxt prepare)
+        ```
+    - WebAssemblyモジュール群のEmscriptenビルド
+        ```sh
+        pnpm run build:engine:clang     # Clang 21.1.0, lld (wasm化、40分程度目安)
+        pnpm run build:engine:qjs-wamr  # QuickJS, WAMR
+        pnpm run build:engines          # 上記すべて (40分程度目安)
+        ```
+    - 開発サーバー
+        ```sh
+        pnpm run dev:chrome             # Chrome Dev Build (※コードテスト実行機能が動作しない Chrome検証時は要build)
+        pnpm run dev:firefox            # Firefox Dev Build
+        ```
+    - テスト・チェック関連
+        ```sh
+        pnpm run test                   # Type Check -> Format -> Lint -> Unit Tests（= 全部まとめて）
+        pnpm run test:unit              # Unit Tests (Vitest)
+        pnpm run test:lint              # Lint (Oxlint)
+        pnpm run test:fmt               # Format (Oxfmt)
+        pnpm run test:type-check        # Type Check (tsc --noEmit)
+        ```
+    - 拡張機能本体をビルド
+        ```sh
+        pnpm run build:ext:chrome       # Chrome Production Build
+        pnpm run build:ext:firefox      # Firefox Production Build
+        pnpm run build:ext              # Chrome & Firefox Production Builds
+        ```
+    - 拡張機能の提出用ビルド(Zip化)
+        ```sh
+        pnpm run zip:chrome             # Chrome Production Build -> Zip
+        pnpm run zip:firefox            # Firefox Production Build -> Zip
+        pnpm run zip                    # Chrome & Firefox Production Builds -> Zip
+        pnpm run zip:full               # テスト・エンジンビルドも含めた全自動zip (40分程度目安)
+        ```
+- 注意点
+    - **`wxt.config.ts`の`version`フィールドにある拡張機能のバージョンをちゃんと編集すること！**
+        - 同じバージョンのパッケージを提出したりして混同することがないように注意！
+    - `pnpm run build:engine:qjs-wamr`について
+        - Emscripten(`emcc`, `emcmake`), cmake, gitのPATHを通しておく必要があります
+            - MacOSでは`brew install emscripten`を先にしておきましょう
+    - `pnpm run build:engine:clang`について
+        - Emscripten(`emcc`, `emcmake`), cmake, ninjaのPATHを通しておく必要があります
+        - 時間がかかります。MacBook Air (M2)で36分かかりました
+    - `pnpm run zip:full`について
+        - `build:engines`も含めたビルドステップ全体を実行するため、実行には時間がかかります
+        - `build:engines`相当が済んでいる場合は`:full`なしで実行すればよいです
+- Firefox版開発・提出時の諸注意
     - 一時的なアドオンの読み込み: `about:debugging#/runtime/this-firefox`
     - AMO申請時 ビルド手順の伝達:
         ```txt
-        Requires: Node.js, pnpm, git, cmake, Emscripten (emcc/emcmake on PATH)
-        Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:wasm` -> `pnpm run build:firefox`(or `pnpm run zip:firefox`)
+        Requires: Node.js, pnpm, git, cmake, ninja, Emscripten (emcc/emcmake on PATH)
+        Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:engines` -> `pnpm run zip:firefox`
         ```

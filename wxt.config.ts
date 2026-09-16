@@ -3,6 +3,7 @@ import preact from "@preact/preset-vite";
 import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
+import { registerCppPublicAssets } from "./plugins/cppPublicAssetsHook";
 import { registerPyodidePublicAssets } from "./plugins/pyodidePublicAssetsHook";
 import { registerRubyPublicAssets } from "./plugins/rubyPublicAssetsHook";
 
@@ -16,7 +17,12 @@ export default defineConfig({
         "build:publicAssets": async (wxt, files) => {
             await registerPyodidePublicAssets(wxt, files);
             await registerRubyPublicAssets(wxt, files);
+            await registerCppPublicAssets(wxt, files);
         },
+    },
+    zip: {
+        // WXT の sources.zip は .gitignore を見ない。Clang の src/dist と temp を混ぜない
+        excludeSources: ["temp/**", "engine/clang-wasi/src/**", "engine/clang-wasi/dist/**"],
     },
     manifest: ({ browser, manifestVersion }) => {
         const permissions = ["storage"];
