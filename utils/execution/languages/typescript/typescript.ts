@@ -96,7 +96,7 @@ export const typescript: LanguageModule<LanguageContext> = {
         quickJsRuntime.setMemoryLimit(1024 * 1024 * 1024); // メモリ制限 1024MiB (一般的なAtCoderの問題と同じ)
         quickJsRuntime.setMaxStackSize(0); // スタックサイズ制限解除
         const quickJsVm = quickJsRuntime.newContext();
-        // core-js の Polyfill（空なら何もしない。virtual:corejs-polyfill の呼び出しルート自体は残す）
+        // core-js の Polyfill（リストが空なら何もしない）
         if (coreJsPolyfill.length > 0) {
             const coreJsPolyfillResult = quickJsVm.evalCode(coreJsPolyfill, "core-js-polyfill.js");
             if (coreJsPolyfillResult.error) {

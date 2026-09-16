@@ -21,8 +21,15 @@ export default defineConfig({
         },
     },
     zip: {
-        // WXT の sources.zip は .gitignore を見ない。Clang の src/dist と temp を混ぜない
-        excludeSources: ["temp/**", "engine/clang-wasi/src/**", "engine/clang-wasi/dist/**"],
+        // WXT の sources.zip は .gitignore を見ない。エンジン残骸と temp を混ぜない
+        excludeSources: [
+            "temp/**",
+            "engine/clang-wasi/src/**",
+            "engine/clang-wasi/dist/**",
+            "engine/quickjs-wamr/vendor/**",
+            "engine/quickjs-wamr/build/**",
+            "engine/quickjs-wamr/dist/**",
+        ],
     },
     manifest: ({ browser, manifestVersion }) => {
         const permissions = ["storage"];
