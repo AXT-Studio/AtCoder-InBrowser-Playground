@@ -51,6 +51,70 @@ print(a + b)
         expect(outcome.status).toBe("RE");
         expect(outcome.stderr).toMatch(/ModuleNotFoundError|No module named/);
     });
+
+    it("sys.exit() は正常終了で、backtrace を stderr に出さない", async () => {
+        const outcome = await python.run(ctx, "import sys\nprint(1)\nsys.exit()\nprint(2)\n", "");
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1\n",
+            stderr: "",
+        });
+    });
+
+    it("exit() は正常終了で、backtrace を stderr に出さない", async () => {
+        const outcome = await python.run(ctx, "print(1)\nexit()\nprint(2)\n", "");
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1\n",
+            stderr: "",
+        });
+    });
+
+    it("quit() は正常終了で、backtrace を stderr に出さない", async () => {
+        const outcome = await python.run(ctx, "print(1)\nquit()\nprint(2)\n", "");
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1\n",
+            stderr: "",
+        });
+    });
+
+    it("sys.stderr への出力があっても sys.exit() は正常終了", async () => {
+        const outcome = await python.run(
+            ctx,
+            `
+import sys
+print(1)
+print("err", file=sys.stderr)
+sys.exit()
+print(2)
+`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1\n",
+            stderr: "err\n",
+        });
+    });
+
+    it("sys.exit(1) は RE になる", async () => {
+        const outcome = await python.run(ctx, "print(1)\nimport sys\nsys.exit(1)\n", "");
+        expect(outcome).toEqual({
+            status: "RE",
+            stdout: "1\n",
+            stderr: "exit 1",
+        });
+    });
+
+    it("sys.exit に文字列を渡すと RE になり、メッセージを stderr に出す", async () => {
+        const outcome = await python.run(ctx, "print(1)\nimport sys\nsys.exit('boom')\n", "");
+        expect(outcome).toEqual({
+            status: "RE",
+            stdout: "1\n",
+            stderr: "boom\n",
+        });
+    });
 });
 
 /** allowlist 各 wheel / パッケージの最小 smoke（pnpm test で確認） */

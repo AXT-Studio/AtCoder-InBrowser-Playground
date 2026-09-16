@@ -53,6 +53,54 @@ const formatErrorMessage = (error: unknown): string => {
     return String(error);
 };
 
+/** ユーザーソースを Pyodide globals 経由で渡す。名前はユーザーコードと衝突しにくいものにする */
+const USER_SOURCE_GLOBAL = "__aibp_user_source";
+
+const EXIT_CODE_GLOBAL = "__aibp_exit_code";
+
+/**
+ * `sys.exit()` / `exit()` / `quit()` は SystemExit なので、eval の外へ漏らさない。
+ * 終了コードは CPython に合わせ、None/0 を成功、それ以外を失敗として JS へ返す。
+ * `runPythonAsync` と同じ `eval_code_async` を使い、ファイル名 `<exec>` と top-level await を維持する。
+ */
+const RUN_USER_CODE = `\
+from _pyodide._base import eval_code_async as __aibp_eval_code_async
+${EXIT_CODE_GLOBAL} = 0
+try:
+    await __aibp_eval_code_async(${USER_SOURCE_GLOBAL}, globals())
+except SystemExit as __aibp_e:
+    __aibp_code = __aibp_e.code
+    if __aibp_code is None:
+        ${EXIT_CODE_GLOBAL} = 0
+    elif isinstance(__aibp_code, int):
+        ${EXIT_CODE_GLOBAL} = int(__aibp_code)
+    else:
+        print(__aibp_code, file=__import__("sys").stderr)
+        ${EXIT_CODE_GLOBAL} = 1
+finally:
+    globals().pop(${JSON.stringify(USER_SOURCE_GLOBAL)}, None)
+    globals().pop("__aibp_eval_code_async", None)
+    globals().pop("__aibp_e", None)
+    globals().pop("__aibp_code", None)
+`;
+
+const readExitCode = (pyodide: PyodideInterface): number => {
+    const value = pyodide.globals.get(EXIT_CODE_GLOBAL);
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+};
+
+const clearRunGlobals = (pyodide: PyodideInterface): void => {
+    pyodide.runPython(`
+globals().pop(${JSON.stringify(USER_SOURCE_GLOBAL)}, None)
+globals().pop(${JSON.stringify(EXIT_CODE_GLOBAL)}, None)
+None
+`);
+};
+
 // ----------------------------------------------------------------
 // Language Module
 // ----------------------------------------------------------------
@@ -95,13 +143,20 @@ export const python: LanguageModule<LanguageContext> = {
         pyodide.setStdout({ raw: (charCode) => stdoutBytes.push(charCode) });
         pyodide.setStderr({ raw: (charCode) => stderrBytes.push(charCode) });
 
+        pyodide.globals.set(USER_SOURCE_GLOBAL, code);
         try {
-            await pyodide.runPythonAsync(code);
-            return {
-                status: "completed",
-                stdout: decodeRawStream(stdoutBytes),
-                stderr: decodeRawStream(stderrBytes),
-            };
+            await pyodide.runPythonAsync(RUN_USER_CODE);
+            const exitCode = readExitCode(pyodide);
+            const stdout = decodeRawStream(stdoutBytes);
+            const stderr = decodeRawStream(stderrBytes);
+            if (exitCode !== 0) {
+                return {
+                    status: "RE",
+                    stdout,
+                    stderr: stderr || `exit ${exitCode}`,
+                };
+            }
+            return { status: "completed", stdout, stderr };
         } catch (error) {
             const status = classifyPythonError(error);
             return {
@@ -109,6 +164,8 @@ export const python: LanguageModule<LanguageContext> = {
                 stdout: decodeRawStream(stdoutBytes),
                 stderr: formatErrorMessage(error),
             };
+        } finally {
+            clearRunGlobals(pyodide);
         }
     },
 };
