@@ -9,6 +9,13 @@ self.onmessage = async (event: MessageEvent<StartMessage>) => {
             throw new Error(`Language module not found: ${language}`);
         }
         const ctx = await langModule.init();
+        if (langModule.prepare) {
+            const prepared = await langModule.prepare(ctx, code);
+            if (prepared) {
+                self.postMessage({ type: "result", id, result: prepared } satisfies ResultMessage);
+                return;
+            }
+        }
         self.postMessage({ type: "ready", id } satisfies ReadyMessage);
         try {
             const outcome = await langModule.run(ctx, code, stdin);

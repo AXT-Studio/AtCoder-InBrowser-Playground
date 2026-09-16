@@ -5,7 +5,7 @@
 AtCoderの問題ページに、ブラウザ上で動作が完結するコードエディター・テスターを追加するWeb拡張機能です。  
 Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.
 
-- Supported Languages …… TypeScript, JavaScript, Python, Lua, Ruby, Brainfuck, Text
+- Supported Languages …… TypeScript, JavaScript, Python, Lua, Ruby, C++(Clang), Brainfuck, Text
 - Supported Browsers …… Chromium-based or Firefox-based browsers
 
 ## License
@@ -105,6 +105,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 |     Python |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
 |        Lua |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
 |       Ruby |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
+| C++(Clang) |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
 |  Brainfuck |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
 |  Text(cat) |     ✅️     |        ➖️        |      ➖️      |    ➖️    |
 
@@ -165,6 +166,18 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - `ac-library-rb`, `bitarray`, `sorted_containers`, `rgl`, `faster_prime`
         - `rgl` の依存として `pairing_heap` と `stream` も入っています
     - stdinは`gets`・`$stdin`、stdoutは`puts`・`print`、stderrは`$stderr`を使用してください
+
+### C++(Clang)
+
+- 想定ジャッジ: C++23 (Clang 21.1.0)
+    - C++23 (GCC 15.2.0) は実行環境としては非対応です（libstdc++ / `ext/pb_ds` は使えません）
+- AIBP側使用ランタイム: [xeus-cpp](https://github.com/compiler-research/xeus-cpp) 0.10（Clang 21.1.8 / libc++）
+- 制約
+    - コンパイルは制限時間の計測より前に行います。実行時間はユーザーコードの実行だけを測ります
+    - `bits/stdc++.h` と ac-library (`#include <atcoder/dsu>` など) は使えます
+    - Boost、OR-Tools、OpenMP、`import std` は使えません
+    - ポインタ幅や `long double` の精度は wasm32 側の値になり、ジャッジの x86_64 とは一致しません
+    - 現時点の実行確認対象は Firefox です（Chrome MV3 では xeus-cpp の `Function()` が CSP に阻まれます）
 
 ### Brainfuck
 

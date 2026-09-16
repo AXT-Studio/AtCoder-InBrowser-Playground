@@ -41,6 +41,7 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 | Polyfill   | ES polyfill機構は残す。現行リストは空（QuickJS-NGに差し替えたことでだいたい揃ったので）            |
 | Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy なし。wheel 拡張内同梱                     |
 | Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし           |
+| C++        | xeus-cpp 0.10（Clang 21.1.8 / libc++）。コンパイルは ready 前。Boost / OpenMP / `import std` なし  |
 | Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                    |
 | 実行寿命   | 現状は実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                       |
 | TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                  |
@@ -65,7 +66,8 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 ### 3.3 CSP
 
 - `wasm-unsafe-eval` 必須
-- Pyodide / wheel / ruby.wasm は拡張内同梱。`connect-src 'self'`（CDN への実行時依存はしない）
+- Firefox の C++ だけ、xeus-cpp（embind / EM_ASM）が `Function()` / `eval` を使うので **`'unsafe-eval'` も付ける**（MV2 では可能）。Chrome MV3 の extension_pages には付けられない
+- Pyodide / wheel / ruby.wasm / xeus-cpp は拡張内同梱。`connect-src 'self'`（CDN への実行時依存はしない）
 
 ---
 
@@ -91,12 +93,14 @@ Runner Worker
 ### 4.3 言語 Module
 
 - `init()` → コンテキスト
+- 任意の `prepare?(ctx, code)` → ready より前。失敗なら `CE` を返し `ready` は出さない
 - `run(ctx, code, stdin)` → `completed` / `CE` / `RE`（TLE は Host）
 - `javascript` は typescript module にマップ
 - `plaintext` は「code をそのまま stdout」
 - `brainfuck` は Tritium `-b -e`（8bit wrap、EOF は -1→255）。テンプレなし。Monaco は自前 Monarch（`plaintext` に落とさない）
 - `lua` は wasmoon（Lua 5.4.5 wasm）。対象はジャッジの Lua 5.4.7。LuaJIT は対象外。テンプレは solver（Input scanner）と generator
 - `ruby` は ruby.wasm（CRuby 3.4 + stdlib）。純 Ruby gem のみ同梱。テンプレなし
+- `cpp` は xeus-cpp（Clang 21.1.8）。`prepare` でコンパイルし、`run` は実行だけ。UI 名は **C++(Clang)**
 
 ### 4.4 `CodeTestResult`
 
@@ -223,15 +227,32 @@ init 時に `lib/**/*.rb` を `/gems` に展開し `$LOAD_PATH.unshift("/gems")`
 
 ---
 
-## 9. UI / 画面 IA
+## 9. C++（xeus-cpp / Clang 21）
 
-### 9.1 技術
+- 対象ジャッジは **C++23 (Clang 21.1.0)**。実行は emscripten-forge-4x の **xeus-cpp 0.10 + Clang 21.1.8**（libc++）
+- UI の言語名は **C++(Clang)**。内部 id は `cpp`。GCC ジャッジ（libstdc++ / `ext/pb_ds`）は対象外
+- コンパイル（clang-repl の増分 wasm）は **`prepare`＝ready より前**。失敗は **CE**。`ready` 以降は実行だけ（例外は **RE**）
+- フラグ: `-std=gnu++23 -DATCODER -DONLINE_JUDGE -fexperimental-library`。`-I /include/compat` で emscripten の `xlocale.h` を拾う。clang-repl は増分なので `int main` は実行ごとに一意な `aibp_main_*` へリネームする
+- `bits/stdc++.h` は libc++ 向け shim を同梱。ac-library 1.6 ヘッダを同梱（`#include <atcoder/dsu>`）
+- `int main` は `aibp_main` にリネームして JS から呼ぶ（グローバル文として `main()` を走らせない）
+- テンプレは solver のみ（`bits/stdc++.h` + `iostream` + `main`）。rep マクロと generator は後回し
+- **同梱しない:** Boost、OR-Tools / LightGBM / Z3 等、`import std` / `std.pcm`、OpenMP / pthread、`-march=native` / LTO
+- wasm32 の ABI（ポインタ幅、`long double` が 80bit にならない）は README 制約。完全同一は追わない
+- ビルド時に `plugins/cppPublicAssetsHook.ts` が xcpp + CppInterOp + shim + ACL を `assets/cpp/` へ同梱。clang resource headers は `xcpp.data` 側。`include.json` は AMO 5MB/file のため ACL + `bits/stdc++.h` のみ
+- glue JS は Blob URL 経由で `import()` しない（Firefox CSP が `blob:` を弾く）。拡張内 URL を直接 import する
+- Chrome MV3 では extension_pages に `'unsafe-eval'` が置けない。C++ の Chrome 実行は sandbox ページが必要（未実装）
+
+---
+
+## 10. UI / 画面 IA
+
+### 10.1 技術
 
 - Preact + Preact Signals
 - Monaco は imperative（ref + mount/dispose）。**テキストの正本は Monaco**（Signals は onChange で片方向追従。props から setValue しない）
 - モデルは pathname 滞在中 `BufferKind` 単位でセッション保持（editor dispose では捨てない）。Undo はモデル、折り/カーソル/選択/スクロールは viewState。ページリロードでは捨てる
 
-### 9.2 Mode = やりたいこと（＝編集バッファ）
+### 10.2 Mode = やりたいこと（＝編集バッファ）
 
 裏データ: **提出用 / 愚直 / 生成器**＋各バッファ独立の言語。永続化は `pathname × バッファ`。  
 TL / eps は問題由来の共有値。
@@ -246,15 +267,16 @@ TL / eps は問題由来の共有値。
 - mode 切替ショートカットは **当面なし**（必要性低）。エディタフォーカス中の Ctrl/Cmd+S の吸収だけ例外（ブラウザのページ保存を止める。明示保存はしない）
 - Compare 中に提出用を直すには Solve に戻る（許容）
 
-### 9.3 テンプレ
+### 10.3 テンプレ
 
 - TS solver: **Scanner / Interactive のみ**（素の Bun/Deno/Node テンプレは削除済み）
 - JS solver・Generator 系は維持
 - Lua solver: **Input scanner のみ**。Generator は `math.random` の最小テンプレ
 - 先頭コメントは role（submission / naive / generator）対応済み。Lua は `--`
 - Python / Ruby テンプレは未導入（必要になったら）
+- C++ solver: `bits/stdc++.h` + `iostream` + `main` の最小のみ。generator は後回し
 
-### 9.4 デザイン言語
+### 10.4 デザイン言語
 
 実装は `entrypoints/main.content/UI/`（`App.css` / `controls.css`）。
 
@@ -269,7 +291,7 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 10. AtCoder 統合・判定
+## 11. AtCoder 統合・判定
 
 - サンプル・制限時間等の DOM パース
 - stdout 比較（空白分割＋数値は許容誤差）: `utils/stdout/isOutputCorrect.ts`
@@ -278,7 +300,7 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 11. リポジトリ・品質
+## 12. リポジトリ・品質
 
 - Vitest（純関数＋ Python allowlist smoke 等）
 - 説明は README。`DECISIONS.md` / `AGENTS.md` は設計用
@@ -287,9 +309,12 @@ TL / eps は問題由来の共有値。
 
 ---
 
-## 12. 未決・後回し
+## 13. 未決・後回し
 
 - Python 提出用テンプレ
 - Chrome #72（dev 時実行）の扱い
 - Worker/VM キャッシュの再導入判断（現状の init 速度で足りているか）
 - Ruby C 拡張 gem（`bit_utils` / `rbtree` / `sorted_set`）。要望があれば検討
+- C++ の rep マクロ付きテンプレ、C++ generator テンプレ
+- C++ の Chrome 実行（MV3 は `'unsafe-eval'` 不可。sandbox ページが必要）
+- WASI Clang 21.1.0 経路（xeus-cpp の保険。製品化しない）

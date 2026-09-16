@@ -15,6 +15,8 @@ export type LanguageRunOutcome = {
 /** Language Moduleのインターフェース */
 export type LanguageModule<Ctx> = {
     init(): Promise<Ctx>;
+    /** ready より前。失敗なら CE を返す。成功なら undefined */
+    prepare?(ctx: Ctx, code: string): Promise<LanguageRunOutcome | undefined>;
     run(ctx: Ctx, code: string, stdin: string): Promise<LanguageRunOutcome>;
 };
 

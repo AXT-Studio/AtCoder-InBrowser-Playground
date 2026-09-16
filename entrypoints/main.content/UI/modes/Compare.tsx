@@ -136,6 +136,7 @@ export function Compare() {
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
                         <option value="ruby">Ruby</option>
+                        <option value="cpp">C++(Clang)</option>
                         <option value="lua">Lua</option>
                         <option value="plaintext">Text (cat)</option>
                         <option value="brainfuck">Brainfuck</option>

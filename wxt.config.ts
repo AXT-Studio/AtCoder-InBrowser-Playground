@@ -3,6 +3,7 @@ import preact from "@preact/preset-vite";
 import { buildInspectRuntimePlugin } from "./plugins/buildInspectRuntimePlugin";
 import { buildPolyfillCodePlugin } from "./plugins/buildPolyfillByCoreJsBuilder";
 import monacoTypescriptLibSplitPlugin from "./plugins/monacoTypescriptLibSplit";
+import { registerCppPublicAssets } from "./plugins/cppPublicAssetsHook";
 import { registerPyodidePublicAssets } from "./plugins/pyodidePublicAssetsHook";
 import { registerRubyPublicAssets } from "./plugins/rubyPublicAssetsHook";
 
@@ -16,6 +17,7 @@ export default defineConfig({
         "build:publicAssets": async (wxt, files) => {
             await registerPyodidePublicAssets(wxt, files);
             await registerRubyPublicAssets(wxt, files);
+            await registerCppPublicAssets(wxt, files);
         },
     },
     manifest: ({ browser, manifestVersion }) => {
@@ -29,7 +31,12 @@ export default defineConfig({
             description: "AtCoderの問題ページ上でコードを書いて実行・テストできる拡張機能",
             permissions,
             content_security_policy: {
-                extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' ws:;",
+                // xeus-cpp の embind / EM_ASM が Function()/eval を使う。
+                // Chrome MV3 の extension_pages には 'unsafe-eval' を付けられない。
+                extension_pages:
+                    browser === "firefox"
+                        ? "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' ws:;"
+                        : "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' ws:;",
             },
             browser_specific_settings: {
                 gecko: {
