@@ -78,6 +78,25 @@ const dumpJoinedLines = (quickJsVm: QuickJSContext, propName: "__stdout__" | "__
     return dumped.map(String).join("\n");
 };
 
+const AIBP_EXIT_NAME = "AibpExit";
+
+type AibpExitDump = {
+    name: unknown;
+    exitCode?: unknown;
+    message?: unknown;
+};
+
+const isAibpExitDump = (dumped: unknown): dumped is AibpExitDump =>
+    dumped !== null && typeof dumped === "object" && (dumped as { name?: unknown }).name === AIBP_EXIT_NAME;
+
+const readAibpExitCode = (dumped: AibpExitDump): number => {
+    if (typeof dumped.exitCode === "number" && Number.isFinite(dumped.exitCode)) {
+        return dumped.exitCode;
+    }
+    const fromMessage = Number(dumped.message);
+    return Number.isFinite(fromMessage) ? fromMessage : 1;
+};
+
 // ----------------------------------------------------------------
 // Language Module
 // ----------------------------------------------------------------
@@ -118,10 +137,10 @@ export const typescript: LanguageModule<LanguageContext> = {
         try {
             // ctxにquickJSがあるので、一旦それを持ってくる
             const quickJsVm = ctx.quickJsVm;
-            // consoleShimの初期化を行う (inspecRuntimeでそういうコードが注入されている)
-            const consoleShimResult = quickJsVm.evalCode("__aibpSetupConsole();", "setup-console.js");
-            if (consoleShimResult.error) {
-                throw new Error("Failed to initialize consoleShim");
+            // consoleShim / exitShim の初期化を行う (inspectRuntime でそういうコードが注入されている)
+            const setupResult = quickJsVm.evalCode("__aibpSetupConsole(); __aibpSetupExit();", "setup-runtime.js");
+            if (setupResult.error) {
+                throw new Error("Failed to initialize runtime shims");
             }
             // グローバル変数 __stdin__ に、こっちが持っている stdin を入れる
             quickJsVm.setProp(quickJsVm.global, "__stdin__", quickJsVm.newString(stdin));
@@ -131,9 +150,22 @@ export const typescript: LanguageModule<LanguageContext> = {
             const result = quickJsVm.evalCode(preprocessed.code, "Main.js");
             // 実行結果に応じて、適切な結果を返す
             if (result.error) {
-                // エラー発生時はRE扱い
                 const dumped = quickJsVm.dump(result.error);
                 result.error.dispose();
+                if (isAibpExitDump(dumped)) {
+                    const exitCode = readAibpExitCode(dumped);
+                    const stdout = dumpJoinedLines(quickJsVm, "__stdout__");
+                    const stderr = dumpJoinedLines(quickJsVm, "__stderr__");
+                    if (exitCode !== 0) {
+                        return {
+                            status: "RE",
+                            stdout,
+                            stderr: stderr || `exit ${exitCode}`,
+                        };
+                    }
+                    return { status: "completed", stdout, stderr };
+                }
+                // 通常のエラー発生時はRE扱い
                 return {
                     status: "RE",
                     stdout: "",

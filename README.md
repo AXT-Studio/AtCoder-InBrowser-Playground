@@ -121,8 +121,11 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - `require("fs").readFileSync("/dev/stdin", "utf8")`
         - `await Deno.readTextFile("/dev/stdin")`
         - `await Bun.file("/dev/stdin").text()`
-    - `console.log()`・`console.error()`以外の`console`オブジェクトのメソッドは、AIBP上では利用できません
-    - 新しいメソッドやランタイム固有のメソッドは使用できません
+    - `console.log()`・`console.error()`以外の`console`オブジェクトのメソッドは、AIBP上では使用できません
+    - `process.exit()`, `Deno.exit()`, `Bun.exit()`は利用できます
+        - 引数なし・`exit(0)`は正常終了、引数に非0を渡した場合はREとして扱われます
+        - `try`節の中では利用できず、そこで例外が発生したものとして扱われます (内部で専用の例外を投げることで動作させているため)
+    - 新しいメソッドや、(上に記載のあるものを除く)ランタイム固有のメソッドは使用できません
         - 少なくともECMAScript 2025仕様に含まれるものはほとんど使えるはずなので、困ることはないと思います
     - エラーの文言はブラウザ内実行環境(QuickJS-NG)の出力をベースとした独自のもので、Node.js・Deno・Bunは一致しません
     - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません

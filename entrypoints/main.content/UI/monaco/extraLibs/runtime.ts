@@ -11,6 +11,10 @@ declare var console: {
     error(...data: unknown[]): void;
 };
 
+declare var process: {
+    exit(code?: number): never;
+};
+
 declare function atob(data: string): string;
 declare function btoa(data: string): string;
 
@@ -51,10 +55,12 @@ declare var require: {
 
 declare namespace Deno {
     function readTextFile(path: string): Promise<string>;
+    function exit(code?: number): never;
 }
 
 declare namespace Bun {
     function file(path: string): {
         text(): Promise<string>;
     };
+    function exit(code?: number): never;
 }
