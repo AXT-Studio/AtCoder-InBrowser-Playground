@@ -32,21 +32,21 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 
 ## 2. 早見表
 
-| 領域       | 決定                                                                                                                   |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
-| ビルド     | WXT                                                                                                                    |
-| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                                                   |
-| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                                               |
-| UI         | Preact + Signals。mode = Solve / Compare / Stress                                                                      |
-| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない                     |
-| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy / matplotlib なし。wheel 拡張内同梱                            |
-| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし                               |
-| C++        | WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。Boost / OpenMP / `import std` なし |
-| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                                        |
-| エンジン   | `engine/*/dist` 等は git に置かない。`pnpm run build:engine:*` で生成。dev のたびに自動ビルドはしない                  |
-| 実行寿命   | 実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                                                 |
-| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                                      |
-| テスト     | `pnpm test` = type-check / fmt / lint / unit（Vitest）                                                                 |
+| 領域       | 決定                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| ビルド     | WXT                                                                                                                                  |
+| 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                                                                 |
+| エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                                                             |
+| UI         | Preact + Signals。mode = Solve / Compare / Stress                                                                                    |
+| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない                                   |
+| Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy / matplotlib なし。wheel 拡張内同梱                                          |
+| Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし                                             |
+| C++        | WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。pb_ds は同梱。Boost / OpenMP / `import std` なし |
+| Lua        | wasmoon 1.16.0（Lua 5.4.5 wasm）。対象ジャッジは Lua 5.4.7 のみ。ライブラリなし                                                      |
+| エンジン   | `engine/*/dist` 等は git に置かない。`pnpm run build:engine:*` で生成。dev のたびに自動ビルドはしない                                |
+| 実行寿命   | 実行ごとに Worker を起動・終了（キャッシュ無し）。必要になったら再検討                                                               |
+| TLE        | `ready` 以降のみ計測。Host がタイマー＆ terminate                                                                                    |
+| テスト     | `pnpm test` = type-check / fmt / lint / unit（Vitest）                                                                               |
 
 ---
 
@@ -227,14 +227,15 @@ init 時に gem の `lib/**/*.rb` を `/gems` に展開し、`gems.json` の `lo
 ## 9. C++（WASI Clang）
 
 - 対象ジャッジは **C++23 (Clang 21.1.0)**。実行も **同じ 21.1.0** の自前 wasm（libc++、wasi-sdk 28、target `wasm32-wasip1`）
-- UI の言語名は **C++(Clang)**。内部 id は `cpp`。GCC ジャッジ（libstdc++ / `ext/pb_ds`）は対象外
+- UI の言語名は **C++**。内部 id は `cpp`。stdlib は libc++ のまま（GCC の libstdc++ には切り替えない）
+- `ext/pb_ds` は GCC 15.2.0 のヘッダを **エンジンビルド時** に取得（`engine/clang-wasi/scripts/fetch-gnu-headers.py` → `dist/gnu-compat/`。git に置かない）。libc++ 向けシムは `utils/execution/languages/cpp/shims/`。`bits/extc++.h` は **slim**（`stdc++.h` + pb_ds）。`rope` / `slist` 等の他 GNU 拡張は入れない
 - コンパイル（clang → wasm-ld）は **`prepare`＝ready より前**。失敗は **CE**。`ready` 以降はユーザー wasm の WASI 実行だけ（非 0 終了は **RE**）
 - フラグ: `-std=gnu++23 -stdlib=libc++ -O2 -DATCODER -DONLINE_JUDGE -fexperimental-library -fno-exceptions -fno-rtti --target=wasm32-wasip1 --sysroot=/ -resource-dir=/lib/clang/21`
 - Emscripten `EXIT_RUNTIME` のため、**clang / lld は prepare ごとに作り直す**。glue JS の `ENVIRONMENT_IS_NODE` は Worker で false になるようパッチする
-- `bits/stdc++.h` は libc++ 向け shim を同梱（WASI が `#error` する `csetjmp` / `csignal` は入れない）。ac-library 1.6 ヘッダを同梱（`#include <atcoder/dsu>`）
-- **同梱しない:** Boost、OR-Tools / LightGBM / Z3 等、`import std` / `std.pcm`、OpenMP / pthread、`-march=native` / LTO
+- `bits/stdc++.h` は libc++ 向け shim を同梱（WASI が `#error` する `csetjmp` / `csignal` は入れない）。`bits/extc++.h` は slim。ac-library 1.6 ヘッダを同梱（`#include <atcoder/dsu>`）
+- **同梱しない:** Boost、OR-Tools / LightGBM / Z3 等、`import std` / `std.pcm`、OpenMP / pthread、`-march=native` / LTO、GNU `ext/` の pb_ds 以外（rope / slist 等）
 - wasm32 の ABI（ポインタ幅、`long double` が 80bit にならない）は README 制約。完全同一は追わない
-- ツールチェインは `pnpm run build:engine:clang`（`engine/clang-wasi/scripts/build.sh`）で wasm 化し、`plugins/cppPublicAssetsHook.ts` が `engine/clang-wasi/dist` + shim + ACL を `assets/cpp/` へ同梱
+- ツールチェインは `pnpm run build:engine:clang`（`engine/clang-wasi/scripts/build.sh`）で wasm 化し、あわせて pb_ds ヘッダを取得する。`plugins/cppPublicAssetsHook.ts` が `engine/clang-wasi/dist` + shim + ACL + pb_ds を `assets/cpp/` へ同梱
 - glue JS は Blob URL 経由で `import()` しない（Firefox CSP が `blob:` を弾く）。拡張内 URL を直接 import する
 - Chrome / Firefox とも他言語と同じ実行ホスト（Offscreen / Background → Runner Worker）
 

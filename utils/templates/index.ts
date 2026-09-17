@@ -132,7 +132,7 @@ export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
     },
     {
         id: "cpp_solver",
-        label: "C++ (Clang)",
+        label: "C++",
         language: "cpp",
         kind: "solver",
         generate: generateCppSolver,

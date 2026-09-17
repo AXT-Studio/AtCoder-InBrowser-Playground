@@ -5,6 +5,7 @@
         "engine/quickjs-wamr/vendor/**",
         "engine/quickjs-wamr/build/**",
         "engine/quickjs-wamr/dist/**",
+        "utils/execution/languages/cpp/shims/**",
         "temp/**"
     ]
 }

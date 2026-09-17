@@ -24,7 +24,7 @@
 9. **テスト:** `pnpm test`（type-check / fmt / lint / unit）。ユニットは Vitest。純関数を優先。言語ランナーの smoke も可
 10. **ツール:** WXT。ドキュメント用 monorepo / VitePress サイトは復活させない
 11. **Ruby:** ruby.wasm（`ruby+stdlib`）。C 拡張 gem は載せない。同梱は純 Ruby 5 gem + rgl の runtime 依存のみ
-12. **C++:** WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。Boost・OpenMP・`import std` は載せない。言語セレクト名は C++(Clang)。成果物は `engine/clang-wasi/dist`（`pnpm run build:engine:clang`）
+12. **C++:** WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。言語セレクト名は C++。pb_ds は slim `bits/extc++.h`（ヘッダはエンジンビルドで取得、git に置かない）。Boost・OpenMP・`import std` は載せない。成果物は `engine/clang-wasi/dist`（`pnpm run build:engine:clang`）
 
 ## やってはいけないこと
 

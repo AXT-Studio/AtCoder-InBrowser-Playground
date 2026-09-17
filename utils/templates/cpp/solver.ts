@@ -7,7 +7,7 @@ ${formatTemplateHeader({
     contestTitle,
     taskTitle,
     taskURL,
-    runtimeLabel: "C++ (Clang)",
+    runtimeLabel: "C++",
     role,
 })}
 

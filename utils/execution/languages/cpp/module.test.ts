@@ -78,6 +78,47 @@ int main() {
         expect(outcome.stderr).toMatch(/undeclared identifier|error:/i);
     }, 30_000);
 
+    it("bits/extc++.h と pb_ds ordered_set が使える", async () => {
+        const outcome = await runPrepared(
+            ctx,
+            `#include <bits/extc++.h>
+using namespace std;
+using namespace __gnu_pbds;
+using ordered_set = tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update>;
+int main() {
+    ordered_set s;
+    s.insert(3);
+    s.insert(1);
+    s.insert(2);
+    cout << *s.find_by_order(1) << " " << s.order_of_key(3) << endl;
+    return 0;
+}
+`,
+            "",
+        );
+        expect(outcome.status).toBe("completed");
+        expect(outcome.stdout).toContain("2 2");
+    }, 120_000);
+
+    it("ext/pb_ds の gp_hash_table が使える", async () => {
+        const outcome = await runPrepared(
+            ctx,
+            `#include <ext/pb_ds/assoc_container.hpp>
+#include <iostream>
+using namespace __gnu_pbds;
+int main() {
+    gp_hash_table<int, int> mp;
+    mp[1] = 2;
+    std::cout << mp[1] << std::endl;
+    return 0;
+}
+`,
+            "",
+        );
+        expect(outcome.status).toBe("completed");
+        expect(outcome.stdout).toContain("2");
+    }, 120_000);
+
     it("ac-library の dsu が使える", async () => {
         const outcome = await runPrepared(
             ctx,

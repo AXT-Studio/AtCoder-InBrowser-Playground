@@ -1,0 +1,21 @@
+#pragma once
+
+#include <type_traits>
+
+namespace std {
+namespace tr1 {
+using std::is_same;
+using std::is_const;
+using std::is_pointer;
+using std::is_reference;
+using std::is_fundamental;
+using std::is_member_object_pointer;
+using std::is_member_pointer;
+using std::is_base_of;
+using std::remove_const;
+using std::remove_reference;
+using std::integral_constant;
+using std::true_type;
+using std::false_type;
+} // namespace tr1
+} // namespace std

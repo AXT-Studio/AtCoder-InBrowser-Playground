@@ -1,0 +1,10 @@
+#pragma once
+
+#include <functional>
+
+namespace std {
+namespace tr1 {
+using std::hash;
+using std::equal_to;
+} // namespace tr1
+} // namespace std

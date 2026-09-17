@@ -5,7 +5,7 @@
 AtCoderの問題ページに、ブラウザ上で動作が完結するコードエディター・テスターを追加するWeb拡張機能です。  
 Web extension provides a code editor/tester for AtCoder, which can be completed in the browser.
 
-- Supported Languages …… TypeScript, JavaScript, Python, Lua, Ruby, C++(Clang), Brainfuck, Text
+- Supported Languages …… TypeScript, JavaScript, Python, Lua, Ruby, C++, Brainfuck, Text
 - Supported Browsers …… Chromium-based or Firefox-based browsers
 
 ## License
@@ -105,7 +105,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 |     Python |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
 |        Lua |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
 |       Ruby |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
-| C++(Clang) |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
+|        C++ |     ✅️     |        ✅️        |      ❌️      |    ✅️    |
 |  Brainfuck |     ✅️     |        ✅️        |      ❌️      |    ➖️    |
 |  Text(cat) |     ✅️     |        ➖️        |      ➖️      |    ➖️    |
 
@@ -167,17 +167,20 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - `rgl` の依存として `pairing_heap` と `stream` も入っています
     - stdinは`gets`・`$stdin`、stdoutは`puts`・`print`、stderrは`$stderr`を使用してください
 
-### C++(Clang)
+### C++
 
 - 想定ジャッジ: C++23 (Clang 21.1.0)
-    - "C++23 (GCC 15.2.0)"は非対応です
-        - `libstdc++`などは使用できません
-        - ただし、GCCでもClangでも動くコードはそこそこあるようです
-- AIBP側使用ランタイム: Clang 21.1.0 (Emscripten上の自前wasmビルド)
+    - "C++23 (GCC 15.2.0)"そのものの再現（libstdc++ を stdlib にする）はしていません
+    - ただし、GCCでもClangでも動くコードはそこそこあります
+    - GCC 由来の `pb_ds`（`ordered_set` / `gp_hash_table` など）は AIBP 上では使えます
+        - `#include <bits/extc++.h>` または `#include <ext/pb_ds/assoc_container.hpp>`
+        - AtCoder の **C++23 (Clang)** 提出では `pb_ds` は使えません。**C++23 (GCC)** 提出ならジャッジ側にあります
+- AIBP側使用ランタイム: Clang 21.1.0 (Emscripten上の自前wasmビルド) + libc++
 - 制約
     - コンパイルに数秒かかることがあります。実行時間の計測とTLE判定はコンパイルを除いたユーザーコードの実行時間のみを対象にしています
-    - `bits/stdc++.h`およびac-library(`#include <atcoder/dsu>`など)は使用できます
+    - `bits/stdc++.h`、`bits/extc++.h`（stdc++.h + pb_ds）、ac-library（`#include <atcoder/dsu>`など）は使用できます
         - ただし、`bits`の`csetjmp`および`csignal`はWASI側の制約により使用できません
+        - GCC の `bits/extc++.h` にある `rope` / `slist` などのその他 GNU 拡張は入れていません
     - Boost、OR-Tools、OpenMP、`import std`などは使用できません
     - 例外(`throw`/`catch`)とRTTI(Run-Time Type Information)はOFFになっています
     - その他、ポインタの幅や`long double`の精度など、ジャッジの`x86_64`とは異なる部分があります
@@ -232,7 +235,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         ```
     - WebAssemblyモジュール群のEmscriptenビルド
         ```sh
-        pnpm run build:engine:clang     # Clang 21.1.0, lld (wasm化、40分程度目安)
+        pnpm run build:engine:clang     # Clang 21.1.0, lld (wasm化、40分程度目安) + pb_ds ヘッダ取得
         pnpm run build:engine:qjs-wamr  # QuickJS, WAMR
         pnpm run build:engines          # 上記すべて (40分程度目安)
         ```
@@ -270,6 +273,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
             - MacOSでは`brew install emscripten`を先にしておきましょう
     - `pnpm run build:engine:clang`について
         - Emscripten(`emcc`, `emcmake`), cmake, ninjaのPATHを通しておく必要があります
+        - あわせて GCC 15.2.0 の `pb_ds` ヘッダを取得します（`engine/clang-wasi/dist/gnu-compat/`。git には置きません）
         - 時間がかかります。MacBook Air (M2)で36分かかりました
     - `pnpm run zip:full`について
         - `build:engines`も含めたビルドステップ全体を実行するため、実行には時間がかかります
