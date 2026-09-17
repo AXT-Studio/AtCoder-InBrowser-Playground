@@ -170,20 +170,22 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 ### C++
 
 - 想定ジャッジ: C++23 (Clang 21.1.0)
-    - "C++23 (GCC 15.2.0)"そのものの再現（libstdc++ を stdlib にする）はしていません
-    - ただし、GCCでもClangでも動くコードはそこそこあります
-    - GCC 由来の `pb_ds`（`ordered_set` / `gp_hash_table` など）は AIBP 上では使えます
-        - `#include <bits/extc++.h>` または `#include <ext/pb_ds/assoc_container.hpp>`
-        - AtCoder の **C++23 (Clang)** 提出では `pb_ds` は使えません。**C++23 (GCC)** 提出ならジャッジ側にあります
+    - "C++23 (GCC 15.2.0)"で動くコードも一部は動きます。詳細は「制約」を確認してください
 - AIBP側使用ランタイム: Clang 21.1.0 (Emscripten上の自前wasmビルド) + libc++
 - 制約
     - コンパイルに数秒かかることがあります。実行時間の計測とTLE判定はコンパイルを除いたユーザーコードの実行時間のみを対象にしています
-    - `bits/stdc++.h`、`bits/extc++.h`（stdc++.h + pb_ds）、ac-library（`#include <atcoder/dsu>`など）は使用できます
-        - ただし、`bits`の`csetjmp`および`csignal`はWASI側の制約により使用できません
-        - GCC の `bits/extc++.h` にある `rope` / `slist` などのその他 GNU 拡張は入れていません
+    - includeできるライブラリは以下のとおりで、これ以外のライブラリには対応していません
+        - `bits/stdc++.h` (`csetjmp`, `csignal`など、WASI側の制約により使用できないものを除く)
+        - `ext/pb_ds/〇〇.hpp` (assoc_container, exception, hash_policy, list_update_policy, priority_queue, tree_policy, trie_policy)
+            - 本来`pb_ds`はGCCジャッジでしか使えません。Clangで提出する場合は`pb_ds`を利用していないことを確認するようにしてください
+        - `bits/extc++.h` (上記2つのみが含まれています。`rope`, `slist`など、上記に列挙されていないGNU拡張は入っていません)
     - Boost、OR-Tools、OpenMP、`import std`などは使用できません
+    - GCC向け標準ライブラリの`libstdc++`は使用できません
     - 例外(`throw`/`catch`)とRTTI(Run-Time Type Information)はOFFになっています
     - その他、ポインタの幅や`long double`の精度など、ジャッジの`x86_64`とは異なる部分があります
+
+> [!NOTE]
+> 将来的にGCCのwasmビルドを誰かが提供した場合はGCCに移行します ([Issue #124](https://github.com/AXT-Studio/AtCoder-InBrowser-Playground/issues/124))
 
 ### Brainfuck
 
