@@ -122,6 +122,7 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
         - `await Deno.readTextFile("/dev/stdin")`
         - `await Bun.file("/dev/stdin").text()`
     - `console.log()`・`console.error()`以外の`console`オブジェクトのメソッドは、AIBP上では利用できません
+    - `process.exit()` / `Deno.exit()` / `Bun.exit()` は利用できます。引数なしおよび `0` は正常終了、非 0 の終了コードは RE になります。`process` / `Deno` / `Bun` のその他の API は提供しません
     - 新しいメソッドやランタイム固有のメソッドは使用できません
         - 少なくともECMAScript 2025仕様に含まれるものはほとんど使えるはずなので、困ることはないと思います
     - エラーの文言はブラウザ内実行環境(QuickJS-NG)の出力をベースとした独自のもので、Node.js・Deno・Bunは一致しません

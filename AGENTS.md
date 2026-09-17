@@ -18,7 +18,7 @@
 3. **UI:** Preact + Preact Signals。巨大 HTML 文字列 UI に戻さない。見た目の正本は `DECISIONS.md` のデザイン言語
 4. **画面:** mode は **Solve / Compare / Stress** のみ。Settings mode を作らない。mode が編集対象バッファ（提出用 / 比較 / 生成器）の切替を兼ねる
 5. **言語設定**は提出用・比較・生成器で独立。コードは pathname×バッファ、言語はバッファ単位（ページ非依存）で永続化
-6. **JS/TS:** QuickJS 系。stdin（fs / Deno / Bun の 3 パターン）を `__stdin__` に置換し、console shim を維持。完全 Node 互換は追わない
+6. **JS/TS:** QuickJS 系。stdin（fs / Deno / Bun の 3 パターン）を `__stdin__` に置換し、console shim / exit shim を維持。完全 Node 互換は追わない
 7. **Python:** Pyodide。**scipy / matplotlib は入れない。** Heuristic/ML 系も allowlist に戻さない。wheel は拡張内同梱
 8. **TLE** は init 除外後（`ready` 以降）のユーザーコード実行時間で判定する
 9. **テスト:** `pnpm test`（type-check / fmt / lint / unit）。ユニットは Vitest。純関数を優先。言語ランナーの smoke も可

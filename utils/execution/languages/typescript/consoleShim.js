@@ -34,3 +34,28 @@ globalThis.__aibpSetupConsole = function () {
         error: (...args) => globalThis.__stderr__.push(args.map(__aibpFormatConsoleArg).join(" ")),
     };
 };
+
+/**
+ * process.exit / Deno.exit / Bun.exit の shim です。
+ * 以降のユーザーコードを止めるため専用例外 AibpExit を投げます。ホストが name と exitCode を見て判定します。
+ */
+globalThis.__aibpSetupExit = function () {
+    const exit = function (code) {
+        let exitCode = 0;
+        if (code === undefined || code === null) {
+            exitCode = 0;
+        } else if (typeof code === "number" && Number.isFinite(code)) {
+            exitCode = Math.trunc(code);
+        } else {
+            globalThis.__stderr__.push(String(code));
+            exitCode = 1;
+        }
+        const err = new Error(String(exitCode));
+        err.name = "AibpExit";
+        err.exitCode = exitCode;
+        throw err;
+    };
+    globalThis.process = { exit };
+    globalThis.Deno = { exit };
+    globalThis.Bun = { exit };
+};

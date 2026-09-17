@@ -25,7 +25,6 @@ import readline from "node:readline";
 // @ts-ignore
 const rl = readline.createInterface({ input: process.stdin });
 const exitProcess = () => {
-    // @ts-ignore
     process.exit(0);
 };
 (async () => {

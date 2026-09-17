@@ -26,6 +26,110 @@ describe("typescript language module", () => {
         });
     });
 
+    it.each(["process", "Deno", "Bun"] as const)(
+        "%s.exit() は正常終了で、以降は走らず backtrace を出さない",
+        async (ns) => {
+            const outcome = await typescript.run(ctx, `console.log(1);\n${ns}.exit();\nconsole.log(2);`, "");
+            expect(outcome).toEqual({
+                status: "completed",
+                stdout: "1",
+                stderr: "",
+            });
+        },
+    );
+
+    it("process.exit(0) は正常終了", async () => {
+        const outcome = await typescript.run(ctx, `console.log(1);\nprocess.exit(0);\nconsole.log(2);`, "");
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1",
+            stderr: "",
+        });
+    });
+
+    it("console.error があっても process.exit() は正常終了", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `console.log(1);\nconsole.error("err");\nprocess.exit();\nconsole.log(2);`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "1",
+            stderr: "err",
+        });
+    });
+
+    it.each(["process", "Deno", "Bun"] as const)("%s.exit(1) は RE になり、stdout は残す", async (ns) => {
+        const outcome = await typescript.run(ctx, `console.log(1);\n${ns}.exit(1);\nconsole.log(2);`, "");
+        expect(outcome).toEqual({
+            status: "RE",
+            stdout: "1",
+            stderr: "exit 1",
+        });
+    });
+
+    it("process.exit に文字列を渡すと RE になり、メッセージを stderr に出す", async () => {
+        const outcome = await typescript.run(ctx, `console.log(1);\nprocess.exit("boom");\nconsole.log(2);`, "");
+        expect(outcome).toEqual({
+            status: "RE",
+            stdout: "1",
+            stderr: "boom",
+        });
+    });
+
+    it("try 節の process.exit はその catch で握りつぶせる", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `try { process.exit(0); } catch { console.log("caught"); }\nconsole.log("after");`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "caught\nafter",
+            stderr: "",
+        });
+    });
+
+    it("catch 節の process.exit はその catch では握りつぶされない", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `try { throw new Error("x"); } catch { process.exit(0); }\nconsole.log("after");`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "",
+            stderr: "",
+        });
+    });
+
+    it("finally 節の process.exit はその構文では握りつぶされない", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `try { console.log("try"); } finally { process.exit(0); }\nconsole.log("after");`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "try",
+            stderr: "",
+        });
+    });
+
+    it("try 節の process.exit は finally では握りつぶされず、finally のあと終了する", async () => {
+        const outcome = await typescript.run(
+            ctx,
+            `try { process.exit(0); } finally { console.log("finally"); }\nconsole.log("after");`,
+            "",
+        );
+        expect(outcome).toEqual({
+            status: "completed",
+            stdout: "finally",
+            stderr: "",
+        });
+    });
+
     it("TypeScript の型注釈を落として実行できる", async () => {
         const outcome = await typescript.run(
             ctx,

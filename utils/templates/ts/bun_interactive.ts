@@ -26,7 +26,6 @@ declare global {
     }
 }
 const exitProcess = () => {
-    // @ts-ignore
     process.exit(0);
 };
 for await (const line of console) {

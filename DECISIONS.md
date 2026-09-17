@@ -38,7 +38,7 @@ AtCoder In-Browser Playground（AIBP）の設計正本。覆す場合はこの�
 | 実行ホスト | **Chrome = MV3 Offscreen**、**Firefox = MV2 Background**（分岐必須）                                                                 |
 | エディタ   | Monaco。AMO 5MB/file 対策の分割＋ Firefox は Blob Worker                                                                             |
 | UI         | Preact + Signals。mode = Solve / Compare / Stress                                                                                    |
-| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim。完全 Node 互換は追わない                                   |
+| JS/TS      | QuickJS-NG + WAMR interp + Sucrase（型落とし）。stdin 置換・console shim・exit shim。完全 Node 互換は追わない                        |
 | Python     | Pyodide。init 先読みなし。import 抽出 → micropip。scipy / matplotlib なし。wheel 拡張内同梱                                          |
 | Ruby       | ruby.wasm（`ruby+stdlib`）。純 Ruby gem 5+rgl依存を init で FS に載せる。C 拡張 gem なし                                             |
 | C++        | WASI Clang（Clang 21.1.0 / libc++ / wasi-sdk 28）。コンパイルは ready 前。例外オフ。pb_ds は同梱。Boost / OpenMP / `import std` なし |
@@ -135,7 +135,7 @@ type CodeTestResult = {
 
 ## 5. TypeScript / JavaScript
 
-- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ Sucrase（型落とし・sourcemap。ES はダウンコンパイルしない）+ console shim（object-inspect）
+- QuickJS-NG（自前 WASM。WAMR インタプリタでゲスト `WebAssembly`）+ Sucrase（型落とし・sourcemap。ES はダウンコンパイルしない）+ console shim（object-inspect）+ exit shim
 - ピン: QuickJS-NG `v0.16.2`、WAMR `WAMR-2.4.1`。FFI は `quickjs-emscripten-core` 0.32（`QTS_*` cwrap は `engine/quickjs-wamr/ffi.ts`）
 - 成果物は `pnpm run build:engine:qjs-wamr` で生成し、リポジトリには置かない
 - ゲスト `WebAssembly` は Module / Instance と数値 export まで。WASI・JIT/AOT・ホスト橋渡しはしない
@@ -146,6 +146,7 @@ type CodeTestResult = {
     - `await Deno.readTextFile("/dev/stdin")`
     - `await Bun.file("/dev/stdin").text()`
 - `console.log` / `console.error` → stdout / stderr。shim 必須（JSON 経由だと `NaN` 等が壊れる）
+- `process.exit` / `Deno.exit` / `Bun.exit` → 専用例外 `AibpExit`（`name` + `exitCode`）。引なし・`null`・`0` は正常終了。非 0 の int は **RE**（traceback なし。stdout は残す。stderr が空なら `exit N`）。非 int の code は stderr へ書いて終了コード 1。`process` / `Deno` / `Bun` の他 API は生やさない。throw なので、**同じ** try-catch-finally では try 節の exit だけがその catch で握りつぶせる（catch / finally 内の exit はその構文では捕まらない）。外側の try-catch や finally の `return` ではまだ握りつぶせる（Node 非互換、許容）
 - RE/CE の stderr は人が読める文字列。行・列は sourcemap でユーザーソース座標へ戻す
 - 列は **1-based**。stderr は snippet（`{line} | {source}`）+ caret（半角幅仮定）+ メッセージ
 - エラー文言は QuickJS-NG / Sucrase 準拠（Node 互換は追わない）
