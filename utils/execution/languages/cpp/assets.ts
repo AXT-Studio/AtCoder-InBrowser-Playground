@@ -12,6 +12,9 @@ export const CPP_STAMP = "clang-21.1.0-wasi-sdk-28";
 /** プロジェクトルートからの相対 */
 export const CPP_LOCAL_DIST_REL = "engine/clang-wasi/dist";
 
+/** GCC libstdc++ pb_ds。`pnpm run build:engine:clang` が dist/gnu-compat へ取得 */
+export const CPP_GNU_COMPAT_DIST_REL = `${CPP_LOCAL_DIST_REL}/gnu-compat`;
+
 export const cppCacheSubdir = (): string => `${CPP_CACHE_DIR_NAME}/${CPP_STAMP}`;
 
 export const ACL_VERSION = "1.6";

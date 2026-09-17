@@ -175,7 +175,7 @@ describe("insertTemplate", () => {
         });
         expect(result.action).toBe("insert");
         if (result.action === "insert") {
-            expect(result.template).toContain("// C++ (Clang) [Main] Submission");
+            expect(result.template).toContain("// C++ [Main] Submission");
             expect(result.template).toContain("#include <bits/stdc++.h>");
             expect(result.template).toContain("#include <iostream>");
             expect(result.template).toContain("int main()");

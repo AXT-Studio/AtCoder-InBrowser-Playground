@@ -1,5 +1,5 @@
 // ================================================================================================
-// WXT: WASI Clang 21.1.0 + ACL + bits/stdc++.h を public assets に同梱する
+// WXT: WASI Clang 21.1.0 + ACL + bits/stdc++.h + pb_ds を public assets に同梱する
 // ================================================================================================
 
 import { createHash } from "node:crypto";
@@ -12,6 +12,7 @@ import type { ResolvedPublicFile, Wxt } from "wxt";
 import {
     ACL_TARBALL_URL,
     ACL_VERSION,
+    CPP_GNU_COMPAT_DIST_REL,
     CPP_INCLUDE_BUNDLE_FILE_NAME,
     CPP_INCLUDE_BUNDLE_MAX_BYTES,
     CPP_LOCAL_DIST_REL,
@@ -32,8 +33,14 @@ const isErrnoException = (error: unknown): error is NodeJS.ErrnoException =>
 
 const sha256Hex = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
 
-const stdcxxHeaderPath = (): string =>
-    resolve(dirname(fileURLToPath(import.meta.url)), "../utils/execution/languages/cpp/stdc++.h");
+const cppHeadersDir = (): string =>
+    resolve(dirname(fileURLToPath(import.meta.url)), "../utils/execution/languages/cpp");
+
+const stdcxxHeaderPath = (): string => resolve(cppHeadersDir(), "stdc++.h");
+
+const extcxxHeaderPath = (): string => resolve(cppHeadersDir(), "extc++.h");
+
+const cppShimsDirPath = (): string => resolve(cppHeadersDir(), "shims");
 
 const downloadBytes = async (url: string): Promise<Uint8Array> => {
     const response = await fetch(url);
@@ -104,15 +111,26 @@ const patchToolJs = (source: string, fileName: string): string => {
     return source.replace(NODE_ENV_NEEDLE, NODE_ENV_REPLACEMENT);
 };
 
-const addTreeToBundle = async (bundle: CppIncludeBundle, root: string, destPrefix: string): Promise<void> => {
+const addTreeToBundle = async (
+    bundle: CppIncludeBundle,
+    root: string,
+    destPrefix: string,
+    options?: { aliasHpp?: boolean; skipNames?: ReadonlySet<string> },
+): Promise<void> => {
+    const aliasHpp = options?.aliasHpp ?? true;
+    const skipNames = options?.skipNames;
     const files = await collectFiles(root);
     for (const file of files) {
         const rel = relative(root, file).replaceAll("\\", "/");
         if (rel.includes("..")) {
             continue;
         }
+        const baseName = rel.split("/").pop() ?? "";
+        if (skipNames?.has(baseName)) {
+            continue;
+        }
         bundle.files[`${destPrefix}/${rel}`] = await readFile(file, "utf8");
-        if (rel.endsWith(".hpp")) {
+        if (aliasHpp && rel.endsWith(".hpp")) {
             bundle.files[`${destPrefix}/${rel.slice(0, -4)}`] = bundle.files[`${destPrefix}/${rel}`];
         }
     }
@@ -132,8 +150,18 @@ export const ensureCppRuntimeCache = async (cacheDir: string): Promise<CppRuntim
     const runtimeDir = resolve(cacheDir, "runtime");
     const includeJsonPath = resolve(runtimeDir, CPP_INCLUDE_BUNDLE_FILE_NAME);
     const distDir = resolve(projectRootFromCacheDir(cacheDir), CPP_LOCAL_DIST_REL);
+    const gnuCompatDir = resolve(projectRootFromCacheDir(cacheDir), CPP_GNU_COMPAT_DIST_REL);
     await mkdir(downloadsDir, { recursive: true });
     await mkdir(runtimeDir, { recursive: true });
+
+    try {
+        await access(resolve(gnuCompatDir, "ext/pb_ds/assoc_container.hpp"));
+    } catch (error) {
+        if (isErrnoException(error) && error.code === "ENOENT") {
+            throw new Error(`AIBP: missing ${gnuCompatDir}. Run pnpm run build:engine:clang`);
+        }
+        throw error;
+    }
 
     for (const fileName of CPP_TOOL_FILES) {
         const srcPath = resolve(distDir, fileName);
@@ -177,6 +205,12 @@ export const ensureCppRuntimeCache = async (cacheDir: string): Promise<CppRuntim
 
     const bundle: CppIncludeBundle = { files: {} };
     bundle.files["include/bits/stdc++.h"] = await readFile(stdcxxHeaderPath(), "utf8");
+    bundle.files["include/bits/extc++.h"] = await readFile(extcxxHeaderPath(), "utf8");
+    await addTreeToBundle(bundle, gnuCompatDir, "include", {
+        aliasHpp: false,
+        skipNames: new Set([".stamp"]),
+    });
+    await addTreeToBundle(bundle, cppShimsDirPath(), "include", { aliasHpp: false });
 
     const aclFiles = await collectFiles(aclExtract);
     const atcoderDir = aclFiles
@@ -223,7 +257,7 @@ export const registerCppPublicAssets = async (wxt: Wxt, files: ResolvedPublicFil
         pushPublicFile(files, existing, resolve(cache.runtimeDir, fileName), fileName, wxt);
     }
     pushPublicFile(files, existing, cache.includeJsonPath, CPP_INCLUDE_BUNDLE_FILE_NAME, wxt);
-    wxt.logger.info("AIBP: Added C++ public assets (WASI Clang 21.1.0).");
+    wxt.logger.info("AIBP: Added C++ public assets (WASI Clang 21.1.0 + pb_ds).");
 };
 
 export const cppDefaultCacheDir = (projectRoot: string): string => resolve(projectRoot, ".wxt", cppCacheSubdir());

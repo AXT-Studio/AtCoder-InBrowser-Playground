@@ -113,5 +113,9 @@ python3 "$ROOT/scripts/copy-toolchain.py" "$BUILD_DIR" "$DIST"
 echo "==> package sysroot"
 bash "$ROOT/scripts/package-sysroot.sh"
 
+echo "==> fetch GNU pb_ds headers"
+python3 "$ROOT/scripts/fetch-gnu-headers.py"
+
 echo "==> done"
 ls -lh "$DIST"
+ls -lh "$DIST/gnu-compat" | head

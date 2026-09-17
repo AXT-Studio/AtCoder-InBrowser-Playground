@@ -1,0 +1,10 @@
+This directory builds WASI Clang 21.1.0 (Emscripten wasm) used by AIBP.
+
+- LLVM / Clang 21.1.0 — Apache License 2.0 with LLVM Exceptions
+  https://github.com/llvm/llvm-project
+- wasi-sdk 28 sysroot — Apache License 2.0 with LLVM Exceptions
+  https://github.com/WebAssembly/wasi-sdk
+- libstdc++ `ext/pb_ds` and a few GNU internal headers from GCC 15.2.0
+  (`releases/gcc-15.2.0`) — GPLv3 + GCC Runtime Library Exception 3.1
+  Fetched at build time by `scripts/fetch-gnu-headers.py` into `dist/gnu-compat/`
+  https://github.com/gcc-mirror/gcc
