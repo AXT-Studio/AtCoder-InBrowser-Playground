@@ -36,7 +36,7 @@ globalThis.__aibpSetupConsole = function () {
 };
 
 /**
- * process.exit の shim です。
+ * process.exit / Deno.exit / Bun.exit の shim です。
  * 以降のユーザーコードを止めるため専用例外 AibpExit を投げます。ホストが name と exitCode を見て判定します。
  */
 globalThis.__aibpSetupExit = function () {
@@ -56,4 +56,6 @@ globalThis.__aibpSetupExit = function () {
         throw err;
     };
     globalThis.process = { exit };
+    globalThis.Deno = { exit };
+    globalThis.Bun = { exit };
 };

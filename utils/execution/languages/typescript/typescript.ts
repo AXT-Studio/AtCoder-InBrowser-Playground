@@ -12,7 +12,9 @@ import coreJsPolyfill from "virtual:corejs-polyfill";
 import { formatRuntimeError, formatTransformError } from "./formatError";
 
 const STDIN_PATTERNS = [
-    `require("fs").readFileSync("/dev/stdin", "utf8")`
+    `require("fs").readFileSync("/dev/stdin", "utf8")`,
+    `await Deno.readTextFile("/dev/stdin")`,
+    `await Bun.file("/dev/stdin").text()`,
 ];
 
 // ----------------------------------------------------------------

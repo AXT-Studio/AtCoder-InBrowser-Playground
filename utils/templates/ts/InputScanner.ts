@@ -1,140 +1,180 @@
 /**
  * 入力をスキャンし、トークンを順に取得するためのクラスです。
- * - 1個受け取り: `str()`, `num()`, `bigint()`
- * - 複数(i個)受け取り:  `strs(i)`, `nums(i)`, `bigints(i)`
- * - 一括受け取り: `batch([String, Number, BigInt])`→`[string, number, bigint]`
+ * - .str()で文字列、.num()で浮動小数点数、.int()で整数、.bigint()でBigIntとして取得できます。
+ * - 引数なしだと1つ、引数1つ(n)だと最大長さnの配列、引数2つ(n, g)だと長さgの最大長さnの配列の配列として取得できます。
  */
 class InputScanner {
-    #target: string;
-    #length: number;
-    #current: number;
+    #str: string;
+    #len: number;
+    #idx: number;
 
-    /**
-     * 新しいInputScannerインスタンスを生成します。
-     * @param target - 読む文字列
-     */
-    constructor(target: string) {
-        this.#target = target;
-        this.#length = target.length;
-        this.#current = 0;
+    /** 新しい入力スキャナーインスタンスを生成します。 */
+    constructor(str: string) {
+        this.#str = str;
+        this.#len = str.length;
+        this.#idx = 0;
     }
-
     /** ある文字がトークンの区切りとみなせる文字(' '・'\n'・'\r'・'\t')であるかを判定します。 */
     #isSpace(c: number): boolean {
         return c === 32 || c === 10 || c === 13 || c === 9;
     }
-
-    /** #currentをトークンの区切りとみなせる文字の直後まで進めます。 */
+    /** #idxをトークンの区切りとみなせる文字の直後まで進めます。 */
     #skipSpaces() {
-        while (this.#current < this.#length) {
-            const c = this.#target.charCodeAt(this.#current);
+        while (this.#idx < this.#len) {
+            const c = this.#str.charCodeAt(this.#idx);
             if (!this.#isSpace(c)) break;
-            this.#current++;
+            this.#idx++;
         }
     }
 
-    /** トークンを1つ取得します。もうトークンが存在しない場合、undefinedを返します。 */
-    #next<T>(parse: (token: string) => T): T | undefined {
-        this.#skipSpaces();
-        if (this.#current >= this.#length) return undefined;
-        const startIdx = this.#current;
-        while (this.#current < this.#length) {
-            const c = this.#target.charCodeAt(this.#current);
-            if (this.#isSpace(c)) break;
-            this.#current++;
+    #read<T>(fn: (token: string) => T): T | undefined;
+    #read<T>(fn: (token: string) => T, n: number): T[];
+    #read<T>(fn: (token: string) => T, n: number, g: number): T[][];
+    /**
+     * @private
+     * トークンを読んだうえで、そのトークンを渡された関数に通して変換して返します。
+     * @param fn - トークンを変換する関数
+     * @param n - 取得するトークンの最大数
+     * @param g - トークンのグループ数(トークンいくつで1巡するか)
+     */
+    #read<T>(fn: (token: string) => T, n?: number, g?: number): T | T[] | T[][] | undefined {
+        // nがない場合: 1トークン読む
+        if (n == null) {
+            this.#skipSpaces();
+            if (this.#idx >= this.#len) return undefined;
+            const startIdx = this.#idx;
+            while (this.#idx < this.#len) {
+                const c = this.#str.charCodeAt(this.#idx);
+                if (this.#isSpace(c)) break;
+                this.#idx++;
+            }
+            const token = this.#str.substring(startIdx, this.#idx);
+            return fn(token);
         }
-        return parse(this.#target.substring(startIdx, this.#current));
-    }
-
-    /**
-     * トークンを1個、stringとして取得します。
-     * もうトークンが存在しない場合、undefinedを返します。
-     */
-    str(): string | undefined {
-        return this.#next((token) => token);
-    }
-
-    /**
-     * トークンを1個、numberとして取得します。
-     * もうトークンが存在しない場合、undefinedを返します。
-     */
-    num(): number | undefined {
-        const token = this.#next((token) => token);
-        return token === undefined ? undefined : Number(token);
-    }
-
-    /**
-     * トークンを1個、bigintとして取得します。
-     * もうトークンが存在しない場合、undefinedを返します。
-     */
-    bigint(): bigint | undefined {
-        const token = this.#next((token) => token);
-        return token === undefined ? undefined : BigInt(token);
-    }
-
-    /**
-     * トークンを(最大)n個、stringとして取得します。
-     * 残りトークンがn個に満たない場合、長さn未満のstring[]が返されます。
-     */
-    strs(n: number): string[] {
-        const result: string[] = [];
-        for (let i = 0; i < n; i++) {
-            const token = this.str();
-            if (token === undefined) break;
-            else result.push(token);
+        // nだけある場合: nトークン読む
+        else if (g == null) {
+            const result: T[] = [];
+            for (let i = 0; i < n; i++) {
+                const token = this.#read(fn);
+                if (token == null) break;
+                result.push(token);
+            }
+            return result;
         }
-        return result;
+        // nもgもある場合: n×gトークン読む
+        else {
+            const result: T[][] = Array.from({ length: g }, () => []);
+            read: for (let i = 0; i < n; i++) {
+                for (let j = 0; j < g; j++) {
+                    const token = this.#read(fn);
+                    if (token == null) break read;
+                    result[j].push(token);
+                }
+            }
+            return result;
+        }
+    }
+    /**
+     * トークンを1つ、stringとして取得します。
+     * - もうトークンが存在しない場合、undefinedを返します。
+     */
+    str(): string | undefined;
+    /**
+     * トークンを(最大)n個、string[]として取得します。
+     * - 残りトークンがn個に満たない場合、長さn未満のstring[]が返されます。
+     * @param n 取得するトークンの最大数
+     */
+    str(n: number): string[];
+    /**
+     * トークンを(最大)n×g個、string[][]として取得します。
+     * - 戻り値のi(0≦i<g)番目の配列は、残存トークンのうちi番目, g+i番目, 2g+i番目, ..., (n-1)g+i番目のトークンを順に取得したstring[]です。
+     * - 戻り値の配列の長さは必ずg個ですが、残存トークンが不足している場合は長さnに満たない配列や空配列が含まれることがあります。
+     * @param n 取得するトークンの最大数
+     * @param g トークンのグループ数(トークンいくつで1巡するか)
+     */
+    str(n: number, g: number): string[][];
+    str(n?: number, g?: number): string | string[] | string[][] | undefined {
+        const mapFn = (token: string) => token;
+        if (n == null) return this.#read(mapFn);
+        else if (g == null) return this.#read(mapFn, n);
+        else return this.#read(mapFn, n, g);
     }
 
     /**
-     * トークンを(最大)n個、numberとして取得します。
-     * 残りトークンがn個に満たない場合、長さn未満のnumber[]が返されます。
+     * トークンを1つ、number(64bit浮動小数点数)として取得します。小数を許容します。
+     * - もうトークンが存在しない場合、undefinedを返します。
      */
-    nums(n: number): number[] {
-        const result: number[] = [];
-        for (let i = 0; i < n; i++) {
-            const token = this.num();
-            if (token === undefined) break;
-            else result.push(token);
-        }
-        return result;
+    num(): number | undefined;
+    /**
+     * トークンを(最大)n個、number[]として取得します。各要素は小数を許容します。
+     * - 残りトークンがn個に満たない場合、長さn未満のnumber[]が返されます。
+     * @param n 取得するトークンの最大数
+     */
+    num(n: number): number[];
+    /**
+     * トークンを(最大)n×g個、number[][]として取得します。各要素は小数を許容します。
+     * - 戻り値のi(0≦i<g)番目の配列は、残存トークンのうちi番目, g+i番目, 2g+i番目, ..., (n-1)g+i番目のトークンを順に取得したnumber[]です。
+     * - 戻り値の配列の長さは必ずg個ですが、残存トークンが不足している場合は長さnに満たない配列や空配列が含まれることがあります。
+     * @param n 取得するトークンの最大数
+     * @param g トークンのグループ数(トークンいくつで1巡するか)
+     */
+    num(n: number, g: number): number[][];
+    num(n?: number, g?: number): number | number[] | number[][] | undefined {
+        const mapFn = (token: string) => Number.parseFloat(token);
+        if (n == null) return this.#read(mapFn);
+        else if (g == null) return this.#read(mapFn, n);
+        else return this.#read(mapFn, n, g);
     }
 
     /**
-     * トークンを(最大)n個、stringとして取得します。
-     * 残りトークンがn個に満たない場合、長さn未満のstring[]が返されます。
+     * トークンを1つ、整数値のnumberとして取得します。
+     * - もうトークンが存在しない場合、undefinedを返します。
      */
-    bigints(n: number): bigint[] {
-        const result: bigint[] = [];
-        for (let i = 0; i < n; i++) {
-            const token = this.bigint();
-            if (token === undefined) break;
-            else result.push(token);
-        }
-        return result;
+    int(): number | undefined;
+    /**
+     * トークンを(最大)n個、number[]として取得します。
+     * - 残りトークンがn個に満たない場合、長さn未満の整数値の配列(number[])が返されます。
+     * @param n 取得するトークンの最大数
+     */
+    int(n: number): number[];
+    /**
+     * トークンを(最大)n×g個、整数値のnumber[][]として取得します。
+     * - 戻り値のi(0≦i<g)番目の配列は、残存トークンのうちi番目, g+i番目, 2g+i番目, ..., (n-1)g+i番目のトークンを順に整数値として取得したnumber[]です。
+     * - 戻り値の配列の長さは必ずg個ですが、残存トークンが不足している場合は長さnに満たない配列や空配列が含まれることがあります。
+     * @param n 取得するトークンの最大数
+     * @param g トークンのグループ数(トークンいくつで1巡するか)
+     */
+    int(n: number, g: number): number[][];
+    int(n?: number, g?: number): number | number[] | number[][] | undefined {
+        const mapFn = (token: string) => Number.parseInt(token);
+        if (n == null) return this.#read(mapFn);
+        else if (g == null) return this.#read(mapFn, n);
+        else return this.#read(mapFn, n, g);
     }
 
     /**
-     * トークンを順にstringとして受け取り、指定したパーサーでパースした結果を返します。
-     * (トークン不足を含めて)パーサーがundefinedを返した場合は、その部分がemptyとなり疎配列が返されます。
-     *
-     * @example
-     * ```ts
-     * const scanner = new InputScanner("1\n2 3\ntest");
-     * const [a, b, c, s] = scanner.batch([Number, Number, Number, String]);
-     * console.log(a + b + c); // => <number> 6 (※a, b, cはいずれもnumber型になっています)
-     * console.log(s); // => <string> "test" (※a, b, cはいずれもstring型になっています)
-     * ```
-     *
-     * @param parsers - トークンのパース方法(stringを取って何かを返す関数)の配列
-     * @returns - 指定した方法でパースされたトークンの配列
+     * トークンを1つ、BigIntとして取得します。
+     * - もうトークンが存在しない場合、undefinedを返します。
      */
-    batch<const P extends readonly ((token: string) => unknown)[]>(parsers: P): {-readonly [K in keyof P]: ReturnType<P[K]>;} {
-        const result: unknown[] = [];
-        for (let i = 0; i < parsers.length; i++) {
-            const token = this.#next(parsers[i]);
-            if (token !== undefined) result[i] = token;
-        }
-        return result as {-readonly [K in keyof P]: ReturnType<P[K]>;};
+    bigint(): bigint | undefined;
+    /**
+     * トークンを(最大)n個、bigint[]として取得します。
+     * - 残りトークンがn個に満たない場合、長さn未満のBigIntの配列(bigint[])が返されます。
+     * @param n 取得するトークンの最大数
+     */
+    bigint(n: number): bigint[];
+    /**
+     * トークンを(最大)n×g個、bigint[][]として取得します。
+     * - 戻り値のi(0≦i<g)番目の配列は、残存トークンのうちi番目, g+i番目, 2g+i番目, ..., (n-1)g+i番目のトークンを順に取得したbigint[]です。
+     * - 戻り値の配列の長さは必ずg個ですが、残存トークンが不足している場合は長さnに満たない配列や空配列が含まれることがあります。
+     * @param n 取得するトークンの最大数
+     * @param g トークンのグループ数(トークンいくつで1巡するか)
+     */
+    bigint(n: number, g: number): bigint[][];
+    bigint(n?: number, g?: number): bigint | bigint[] | bigint[][] | undefined {
+        const mapFn = (token: string) => BigInt(token);
+        if (n == null) return this.#read(mapFn);
+        else if (g == null) return this.#read(mapFn, n);
+        else return this.#read(mapFn, n, g);
     }
 }

@@ -1,19 +1,15 @@
-import type { GenerateTemplateParams, TemplateRole } from "../types";
-
-const ROLE_LABEL: Record<TemplateRole, string> = {
-    submission: "[Main] Submission",
-    compare: "[Compare] Comparative Implementation",
-    generator: "[Gen] Testcase Input Generator",
-};
+import { formatTemplateHeader } from "../formatHeader";
+import type { GenerateTemplateParams } from "../types";
 
 export const generateTemplate = ({ contestTitle, taskTitle, taskURL, role }: GenerateTemplateParams): string =>
     `\
-// ================================================================
-// ${contestTitle}
-// ${taskTitle}
-// (URL: ${taskURL})
-// C++ ${ROLE_LABEL[role]}
-// ================================================================
+${formatTemplateHeader({
+    contestTitle,
+    taskTitle,
+    taskURL,
+    runtimeLabel: "C++",
+    role,
+})}
 
 #include <bits/stdc++.h>
 #include <iostream>

@@ -143,8 +143,10 @@ type CodeTestResult = {
 - IIFE では包まない（実行ごとに Worker を破棄するため）
 - stdin 置換:
     - `require("fs").readFileSync("/dev/stdin", "utf8")`
+    - `await Deno.readTextFile("/dev/stdin")`
+    - `await Bun.file("/dev/stdin").text()`
 - `console.log` / `console.error` → stdout / stderr。shim 必須（JSON 経由だと `NaN` 等が壊れる）
-- `process.exit` → 専用例外 `AibpExit`（`name` + `exitCode`）。引なし・`null`・`0` は正常終了。非 0 の int は **RE**（traceback なし。stdout は残す。stderr が空なら `exit N`）。非 int の code は stderr へ書いて終了コード 1。`process` の他 API は生やさない。throw なので、**同じ** try-catch-finally では try 節の exit だけがその catch で握りつぶせる（catch / finally 内の exit はその構文では捕まらない）。外側の try-catch や finally の `return` ではまだ握りつぶせる（Node 非互換、許容）
+- `process.exit` / `Deno.exit` / `Bun.exit` → 専用例外 `AibpExit`（`name` + `exitCode`）。引なし・`null`・`0` は正常終了。非 0 の int は **RE**（traceback なし。stdout は残す。stderr が空なら `exit N`）。非 int の code は stderr へ書いて終了コード 1。`process` / `Deno` / `Bun` の他 API は生やさない。throw なので、**同じ** try-catch-finally では try 節の exit だけがその catch で握りつぶせる（catch / finally 内の exit はその構文では捕まらない）。外側の try-catch や finally の `return` ではまだ握りつぶせる（Node 非互換、許容）
 - RE/CE の stderr は人が読める文字列。行・列は sourcemap でユーザーソース座標へ戻す
 - 列は **1-based**。stderr は snippet（`{line} | {source}`）+ caret（半角幅仮定）+ メッセージ
 - エラー文言は QuickJS-NG / Sucrase 準拠（Node 互換は追わない）
@@ -268,9 +270,8 @@ TL / eps は問題由来の共有値。
 
 正本は `utils/templates/index.ts`。
 
-- TS solver: Scanner / Interactive のみ（素のテンプレは置かない）
+- TS solver: Scanner / Interactive のみ（素の Bun/Deno/Node テンプレは置かない）
 - JS solver と Generator（TS/JS）は維持
-- JS/TS テンプレは Node.js 形式（`require("fs").readFileSync("/dev/stdin")`）の 1 系統のみ別テンプレは置かない（stdinの置換は実行側で吸収。AGENTS.md 6）
 - Lua solver: Input scanner。Generator は `math.random` の最小
 - C++ solver: `bits/stdc++.h` + `iostream` + `main` の最小。generator / rep マクロは後回し
 - Python / Ruby / Brainfuck / Text は未導入
