@@ -9,18 +9,18 @@ const ROLE_LABEL: Record<TemplateRole, string> = {
 /**
  * テンプレ先頭ブロックを組み立てる。
  * role 行の例:
- * - `// TypeScript (Bun) [Main] Submission`
- * - `// TypeScript (Bun, using InputScanner) [Main] Submission`
- * - `// TypeScript (Bun, INTERACTIVE) [Compare] Comparative Implementation`
+ * - `// TypeScript (Node.js) [Main] Submission`
+ * - `// TypeScript (Node.js, using InputScanner) [Main] Submission`
+ * - `// TypeScript (Node.js, INTERACTIVE) [Compare] Comparative Implementation`
  */
 export const formatTemplateHeader = (params: {
     contestTitle: string;
     taskTitle: string;
     taskURL: string;
-    /** 例: `TypeScript (Bun)` */
+    /** 例: `TypeScript (Node.js)` */
     runtimeLabel: string;
     role: TemplateRole;
-    /** 括弧内に追記。例: `using InputScanner` / `INTERACTIVE` → `(Bun, …)` */
+    /** 括弧内に追記。例: `using InputScanner` / `INTERACTIVE` → `(Node.js, …)` */
     runtimeVariant?: string;
 }): string => {
     const runtimeDisplay = params.runtimeVariant

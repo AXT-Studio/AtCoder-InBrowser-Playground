@@ -270,8 +270,9 @@ TL / eps は問題由来の共有値。
 
 正本は `utils/templates/index.ts`。
 
-- TS solver: Scanner / Interactive のみ（素の Bun/Deno/Node テンプレは置かない）
+- TS solver: Scanner / Interactive のみ（素のテンプレは置かない）
 - JS solver と Generator（TS/JS）は維持
+- JS/TS テンプレは Node.js 形式（`require("fs").readFileSync("/dev/stdin")`）の 1 系統のみ。Bun / Deno 別テンプレは置かない（stdin 3 パターンの置換は実行側で吸収。AGENTS.md 6）
 - Lua solver: Input scanner。Generator は `math.random` の最小
 - C++ solver: `bits/stdc++.h` + `iostream` + `main` の最小。generator / rep マクロは後回し
 - Python / Ruby / Brainfuck / Text は未導入
