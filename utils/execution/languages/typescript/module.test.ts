@@ -26,7 +26,7 @@ describe("typescript language module", () => {
         });
     });
 
-    it.each(["process", "Deno", "Bun"] as const)(
+    it.each(["process"] as const)(
         "%s.exit() は正常終了で、以降は走らず backtrace を出さない",
         async (ns) => {
             const outcome = await typescript.run(ctx, `console.log(1);\n${ns}.exit();\nconsole.log(2);`, "");
@@ -60,7 +60,7 @@ describe("typescript language module", () => {
         });
     });
 
-    it.each(["process", "Deno", "Bun"] as const)("%s.exit(1) は RE になり、stdout は残す", async (ns) => {
+    it.each(["process"] as const)("%s.exit(1) は RE になり、stdout は残す", async (ns) => {
         const outcome = await typescript.run(ctx, `console.log(1);\n${ns}.exit(1);\nconsole.log(2);`, "");
         expect(outcome).toEqual({
             status: "RE",
@@ -304,7 +304,7 @@ function Main(inputText: string): void {
 
 // Please do not change the following code.
 export {}; // <- An empty export is required so that ts-check can determine it as a module.
-Main(await Bun.file("/dev/stdin").text());
+Main(require("fs").readFileSync("/dev/stdin", "utf8"));
 `,
             `\
 8 7

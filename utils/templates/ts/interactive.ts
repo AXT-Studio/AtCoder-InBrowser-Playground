@@ -15,7 +15,10 @@ export const generateTemplate = ({ contestTitle, taskTitle, taskURL, role }: Gen
 // TypeScript (Node.js or Bun, INTERACTIVE) ${ROLE_LABEL[role]}
 // ================================================================
 
-// Add init code here...
+// @ts-ignore
+import readline from "node:readline";
+// @ts-ignore
+const readLineInterface = readline.createInterface({ input: process.stdin });
 
 function Main(line: string): void {
     const inputs: string[] = line.split(" ");
@@ -23,13 +26,6 @@ function Main(line: string): void {
 }
 
 // Please do not change the following code.
-// @ts-ignore
-import readline from "node:readline";
-// @ts-ignore
-const rl = readline.createInterface({ input: process.stdin });
-const exitProcess = () => {
-    process.exit(0);
-};
 (async () => {
     for await (const line of rl) {
         Main((line as string).trim());
