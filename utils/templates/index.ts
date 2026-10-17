@@ -1,5 +1,5 @@
 import { generateTemplate as generateCppSolver } from "./cpp/solver";
-import { generateTemplate as generateJsNode } from "./js/node";
+import { generateTemplate as generateJsSolver } from "./js/solver";
 import { generateTemplate as generateGenJsNode } from "./generator/js";
 import { generateTemplate as generateGenLua } from "./generator/lua";
 import { generateTemplate as generateGenTsNode } from "./generator/ts";
@@ -21,29 +21,35 @@ export type InsertTemplateResult =
 export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
     {
         id: "ts_node_scanner",
-        label: "TypeScript (Node.js) + Scanner",
+        label: "TypeScript (Node/Bun) + InputScanner",
         language: "typescript",
         kind: "solver",
         generate: generateTsScanner,
     },
     {
         id: "ts_node_interactive",
-        label: "TypeScript (Node.js) Interactive",
+        label: "TypeScript (Node/Bun) Interactive",
         language: "typescript",
         kind: "solver",
         generate: generateTsInteractive,
     },
-    { id: "js_node", label: "JavaScript (Node.js)", language: "javascript", kind: "solver", generate: generateJsNode },
+    {
+        id: "js_solver",
+        label: "JavaScript (Node/Bun)",
+        language: "javascript",
+        kind: "solver",
+        generate: generateJsSolver,
+    },
     {
         id: "gen_ts_node",
-        label: "Generator — TypeScript (Node.js)",
+        label: "Generator — TypeScript (Node/Bun)",
         language: "typescript",
         kind: "generator",
         generate: generateGenTsNode,
     },
     {
         id: "gen_js_node",
-        label: "Generator — JavaScript (Node.js)",
+        label: "Generator — JavaScript (Node/Bun)",
         language: "javascript",
         kind: "generator",
         generate: generateGenJsNode,

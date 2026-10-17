@@ -1,15 +1,19 @@
-import { formatTemplateHeader } from "../formatHeader";
-import type { GenerateTemplateParams } from "../types";
+import type { GenerateTemplateParams, TemplateRole } from "../types";
+
+const ROLE_LABEL: Record<TemplateRole, string> = {
+    submission: "[Main] Submission",
+    compare: "[Compare] Comparative Implementation",
+    generator: "[Gen] Testcase Input Generator",
+};
 
 export const generateTemplate = ({ contestTitle, taskTitle, taskURL, role }: GenerateTemplateParams): string =>
     `\
-${formatTemplateHeader({
-    contestTitle,
-    taskTitle,
-    taskURL,
-    runtimeLabel: "TypeScript (Node.js)",
-    role,
-})}
+// ================================================================
+// ${contestTitle}
+// ${taskTitle}
+// (URL: ${taskURL})
+// TypeScript (Node.js or Bun) ${ROLE_LABEL[role]}
+// ================================================================
 
 function Main(): void {
     // Write a testcase to stdout.
