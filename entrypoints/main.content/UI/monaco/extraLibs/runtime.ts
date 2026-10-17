@@ -52,15 +52,3 @@ declare module "fs" {
 declare var require: {
     (moduleName: "fs"): typeof import("fs");
 };
-
-declare namespace Deno {
-    function readTextFile(path: string): Promise<string>;
-    function exit(code?: number): never;
-}
-
-declare namespace Bun {
-    function file(path: string): {
-        text(): Promise<string>;
-    };
-    function exit(code?: number): never;
-}

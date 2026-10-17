@@ -1,21 +1,11 @@
 import { generateTemplate as generateCppSolver } from "./cpp/solver";
-import { generateTemplate as generateJsBun } from "./js/bun";
-import { generateTemplate as generateJsDeno } from "./js/deno";
-import { generateTemplate as generateJsNode } from "./js/node";
-import { generateTemplate as generateGenJsBun } from "./generator/js/bun";
-import { generateTemplate as generateGenJsDeno } from "./generator/js/deno";
-import { generateTemplate as generateGenJsNode } from "./generator/js/node";
+import { generateTemplate as generateJsSolver } from "./js/solver";
+import { generateTemplate as generateGenJsNode } from "./generator/js";
 import { generateTemplate as generateGenLua } from "./generator/lua";
-import { generateTemplate as generateGenTsBun } from "./generator/ts/bun";
-import { generateTemplate as generateGenTsDeno } from "./generator/ts/deno";
-import { generateTemplate as generateGenTsNode } from "./generator/ts/node";
+import { generateTemplate as generateGenTsNode } from "./generator/ts";
 import { generateTemplate as generateLuaScanner } from "./lua/scanner";
-import { generateTemplate as generateTsBunInteractive } from "./ts/bun_interactive";
-import { generateTemplate as generateTsBunScanner } from "./ts/bun_scanner";
-import { generateTemplate as generateTsDenoInteractive } from "./ts/deno_interactive";
-import { generateTemplate as generateTsDenoScanner } from "./ts/deno_scanner";
-import { generateTemplate as generateTsNodeInteractive } from "./ts/node_interactive";
-import { generateTemplate as generateTsNodeScanner } from "./ts/node_scanner";
+import { generateTemplate as generateTsInteractive } from "./ts/interactive";
+import { generateTemplate as generateTsScanner } from "./ts/scanner";
 import type { TemplateDefinition, TemplateKind, TemplateRole } from "./types";
 
 export type { GenerateTemplateParams, TemplateDefinition, TemplateKind, TemplateLanguage, TemplateRole } from "./types";
@@ -30,88 +20,36 @@ export type InsertTemplateResult =
 /** 全テンプレ定義（UI の select と insert の正本） */
 export const TEMPLATE_DEFINITIONS: readonly TemplateDefinition[] = [
     {
-        id: "ts_bun_scanner",
-        label: "TypeScript (Bun) + Scanner",
-        language: "typescript",
-        kind: "solver",
-        generate: generateTsBunScanner,
-    },
-    {
-        id: "ts_bun_interactive",
-        label: "TypeScript (Bun) Interactive",
-        language: "typescript",
-        kind: "solver",
-        generate: generateTsBunInteractive,
-    },
-    {
-        id: "ts_deno_scanner",
-        label: "TypeScript (Deno) + Scanner",
-        language: "typescript",
-        kind: "solver",
-        generate: generateTsDenoScanner,
-    },
-    {
-        id: "ts_deno_interactive",
-        label: "TypeScript (Deno) Interactive",
-        language: "typescript",
-        kind: "solver",
-        generate: generateTsDenoInteractive,
-    },
-    {
         id: "ts_node_scanner",
-        label: "TypeScript (Node.js) + Scanner",
+        label: "TypeScript (Node/Bun) + InputScanner",
         language: "typescript",
         kind: "solver",
-        generate: generateTsNodeScanner,
+        generate: generateTsScanner,
     },
     {
         id: "ts_node_interactive",
-        label: "TypeScript (Node.js) Interactive",
+        label: "TypeScript (Node/Bun) Interactive",
         language: "typescript",
         kind: "solver",
-        generate: generateTsNodeInteractive,
-    },
-    { id: "js_bun", label: "JavaScript (Bun)", language: "javascript", kind: "solver", generate: generateJsBun },
-    { id: "js_deno", label: "JavaScript (Deno)", language: "javascript", kind: "solver", generate: generateJsDeno },
-    { id: "js_node", label: "JavaScript (Node.js)", language: "javascript", kind: "solver", generate: generateJsNode },
-    {
-        id: "gen_ts_bun",
-        label: "Generator — TypeScript (Bun)",
-        language: "typescript",
-        kind: "generator",
-        generate: generateGenTsBun,
+        generate: generateTsInteractive,
     },
     {
-        id: "gen_ts_deno",
-        label: "Generator — TypeScript (Deno)",
-        language: "typescript",
-        kind: "generator",
-        generate: generateGenTsDeno,
+        id: "js_solver",
+        label: "JavaScript (Node/Bun)",
+        language: "javascript",
+        kind: "solver",
+        generate: generateJsSolver,
     },
     {
         id: "gen_ts_node",
-        label: "Generator — TypeScript (Node.js)",
+        label: "Generator — TypeScript (Node/Bun)",
         language: "typescript",
         kind: "generator",
         generate: generateGenTsNode,
     },
     {
-        id: "gen_js_bun",
-        label: "Generator — JavaScript (Bun)",
-        language: "javascript",
-        kind: "generator",
-        generate: generateGenJsBun,
-    },
-    {
-        id: "gen_js_deno",
-        label: "Generator — JavaScript (Deno)",
-        language: "javascript",
-        kind: "generator",
-        generate: generateGenJsDeno,
-    },
-    {
         id: "gen_js_node",
-        label: "Generator — JavaScript (Node.js)",
+        label: "Generator — JavaScript (Node/Bun)",
         language: "javascript",
         kind: "generator",
         generate: generateGenJsNode,

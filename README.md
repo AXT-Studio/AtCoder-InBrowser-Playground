@@ -114,27 +114,25 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
 
 ### JavaScript
 
-- 想定ジャッジ: JavaScript (Bun 1.2.21), JavaScript (Deno 2.4.5), JavaScript (Node.js 22.19.0)
+- 想定ジャッジ: JavaScript (Bun 1.2.21), JavaScript (Node.js 22.19.0)
 - AIBP側使用ランタイム: [QuickJS-NG](https://github.com/quickjs-ng/quickjs) + [Sucrase](https://github.com/alangpierce/sucrase)
 - 制約
-    - stdinは以下のいずれかの方法で受け付ける必要があります
+    - stdinは以下の方法で受け付ける必要があります
         - `require("fs").readFileSync("/dev/stdin", "utf8")`
-        - `await Deno.readTextFile("/dev/stdin")`
-        - `await Bun.file("/dev/stdin").text()`
     - `console.log()`・`console.error()`以外の`console`オブジェクトのメソッドは、AIBP上では使用できません
-    - `process.exit()`, `Deno.exit()`, `Bun.exit()`は利用できます
+    - `process.exit()`は利用できます
         - 引数なし・`exit(0)`は正常終了、引数に非0を渡した場合はREとして扱われます
         - `try`節の中では利用できず、そこで例外が発生したものとして扱われます (内部で専用の例外を投げることで動作させているため)
     - 新しいメソッドや、(上に記載のあるものを除く)ランタイム固有のメソッドは使用できません
         - 少なくともECMAScript 2025仕様に含まれるものはほとんど使えるはずなので、困ることはないと思います
-    - エラーの文言はブラウザ内実行環境(QuickJS-NG)の出力をベースとした独自のもので、Node.js・Deno・Bunは一致しません
+    - エラーの文言はブラウザ内実行環境(QuickJS-NG)の出力をベースとした独自のもので、Node.js・Bunとは一致しません
     - AtCoderジャッジ環境で使える各種ライブラリ(`data-structure-typed`, `immutable`, `lodash`, `mathjs`, `tstl`)は使えません
     - WebAssembly JavaScript APIの基本的な機能も利用できます(が、WebAssembly System Interfaceなどは使用できません)
     - 深い再帰が必要なコードは(コールスタックサイズの制限により)動作しないことがあります
 
 ### TypeScript
 
-- 想定ジャッジ: TypeScript 5.8 (Deno 2.4.5), TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
+- 想定ジャッジ: TypeScript 5.9 (tsc 5.9.2 (Bun 1.2.21)), TypeScript 5.9 (tsc 5.9.2 (Node.js 22.19.0))
 - AIBP側使用ランタイム: [QuickJS-NG](https://github.com/quickjs-ng/quickjs) + [Sucrase](https://github.com/alangpierce/sucrase)
 - 制約
     - JavaScriptとほぼ同様です。JavaScriptの記述を参照してください
@@ -288,5 +286,5 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
     - AMO申請時 ビルド手順の伝達:
         ```txt
         Requires: Node.js, pnpm, git, cmake, ninja, Emscripten (emcc/emcmake on PATH)
-        Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:engines` -> `pnpm run zip:firefox`
+        Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:engines` -> `pnpm run build:ext:firefox`
         ```
