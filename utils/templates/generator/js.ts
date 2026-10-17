@@ -1,5 +1,5 @@
-import { formatTemplateHeader } from "../../formatHeader";
-import type { GenerateTemplateParams } from "../../types";
+import { formatTemplateHeader } from "../formatHeader";
+import type { GenerateTemplateParams } from "../types";
 
 export const generateTemplate = ({ contestTitle, taskTitle, taskURL, role }: GenerateTemplateParams): string =>
     `\
