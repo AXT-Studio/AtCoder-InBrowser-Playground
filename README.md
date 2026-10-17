@@ -288,5 +288,5 @@ AIBPをあなたが使っているブラウザにインストールするだけ�
     - AMO申請時 ビルド手順の伝達:
         ```txt
         Requires: Node.js, pnpm, git, cmake, ninja, Emscripten (emcc/emcmake on PATH)
-        Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:engines` -> `pnpm run zip:firefox`
+        Build command: `pnpm install` (-> `pnpm approve-builds` ) -> `pnpm run build:engines` -> `pnpm run build:ext:firefox`
         ```
