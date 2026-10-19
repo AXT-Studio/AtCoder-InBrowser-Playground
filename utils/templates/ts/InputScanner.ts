@@ -3,6 +3,7 @@
  * - 1個受け取り: `str()`, `num()`, `bigint()`
  * - 複数(i個)受け取り:  `strs(i)`, `nums(i)`, `bigints(i)`
  * - 一括受け取り: `batch([String, Number, BigInt])`→`[string, number, bigint]`
+ * ※このクラスは https://github.com/AXT-Studio/AtCoder-InBrowser-Playground (`utils/templates/ts/InputScanner.ts`) に同梱されているテンプレートコードです。このクラスとJSDocはCC0として扱ってよいです。
  */
 class InputScanner {
     #target: string;
