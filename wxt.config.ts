@@ -72,4 +72,7 @@ export default defineConfig({
             plugins: () => [buildPolyfillCodePlugin(), buildInspectRuntimePlugin()],
         },
     }),
+    webExt: {
+        startUrls: ["https://atcoder.jp/contests/abs/tasks/practice_1"]
+    }
 });
