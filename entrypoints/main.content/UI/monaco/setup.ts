@@ -83,11 +83,16 @@ export const ensureMonacoCompilerOptions = (): void => {
      * DOM lib は入れない（補完が重くなる）。
      * Monaco では `lib` 名は小文字で渡す（`ESNext` だと解決に失敗し Set 等まで消える）。
      * `esnext` は内部で es2024… へ reference される。
+     *
+     * moduleDetection の 3 は ModuleDetectionKind.Force。Monaco 0.55 の CompilerOptions 型には無い。
+     * import/export がなくてもファイル単位のモジュールにし、Solve / Compare / Stress で同じトップレベル名が衝突しないようにする。
+     * .d.ts の extra lib は対象外なので console / require はグローバルのまま。
      */
-    const commonCompilerOptions: monacoTS.CompilerOptions = {
+    const commonCompilerOptions: monacoTS.CompilerOptions & { moduleDetection: 3 } = {
         target: monacoTS.ScriptTarget.ESNext,
         module: monacoTS.ModuleKind.ESNext,
         moduleResolution: monacoTS.ModuleResolutionKind.NodeJs,
+        moduleDetection: 3,
         lib: ["esnext"],
         noEmit: true,
         skipLibCheck: true,
